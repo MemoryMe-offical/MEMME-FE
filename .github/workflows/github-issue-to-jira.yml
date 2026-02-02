@@ -1,4 +1,4 @@
-name: GitHub Issue → Jira (Frontend)
+name: GitHub Issue to Jira (Frontend)
 
 on:
   issues:
@@ -17,37 +17,25 @@ jobs:
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
           ISSUE_URL: ${{ github.event.issue.html_url }}
-          REPO_NAME: ${{ github.repository }}
           LABELS: ${{ join(github.event.issue.labels.*.name, ',') }}
         run: |
-          echo "🚀 Creating Jira Issue from GitHub"
-          echo "Repository: $REPO_NAME"
+          echo "Creating Jira Issue..."
           echo "Labels: $LABELS"
           
-          # 기본값 설정
           ISSUE_TYPE="Task"
-          EPIC_KEY="MEM-1"  # Frontend Epic
+          EPIC_KEY="MEM-1"
           PREFIX="[FE]"
           
-          # 라벨 기준 Issue Type 결정
           if [[ "$LABELS" == *"feature"* ]] || [[ "$LABELS" == *"enhancement"* ]]; then
             ISSUE_TYPE="Story"
-            echo "✨ Feature 라벨 감지 → Story로 생성"
           elif [[ "$LABELS" == *"bug"* ]] || [[ "$LABELS" == *"fix"* ]]; then
             ISSUE_TYPE="Bug"
-            echo "🐛 Bug/Fix 라벨 감지 → Bug로 생성"
           elif [[ "$LABELS" == *"refactor"* ]] || [[ "$LABELS" == *"chore"* ]]; then
             ISSUE_TYPE="Task"
-            echo "🔧 Refactor/Chore 라벨 감지 → Task로 생성"
-          else
-            ISSUE_TYPE="Task"
-            echo "📋 기본 타입 → Task로 생성"
           fi
           
           echo "Issue Type: $ISSUE_TYPE"
-          echo "Epic Key: $EPIC_KEY"
           
-          # Description 구성
           DESCRIPTION=$(cat <<EOF
           {
             "type": "doc",
@@ -110,7 +98,6 @@ jobs:
           EOF
           )
           
-          # Jira API 호출
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
             -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
             -H "Content-Type: application/json" \
@@ -136,10 +123,10 @@ jobs:
           
           if [ "$HTTP_CODE" -eq 201 ]; then
             JIRA_KEY=$(echo "$BODY" | jq -r '.key')
-            echo "✅ Jira 이슈 생성 완료: $JIRA_KEY"
-            echo "🔗 $JIRA_BASE_URL/browse/$JIRA_KEY"
+            echo "Jira issue created: $JIRA_KEY"
+            echo "$JIRA_BASE_URL/browse/$JIRA_KEY"
           else
-            echo "❌ Jira 이슈 생성 실패 (HTTP $HTTP_CODE)"
+            echo "Failed to create Jira issue (HTTP $HTTP_CODE)"
             echo "$BODY"
             exit 1
           fi
