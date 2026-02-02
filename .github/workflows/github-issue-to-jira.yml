@@ -1,0 +1,169 @@
+name: GitHub Issue → Jira (Frontend)
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  create-jira-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Jira Issue
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          REPO_NAME: ${{ github.repository }}
+          LABELS: ${{ join(github.event.issue.labels.*.name, ',') }}
+          ASSIGNEE: ${{ github.event.issue.assignee.login }}
+        run: |
+          echo "🚀 Creating Jira Issue from GitHub"
+          echo "Repository: $REPO_NAME"
+          echo "Labels: $LABELS"
+          
+          # 기본값 설정
+          ISSUE_TYPE="Task"
+          EPIC_KEY="MEM-1"  # Frontend Epic
+          PREFIX="[FE]"
+          
+          # 라벨 기준 Issue Type 결정
+          if [[ "$LABELS" == *"feature"* ]] || [[ "$LABELS" == *"enhancement"* ]]; then
+            ISSUE_TYPE="Story"
+            echo "✨ Feature 라벨 감지 → Story로 생성"
+          elif [[ "$LABELS" == *"bug"* ]] || [[ "$LABELS" == *"fix"* ]]; then
+            ISSUE_TYPE="Bug"
+            echo "🐛 Bug/Fix 라벨 감지 → Bug로 생성"
+          elif [[ "$LABELS" == *"refactor"* ]] || [[ "$LABELS" == *"chore"* ]]; then
+            ISSUE_TYPE="Task"
+            echo "🔧 Refactor/Chore 라벨 감지 → Task로 생성"
+          else
+            ISSUE_TYPE="Task"
+            echo "📋 기본 타입 → Task로 생성"
+          fi
+          
+          echo "Issue Type: $ISSUE_TYPE"
+          echo "Epic Key: $EPIC_KEY"
+          
+          # Description 구성
+          DESCRIPTION=$(cat <<EOF
+          {
+            "type": "doc",
+            "version": 1,
+            "content": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "GitHub Issue: ",
+                    "marks": [{"type": "strong"}]
+                  },
+                  {
+                    "type": "text",
+                    "text": "$ISSUE_URL",
+                    "marks": [
+                      {
+                        "type": "link",
+                        "attrs": {
+                          "href": "$ISSUE_URL"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Repository: MEMME-FE"
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Labels: $LABELS"
+                  }
+                ]
+              },
+              {
+                "type": "rule"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "$ISSUE_BODY"
+                  }
+                ]
+              }
+            ]
+          }
+          EOF
+          )
+          
+          # Jira API 호출
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+            -H "Content-Type: application/json" \
+            "$JIRA_BASE_URL/rest/api/3/issue" \
+            -d "{
+              \"fields\": {
+                \"project\": {
+                  \"key\": \"$JIRA_PROJECT_KEY\"
+                },
+                \"summary\": \"$PREFIX $ISSUE_TITLE\",
+                \"description\": $DESCRIPTION,
+                \"issuetype\": {
+                  \"name\": \"$ISSUE_TYPE\"
+                },
+                \"parent\": {
+                  \"key\": \"$EPIC_KEY\"
+                }
+              }
+            }")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          if [ "$HTTP_CODE" -eq 201 ]; then
+            JIRA_KEY=$(echo "$BODY" | jq -r '.key')
+            echo "✅ Jira 이슈 생성 완료: $JIRA_KEY"
+            echo "🔗 $JIRA_BASE_URL/browse/$JIRA_KEY"
+          else
+            echo "❌ Jira 이슈 생성 실패 (HTTP $HTTP_CODE)"
+            echo "$BODY"
+            exit 1
+          fi
+
+      - name: Comment on GitHub Issue
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const labels = context.payload.issue.labels.map(l => l.name).join(', ');
+            let issueType = 'Task';
+            
+            if (labels.includes('feature') || labels.includes('enhancement')) {
+              issueType = 'Story';
+            } else if (labels.includes('bug') || labels.includes('fix')) {
+              issueType = 'Bug';
+            } else if (labels.includes('refactor') || labels.includes('chore')) {
+              issueType = 'Task';
+            }
+            
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `✅ **Jira 이슈가 생성되었습니다!**\n\n- Epic: \`MEM-1\` (Frontend)\n- Type: \`${issueType}\`\n- Labels: ${labels || 'None'}`
+            });
