@@ -4,10 +4,6 @@ on:
   issues:
     types: [opened]
 
-permissions:
-  issues: write
-  contents: read
-
 jobs:
   create-jira-issue:
     runs-on: ubuntu-latest
@@ -23,7 +19,6 @@ jobs:
           ISSUE_URL: ${{ github.event.issue.html_url }}
           REPO_NAME: ${{ github.repository }}
           LABELS: ${{ join(github.event.issue.labels.*.name, ',') }}
-          ASSIGNEE: ${{ github.event.issue.assignee.login }}
         run: |
           echo "🚀 Creating Jira Issue from GitHub"
           echo "Repository: $REPO_NAME"
@@ -148,26 +143,3 @@ jobs:
             echo "$BODY"
             exit 1
           fi
-
-      - name: Comment on GitHub Issue
-        if: success()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const labels = context.payload.issue.labels.map(l => l.name).join(', ');
-            let issueType = 'Task';
-            
-            if (labels.includes('feature') || labels.includes('enhancement')) {
-              issueType = 'Story';
-            } else if (labels.includes('bug') || labels.includes('fix')) {
-              issueType = 'Bug';
-            } else if (labels.includes('refactor') || labels.includes('chore')) {
-              issueType = 'Task';
-            }
-            
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: `✅ **Jira 이슈가 생성되었습니다!**\n\n- Epic: \`MEM-1\` (Frontend)\n- Type: \`${issueType}\`\n- Labels: ${labels || 'None'}`
-            });
