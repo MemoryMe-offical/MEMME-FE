@@ -62,37 +62,58 @@ jobs:
             
             DESC_TEXT="GitHub Issue: $ISSUE_URL | Repository: MEMME-FE | Labels: $LABELS"
             
-            # assignee 필드 준비
+            # Jira 이슈 생성 payload 구성
             if [ -n "$JIRA_ASSIGNEE" ]; then
-              ASSIGNEE_FIELD=", assignee: {accountId: \$assignee}"
+              # 담당자가 있는 경우
+              PAYLOAD=$(jq -n \
+                --arg project "$JIRA_PROJECT_KEY" \
+                --arg summary "$PREFIX $ISSUE_TITLE" \
+                --arg desc "$DESC_TEXT" \
+                --arg type "$ISSUE_TYPE" \
+                --arg epic "$EPIC_KEY" \
+                --arg assignee "$JIRA_ASSIGNEE" \
+                '{
+                  fields: {
+                    project: {key: $project},
+                    summary: $summary,
+                    description: {
+                      type: "doc",
+                      version: 1,
+                      content: [{
+                        type: "paragraph",
+                        content: [{type: "text", text: $desc}]
+                      }]
+                    },
+                    issuetype: {name: $type},
+                    parent: {key: $epic},
+                    assignee: {accountId: $assignee}
+                  }
+                }')
             else
-              ASSIGNEE_FIELD=""
+              # 담당자가 없는 경우
+              PAYLOAD=$(jq -n \
+                --arg project "$JIRA_PROJECT_KEY" \
+                --arg summary "$PREFIX $ISSUE_TITLE" \
+                --arg desc "$DESC_TEXT" \
+                --arg type "$ISSUE_TYPE" \
+                --arg epic "$EPIC_KEY" \
+                '{
+                  fields: {
+                    project: {key: $project},
+                    summary: $summary,
+                    description: {
+                      type: "doc",
+                      version: 1,
+                      content: [{
+                        type: "paragraph",
+                        content: [{type: "text", text: $desc}]
+                      }]
+                    },
+                    issuetype: {name: $type},
+                    parent: {key: $epic}
+                  }
+                }')
             fi
-            
-            PAYLOAD=$(jq -n \
-              --arg project "$JIRA_PROJECT_KEY" \
-              --arg summary "$PREFIX $ISSUE_TITLE" \
-              --arg desc "$DESC_TEXT" \
-              --arg type "$ISSUE_TYPE" \
-              --arg epic "$EPIC_KEY" \
-              --arg assignee "$JIRA_ASSIGNEE" \
-              --argjson hasAssignee "$([ -n "$JIRA_ASSIGNEE" ] && echo true || echo false)" \
-              '{
-                fields: {
-                  project: {key: $project},
-                  summary: $summary,
-                  description: {
-                    type: "doc",
-                    version: 1,
-                    content: [{
-                      type: "paragraph",
-                      content: [{type: "text", text: $desc}]
-                    }]
-                  },
-                  issuetype: {name: $type},
-                  parent: {key: $epic}
-                } + (if $hasAssignee then {assignee: {accountId: $assignee}} else {} end)
-              }')
             
             RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
               -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
