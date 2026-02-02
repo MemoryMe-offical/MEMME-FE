@@ -28,6 +28,26 @@ jobs:
           EPIC_KEY="MEM-1"
           PREFIX="[FE]"
           
+          # GitHub assignee를 Jira Account ID로 매핑
+          GITHUB_ASSIGNEE="${{ github.event.issue.assignee.login }}"
+          JIRA_ASSIGNEE=""
+          
+          case "$GITHUB_ASSIGNEE" in
+            "dongsubnambuk")
+              JIRA_ASSIGNEE="712020:8e9253b4-b182-4b7a-a1da-8ed4fc02fa5e"
+              echo "Assignee: 서동섭 (dongsubnambuk)"
+              ;;
+            "ganglike248")
+              JIRA_ASSIGNEE="712020:87870717-1e26-4d19-8a17-afc8ac2dabcf"
+              echo "Assignee: 손경락 (ganglike248)"
+              ;;
+            *)
+              # 매핑되지 않은 사용자는 기본 담당자 없음
+              JIRA_ASSIGNEE=""
+              echo "No assignee or unmapped user"
+              ;;
+          esac
+          
           JIRA_KEY=$(echo "$ISSUE_BODY" | grep -oP 'Jira:\s*\K[A-Z]+-[0-9]+' || echo "")
           
           if [ "$ACTION" == "opened" ]; then
@@ -42,12 +62,21 @@ jobs:
             
             DESC_TEXT="GitHub Issue: $ISSUE_URL | Repository: MEMME-FE | Labels: $LABELS"
             
+            # assignee 필드 준비
+            if [ -n "$JIRA_ASSIGNEE" ]; then
+              ASSIGNEE_FIELD=", assignee: {accountId: \$assignee}"
+            else
+              ASSIGNEE_FIELD=""
+            fi
+            
             PAYLOAD=$(jq -n \
               --arg project "$JIRA_PROJECT_KEY" \
               --arg summary "$PREFIX $ISSUE_TITLE" \
               --arg desc "$DESC_TEXT" \
               --arg type "$ISSUE_TYPE" \
               --arg epic "$EPIC_KEY" \
+              --arg assignee "$JIRA_ASSIGNEE" \
+              --argjson hasAssignee "$([ -n "$JIRA_ASSIGNEE" ] && echo true || echo false)" \
               '{
                 fields: {
                   project: {key: $project},
@@ -62,7 +91,7 @@ jobs:
                   },
                   issuetype: {name: $type},
                   parent: {key: $epic}
-                }
+                } + (if $hasAssignee then {assignee: {accountId: $assignee}} else {} end)
               }')
             
             RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
