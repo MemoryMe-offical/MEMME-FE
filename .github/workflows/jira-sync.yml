@@ -78,10 +78,8 @@ jobs:
               JIRA_KEY=$(echo "$BODY" | jq -r '.key')
               echo "Jira issue created: $JIRA_KEY"
               
-              NEW_BODY="${ISSUE_BODY}
-
----
-**Jira: ${JIRA_KEY}**"
+              JIRA_LINE="Jira: ${JIRA_KEY}"
+              NEW_BODY=$(printf "%s\n\n---\n**%s**" "$ISSUE_BODY" "$JIRA_LINE")
               
               BODY_JSON=$(jq -n --arg body "$NEW_BODY" '{body: $body}')
               
