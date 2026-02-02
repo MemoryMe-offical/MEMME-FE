@@ -1,0 +1,276 @@
+name: GitHub-Jira Sync
+
+on:
+  issues:
+    types: [opened, closed, reopened, edited]
+
+jobs:
+  sync-issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Sync with Jira
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_PROJECT_KEY: ${{ secrets.JIRA_PROJECT_KEY }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+          ISSUE_STATE: ${{ github.event.issue.state }}
+          ACTION: ${{ github.event.action }}
+          LABELS: ${{ join(github.event.issue.labels.*.name, ',') }}
+        run: |
+          echo "Action: $ACTION"
+          echo "Issue State: $ISSUE_STATE"
+          echo "Labels: $LABELS"
+          
+          EPIC_KEY="MEM-1"
+          PREFIX="[FE]"
+          
+          JIRA_KEY=$(echo "$ISSUE_BODY" | grep -oP 'Jira:\s*\K[A-Z]+-[0-9]+' || echo "")
+          
+          if [ "$ACTION" == "opened" ]; then
+            echo "Creating new Jira issue..."
+            
+            ISSUE_TYPE="Task"
+            if [[ "$LABELS" == *"feature"* ]] || [[ "$LABELS" == *"enhancement"* ]]; then
+              ISSUE_TYPE="Story"
+            elif [[ "$LABELS" == *"bug"* ]] || [[ "$LABELS" == *"fix"* ]]; then
+              ISSUE_TYPE="Bug"
+            fi
+            
+            DESCRIPTION=$(cat <<'EOF'
+          {
+            "type": "doc",
+            "version": 1,
+            "content": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "GitHub Issue: ",
+                    "marks": [{"type": "strong"}]
+                  },
+                  {
+                    "type": "text",
+                    "text": "ISSUE_URL_PLACEHOLDER",
+                    "marks": [
+                      {
+                        "type": "link",
+                        "attrs": {
+                          "href": "ISSUE_URL_PLACEHOLDER"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Repository: MEMME-FE"
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Labels: LABELS_PLACEHOLDER"
+                  }
+                ]
+              },
+              {
+                "type": "rule"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "ISSUE_BODY_PLACEHOLDER"
+                  }
+                ]
+              }
+            ]
+          }
+EOF
+            )
+            
+            DESCRIPTION=$(echo "$DESCRIPTION" | sed "s|ISSUE_URL_PLACEHOLDER|$ISSUE_URL|g" | sed "s|LABELS_PLACEHOLDER|$LABELS|g" | sed "s|ISSUE_BODY_PLACEHOLDER|$ISSUE_BODY|g")
+            
+            RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+              -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+              -H "Content-Type: application/json" \
+              "$JIRA_BASE_URL/rest/api/3/issue" \
+              -d "{
+                \"fields\": {
+                  \"project\": {
+                    \"key\": \"$JIRA_PROJECT_KEY\"
+                  },
+                  \"summary\": \"$PREFIX $ISSUE_TITLE\",
+                  \"description\": $DESCRIPTION,
+                  \"issuetype\": {
+                    \"name\": \"$ISSUE_TYPE\"
+                  },
+                  \"parent\": {
+                    \"key\": \"$EPIC_KEY\"
+                  }
+                }
+              }")
+            
+            HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+            BODY=$(echo "$RESPONSE" | sed '$d')
+            
+            if [ "$HTTP_CODE" -eq 201 ]; then
+              JIRA_KEY=$(echo "$BODY" | jq -r '.key')
+              echo "Jira issue created: $JIRA_KEY"
+              
+              NEW_BODY="${ISSUE_BODY}
+
+---
+**Jira: ${JIRA_KEY}**"
+              
+              curl -X PATCH \
+                -H "Accept: application/vnd.github.v3+json" \
+                -H "Authorization: token $GH_PAT" \
+                https://api.github.com/repos/${{ github.repository }}/issues/$ISSUE_NUMBER \
+                -d "{\"body\":$(echo "$NEW_BODY" | jq -Rs .)}"
+              
+              echo "GitHub issue updated with Jira key"
+            else
+              echo "Failed to create Jira issue (HTTP $HTTP_CODE)"
+              echo "$BODY"
+              exit 1
+            fi
+            
+          elif [ "$ACTION" == "closed" ]; then
+            if [ -n "$JIRA_KEY" ]; then
+              echo "Closing Jira issue: $JIRA_KEY"
+              
+              TRANSITIONS=$(curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+                "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_KEY/transitions")
+              
+              DONE_ID=$(echo "$TRANSITIONS" | jq -r '.transitions[] | select(.name == "Done" or .name == "완료") | .id' | head -1)
+              
+              if [ -n "$DONE_ID" ]; then
+                curl -X POST \
+                  -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+                  -H "Content-Type: application/json" \
+                  "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_KEY/transitions" \
+                  -d "{\"transition\":{\"id\":\"$DONE_ID\"}}"
+                
+                echo "Jira issue transitioned to Done"
+              else
+                echo "Could not find Done transition"
+              fi
+            else
+              echo "No Jira key found in issue body"
+            fi
+            
+          elif [ "$ACTION" == "reopened" ]; then
+            if [ -n "$JIRA_KEY" ]; then
+              echo "Reopening Jira issue: $JIRA_KEY"
+              
+              TRANSITIONS=$(curl -s -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+                "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_KEY/transitions")
+              
+              TODO_ID=$(echo "$TRANSITIONS" | jq -r '.transitions[] | select(.name == "To Do" or .name == "In Progress" or .name == "할 일" or .name == "진행 중") | .id' | head -1)
+              
+              if [ -n "$TODO_ID" ]; then
+                curl -X POST \
+                  -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+                  -H "Content-Type: application/json" \
+                  "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_KEY/transitions" \
+                  -d "{\"transition\":{\"id\":\"$TODO_ID\"}}"
+                
+                echo "Jira issue reopened"
+              else
+                echo "Could not find transition"
+              fi
+            else
+              echo "No Jira key found in issue body"
+            fi
+            
+          elif [ "$ACTION" == "edited" ]; then
+            if [ -n "$JIRA_KEY" ]; then
+              echo "Updating Jira issue: $JIRA_KEY"
+              
+              DESCRIPTION=$(cat <<'EOF'
+          {
+            "type": "doc",
+            "version": 1,
+            "content": [
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "GitHub Issue: ",
+                    "marks": [{"type": "strong"}]
+                  },
+                  {
+                    "type": "text",
+                    "text": "ISSUE_URL_PLACEHOLDER",
+                    "marks": [
+                      {
+                        "type": "link",
+                        "attrs": {
+                          "href": "ISSUE_URL_PLACEHOLDER"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "Repository: MEMME-FE"
+                  }
+                ]
+              },
+              {
+                "type": "rule"
+              },
+              {
+                "type": "paragraph",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "ISSUE_BODY_PLACEHOLDER"
+                  }
+                ]
+              }
+            ]
+          }
+EOF
+              )
+              
+              DESCRIPTION=$(echo "$DESCRIPTION" | sed "s|ISSUE_URL_PLACEHOLDER|$ISSUE_URL|g" | sed "s|ISSUE_BODY_PLACEHOLDER|$ISSUE_BODY|g")
+              
+              curl -X PUT \
+                -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+                -H "Content-Type: application/json" \
+                "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_KEY" \
+                -d "{
+                  \"fields\": {
+                    \"summary\": \"$PREFIX $ISSUE_TITLE\",
+                    \"description\": $DESCRIPTION
+                  }
+                }"
+              
+              echo "Jira issue updated"
+            else
+              echo "No Jira key found in issue body"
+            fi
+          fi
