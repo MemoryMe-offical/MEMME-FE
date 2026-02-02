@@ -2,7 +2,7 @@ name: GitHub-Jira Sync
 
 on:
   issues:
-    types: [opened, closed, reopened, edited]
+    types: [opened, closed, reopened]
 
 jobs:
   sync-issue:
@@ -40,45 +40,36 @@ jobs:
               ISSUE_TYPE="Bug"
             fi
             
+            DESC_TEXT="GitHub Issue: $ISSUE_URL | Repository: MEMME-FE | Labels: $LABELS"
+            
+            PAYLOAD=$(jq -n \
+              --arg project "$JIRA_PROJECT_KEY" \
+              --arg summary "$PREFIX $ISSUE_TITLE" \
+              --arg desc "$DESC_TEXT" \
+              --arg type "$ISSUE_TYPE" \
+              --arg epic "$EPIC_KEY" \
+              '{
+                fields: {
+                  project: {key: $project},
+                  summary: $summary,
+                  description: {
+                    type: "doc",
+                    version: 1,
+                    content: [{
+                      type: "paragraph",
+                      content: [{type: "text", text: $desc}]
+                    }]
+                  },
+                  issuetype: {name: $type},
+                  parent: {key: $epic}
+                }
+              }')
+            
             RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
               -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
               -H "Content-Type: application/json" \
               "$JIRA_BASE_URL/rest/api/3/issue" \
-              -d @- <<PAYLOAD
-            {
-              "fields": {
-                "project": {"key": "$JIRA_PROJECT_KEY"},
-                "summary": "$PREFIX $ISSUE_TITLE",
-                "description": {
-                  "type": "doc",
-                  "version": 1,
-                  "content": [
-                    {
-                      "type": "paragraph",
-                      "content": [
-                        {"type": "text", "text": "GitHub Issue: $ISSUE_URL"}
-                      ]
-                    },
-                    {
-                      "type": "paragraph",
-                      "content": [
-                        {"type": "text", "text": "Repository: MEMME-FE"}
-                      ]
-                    },
-                    {
-                      "type": "paragraph",
-                      "content": [
-                        {"type": "text", "text": "Labels: $LABELS"}
-                      ]
-                    }
-                  ]
-                },
-                "issuetype": {"name": "$ISSUE_TYPE"},
-                "parent": {"key": "$EPIC_KEY"}
-              }
-            }
-PAYLOAD
-            )
+              -d "$PAYLOAD")
             
             HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
             BODY=$(echo "$RESPONSE" | sed '$d')
@@ -92,11 +83,13 @@ PAYLOAD
 ---
 **Jira: ${JIRA_KEY}**"
               
+              BODY_JSON=$(jq -n --arg body "$NEW_BODY" '{body: $body}')
+              
               curl -X PATCH \
                 -H "Accept: application/vnd.github.v3+json" \
                 -H "Authorization: token $GH_PAT" \
-                https://api.github.com/repos/${{ github.repository }}/issues/$ISSUE_NUMBER \
-                -d "{\"body\":$(echo "$NEW_BODY" | jq -Rs .)}"
+                "https://api.github.com/repos/${{ github.repository }}/issues/$ISSUE_NUMBER" \
+                -d "$BODY_JSON"
               
               echo "GitHub issue updated"
             else
@@ -114,12 +107,12 @@ PAYLOAD
               DONE_ID=$(echo "$TRANSITIONS" | jq -r '.transitions[] | select(.name == "Done" or .name == "완료") | .id' | head -1)
               
               if [ -n "$DONE_ID" ]; then
-                curl -X POST \
+                curl -s -X POST \
                   -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
                   -H "Content-Type: application/json" \
                   "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_KEY/transitions" \
                   -d "{\"transition\":{\"id\":\"$DONE_ID\"}}"
-                echo "Done"
+                echo "Jira issue closed"
               fi
             fi
             
@@ -133,12 +126,12 @@ PAYLOAD
               TODO_ID=$(echo "$TRANSITIONS" | jq -r '.transitions[] | select(.name == "To Do" or .name == "In Progress") | .id' | head -1)
               
               if [ -n "$TODO_ID" ]; then
-                curl -X POST \
+                curl -s -X POST \
                   -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
                   -H "Content-Type: application/json" \
                   "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_KEY/transitions" \
                   -d "{\"transition\":{\"id\":\"$TODO_ID\"}}"
-                echo "Reopened"
+                echo "Jira issue reopened"
               fi
             fi
           fi
