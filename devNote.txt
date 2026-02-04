@@ -1,4 +1,5 @@
 안드로이드 실행
+npm run android
 npx react-native run-android
 
 -----
@@ -19,3 +20,25 @@ React Context란: 기존에는 파일 간에 값을 props를 통해 계속 넘�
 
 로컬 스토리지: 앱을 끄거나 켜도 다시 복원해야 하는 정보(자동 로그인용 토큰, 마지막으로 본 온보딩 여부 등)
 
+-----
+<기본 컴포넌트>
+
+View, Text, TextInput, ScrollView, FlatList, Pressable / TouchableOpacity, Image
+
+-----
+<타입>
+
+string, number, boolean, null, undefined
+
+-----
+<네비게이션>
+
+페이지 등록: App.tsx에서 관리
+
+페이지 파라미터 관리: navigation/RootNavigator.tsx에서 type RootStackParamList 관리
+- { Home: undefined; Login: { id: number } }; // Home은 파라미터 없음, Login은 number 타입의 id라는 파라미터 존재
+
+페이지 이동:
+- navigation.navigate('ScreenName', params)
+-- navigation.navigate('Login', id) // Login 페이지로 id를 들고 감
+- navigation.goBack() // 뒤로 가기
