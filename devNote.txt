@@ -28,7 +28,35 @@ View, Text, TextInput, ScrollView, FlatList, Pressable / TouchableOpacity, Image
 -----
 <타입>
 
-string, number, boolean, null, undefined
+문자: string
+숫자: number
+참/거짓: boolean
+아직 값이 없는 것들: null / undefined
+    - let userName: string | null = null; // 지금은 값이 없지만 후에 string으로 들어올 값
+    - let selectedid: number | undefined; // 아직 선택 안되었을 수도 있고, 되면 number로
+
+-----
+<타입 사용 예시>
+
+// 기본
+const [count, setCount] = useState<number>(0);
+const [email, setEmail] = useState<string>('');
+const [loading, setLoading] = useState<boolean>(false);
+const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+// 객체
+type Todo = {
+  id: number;
+  title: string;
+  done: boolean;
+};
+
+const [todos, setTodos] = useState<Todo[]>([]); // 또는
+const [todos, setTodos] = useState<Todo[]>({
+    id: 0,
+    title: "",
+    done: false,
+});
 
 -----
 <네비게이션>
