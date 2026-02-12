@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { View, Alert, Text, Button, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
-import { ChatBoardItem, ChatMessage, BoardPost, MessageType } from '../types/chatBoard.type';
-import ChatMessageItem from '../components/chat/ChatMessageItem'
+import React, { useState } from 'react';
+import { View, StyleSheet, FlatList } from 'react-native';
+import { ChatBoardItem, MessageType } from '../types/chatBoard.type';
+import ChatMessageItem from '../components/chat/ChatMessageItem';
 import BoardPostItem from '../components/board/BoardPostItem';
 
 // 예시 아이템
@@ -44,7 +44,7 @@ const MainScreen = () => {
                 data={items} // 리스트에 보일 데이터 배열
                 keyExtractor={item => item.id} // items 중 하나의 아이템의 고유 key를 뽑는 함수(item의 id를 key로 쓰겠다.)
                 renderItem={({ item }) => {
-                    if (item.type == 'chat') {
+                    if (item.type === 'chat') {
                         return <ChatMessageItem item={item} />;
                     }
                     return <BoardPostItem item={item} />;

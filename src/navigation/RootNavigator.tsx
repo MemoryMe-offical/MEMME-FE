@@ -13,7 +13,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const RootNavigator = () => {
     return (
-        // 일단은 Home 부터 시작
+        // 일단은 Main 화면부터 시작
         <Stack.Navigator initialRouteName="Main">
             {/* 아래에 화면 리스트 추가 */}
             <Stack.Screen

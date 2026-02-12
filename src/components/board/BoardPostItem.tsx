@@ -6,6 +6,6 @@ import { BoardPost } from "../../types/chatBoard.type";
 
 const BoardPostItem = ({ item }: { item: BoardPost }) => (
     <Text>게시물 제목: {item.title}, 내용: {item.content}</Text>
-)
+);
 
 export default BoardPostItem;
