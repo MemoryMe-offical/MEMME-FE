@@ -1,7 +1,8 @@
-import React, {useEffect, useState} from 'react';
-import {View, Alert, Text, Button, StyleSheet, TouchableOpacity} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Alert, Text, Button, StyleSheet, TouchableOpacity } from 'react-native';
+import { ChatBoardItem, ChatMessage, BoardPost, MessageType } from '../types/chatBoard.type';
 
-const HomeScreen = () => {
+const MainScreen = () => {
     const [count, setCount] = useState<number>(0);
 
     const handleCount = () => {
@@ -18,7 +19,7 @@ const HomeScreen = () => {
         <View style={styles.container}>
             <Text>맴매 맞을 횟수: {count}</Text>
             <TouchableOpacity onPress={handleCount} style={styles.button}>
-                <Text>+</Text>    
+                <Text>+</Text>
             </TouchableOpacity>
         </View>
     )
@@ -42,4 +43,4 @@ const styles = StyleSheet.create({
     }
 })
 
-export default HomeScreen;
+export default MainScreen;
