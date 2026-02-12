@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
 import { ChatBoardItem, MessageType } from '../types/chatBoard.type';
 import ChatMessageItem from '../components/chat/ChatMessageItem';
