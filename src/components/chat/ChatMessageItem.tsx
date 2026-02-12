@@ -6,6 +6,6 @@ import { ChatMessage } from "../../types/chatBoard.type"
 
 const ChatMessageItem = ({ item }: { item: ChatMessage }) => (
     <Text>채팅: {item.text}</Text>
-)
+);
 
 export default ChatMessageItem;
