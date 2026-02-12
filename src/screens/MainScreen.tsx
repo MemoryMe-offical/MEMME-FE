@@ -44,7 +44,7 @@ const MainScreen = () => {
                 data={items} // 리스트에 보일 데이터 배열
                 keyExtractor={item => item.id} // items 중 하나의 아이템의 고유 key를 뽑는 함수(item의 id를 key로 쓰겠다.)
                 renderItem={({ item }) => {
-                    if (item.type == 'chat') {
+                    if (item.type === 'chat') {
                         return <ChatMessageItem item={item} />;
                     }
                     return <BoardPostItem item={item} />;
