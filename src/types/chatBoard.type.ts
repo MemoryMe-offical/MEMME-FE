@@ -6,9 +6,9 @@ export type MessageType = 'chat' | 'post';
 // 공통 필드 타입
 export interface BaseItem {
     id: string;
+    userId: string; // 누가 만든 것인가(추후 타인과 대화를 추가할 경우 대비)
     type: MessageType; // 메시지 종류
     createdAt: string; // 생성 날짜
-    isMe: boolean; // 내가 만든 것인가(추후 타인과 대화를 추가할 경우 대비)
     bookMark: boolean; // 북마크 유무
 }
 

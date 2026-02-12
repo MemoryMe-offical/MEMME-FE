@@ -1,26 +1,44 @@
 import React, { useEffect, useState } from 'react';
-import { View, Alert, Text, Button, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Alert, Text, Button, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { ChatBoardItem, ChatMessage, BoardPost, MessageType } from '../types/chatBoard.type';
 
+const initItems: ChatBoardItem[] = [
+    {
+        id: '1',
+        userId: '24',
+        type: 'chat',
+        bookMark: false,
+        text: '오늘 할 일을 정리해보자.',
+        createdAt: new Date().toISOString(),
+    },
+    {
+        id: '2',
+        userId: '22',
+        bookMark: false,
+        type: 'post',
+        title: '📌 오늘의 TODO',
+        content: '- 타입 정의하기\n- 메인 화면 UI 잡기',
+        createdAt: new Date().toISOString(),
+    },
+]
+
 const MainScreen = () => {
-    const [count, setCount] = useState<number>(0);
-
-    const handleCount = () => {
-        setCount(count + 1);
-    }
-
-    useEffect(() => {
-        if (count >= 10) {
-            Alert.alert("ㅎㅇ");
-        }
-    }, [count]);
+    const [items, setItems] = useState<ChatBoardItem[]>(initItems);
+    const [messageType, setMessageType] = useState<MessageType>('chat');
+    const [inputText, setInputText] = useState('');
 
     return (
         <View style={styles.container}>
-            <Text>맴매 맞을 횟수: {count}</Text>
-            <TouchableOpacity onPress={handleCount} style={styles.button}>
-                <Text>+</Text>
-            </TouchableOpacity>
+            <FlatList<ChatBoardItem> // 이 리스트는 ChatBoardItem 배열을 렌더링하는 컴포넌트 명시
+                data={items} // 리스트에 보일 데이터 배열
+                keyExtractor={item => item.id} // items 중 하나의 아이템의 고유 key를 뽑는 함수(item의 id를 key로 쓰겠다.)
+                renderItem={({item}) => {
+                    if(item.type == 'chat') {
+                        return <Text>채팅: {item.text}</Text>;
+                    }
+                    return <Text>게시글: {item.title}</Text>;
+                }}
+            />
         </View>
     )
 }
@@ -30,16 +48,6 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center'
-    },
-    button: {
-        marginTop: 10,
-        width: 30,
-        height: 30,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: 6,
-        backgroundColor: 'lightblue'
     }
 })
 
