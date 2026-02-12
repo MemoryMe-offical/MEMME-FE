@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, FlatList } from 'react-native';
 import { ChatBoardItem, ChatMessage, BoardPost, MessageType } from '../types/chatBoard.type';
-import ChatMessageItem from '../components/chat/ChatMessageItem'
+import ChatMessageItem from '../components/chat/ChatMessageItem';
 import BoardPostItem from '../components/board/BoardPostItem';
 
 // 예시 아이템
