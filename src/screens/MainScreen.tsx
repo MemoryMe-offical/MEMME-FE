@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { View, Alert, Text, Button, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { ChatBoardItem, ChatMessage, BoardPost, MessageType } from '../types/chatBoard.type';
+import ChatMessageItem from '../components/chat/ChatMessageItem'
+import BoardPostItem from '../components/board/BoardPostItem';
 
+// 예시 아이템
 const initItems: ChatBoardItem[] = [
     {
         id: '1',
@@ -20,6 +23,14 @@ const initItems: ChatBoardItem[] = [
         content: '- 타입 정의하기\n- 메인 화면 UI 잡기',
         createdAt: new Date().toISOString(),
     },
+    {
+        id: '3',
+        userId: '24',
+        type: 'chat',
+        bookMark: false,
+        text: '리액트 네이티브 공부하기',
+        createdAt: new Date().toISOString(),
+    },
 ]
 
 const MainScreen = () => {
@@ -32,11 +43,11 @@ const MainScreen = () => {
             <FlatList<ChatBoardItem> // 이 리스트는 ChatBoardItem 배열을 렌더링하는 컴포넌트 명시
                 data={items} // 리스트에 보일 데이터 배열
                 keyExtractor={item => item.id} // items 중 하나의 아이템의 고유 key를 뽑는 함수(item의 id를 key로 쓰겠다.)
-                renderItem={({item}) => {
-                    if(item.type == 'chat') {
-                        return <Text>채팅: {item.text}</Text>;
+                renderItem={({ item }) => {
+                    if (item.type == 'chat') {
+                        return <ChatMessageItem item={item} />;
                     }
-                    return <Text>게시글: {item.title}</Text>;
+                    return <BoardPostItem item={item} />;
                 }}
             />
         </View>
