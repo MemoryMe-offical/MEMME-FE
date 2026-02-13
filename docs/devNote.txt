@@ -70,3 +70,219 @@ const [todos, setTodos] = useState<Todo[]>({
 - navigation.navigate('ScreenName', params)
 -- navigation.navigate('Login', id) // Login 페이지로 id를 들고 감
 - navigation.goBack() // 뒤로 가기
+
+
+
+----------------------------------------------------
+
+1. 이 화면을 기능 단위로 쪼개서 이해하기
+만들고 싶은 메인 화면의 기능을 먼저 나눠보면:
+
+채팅/게시판 아이템 리스트 (FlatList + type에 따라 다른 UI)
+
+하단 입력 영역 (TextInput + 전송 버튼)
+
+타입 토글 (채팅 ↔ 게시판 모드 전환 버튼)
+
+롱프레스 → 모달 (onLongPress로 모달 열기 → “게시판으로 변경” 클릭)
+
+“채팅 → 게시판으로 변경” 시, 배열 안의 한 아이템의 type과 필드 구조를 바꾸는 로직
+
+이 5가지를 각각 독립된 문제로 보고, 하나씩 해결하면서 합치는 식으로 접근하면 훨씬 덜 복잡해져요.
+
+2. TypeScript 처음 쓸 때 꼭 알아야 할 것
+TS는 “런타임 동작을 바꾸는 게 아니라, 컴파일 타임에 형검사만 추가된 JS”라고 생각하면 편해요.
+
+이 프로젝트에서 먼저 쓸 TS 개념은 딱 3개만 잡고 시작해도 충분해요:
+
+type / interface로 모델 정의
+
+예:
+
+ts
+type MessageType = 'chat' | 'post';
+interface ChatMessage { id: string; type: 'chat'; text: string; }
+interface BoardPost { id: string; type: 'post'; title: string; content: string; }
+type ChatBoardItem = ChatMessage | BoardPost; // 유니온 타입
+목적: items 배열에 “chat인지 post인지”를 타입 레벨에서 강제.
+
+컴포넌트 Props 타입
+
+예:
+
+ts
+interface ChatMessageItemProps { item: ChatMessage; }
+const ChatMessageItem: React.FC<ChatMessageItemProps> = ({ item }) => { ... };
+목적: item에 .title 같은 필드 잘못 쓰면 컴파일 단계에서 잡게.
+
+useState에 제네릭 타입 지정
+
+예:
+
+ts
+const [items, setItems] = useState<ChatBoardItem[]>([]);
+목적: setItems([...items, "문자열"]) 같은 실수를 미리 막기.
+​
+
+이 3가지를 이 화면에서 직접 써보는 게 TypeScript 입문이라고 생각하면 딱 좋아요.
+
+3. 구현 순서 (진짜 작업 순서 느낌으로)
+1단계: 데이터 모델만 먼저 설계
+지금 코드 수정 안 하고, types/chatBoard.types.ts 하나 만들어서
+ChatMessage, BoardPost, ChatBoardItem 타입만 우선 정의해봐.
+
+이때 “롱프레스 후 게시판으로 변경”을 고려해서 구조를 설계하는 게 포인트:
+
+
+리스트에는 두 종류의 아이템이 섞여 있음
+
+채팅 메시지
+
+게시판 글
+
+둘 다 공통으로 가지는 정보
+
+id: 고유 식별자
+
+type: 'chat' or 'post'
+
+createdAt: 생성 시각
+
+채팅만 가지는 정보
+
+text: 한 줄 메시지
+
+isMe: 내가 쓴 메시지인지 여부 (지금은 항상 true지만 구조는 남김)
+
+게시판만 가지는 정보
+
+title: 제목 (채팅 → 게시판 변경 시, text가 여기로 옮겨짐)
+
+content: 상세 내용
+
+likes, commentsCount: 숫자들
+
+
+공통 필드: id, type, createdAt
+
+채팅에서 게시판으로 바꿀 때:
+
+채팅의 text → 게시판의 title로 옮길 거지?
+
+게시판의 content는 일단 빈 문자열 또는 기본 문구
+
+이걸 미리 상상하면서 필드를 잡는 게 중요.
+
+이 단계에서 질문:
+
+“어떤 필드가 chat/post 모두에 필요하고, 어떤 필드는 타입별로만 필요한지?”
+를 스스로 정의해보는 게 설계 연습이야.
+
+2단계: FlatList + 타입 구분 UI (롱프레스, 모달은 아직 X)
+목표: “채팅/게시글이 섞인 리스트” + “하단 입력창”만 먼저.
+
+MainScreen.tsx 파일에서:
+
+useState<ChatBoardItem[]>(초기 더미 데이터) 정의
+
+FlatList<ChatBoardItem> 에 renderItem으로
+
+ts
+if (item.type === 'chat') { /* 채팅용 컴포넌트 */ }
+else { /* 게시판용 컴포넌트 */ }
+형태로 분기만 구현.
+​
+​
+
+이때 아이템 컴포넌트는 아주 심플하게 시작:
+
+ChatMessageItem: 그냥 Text 하나
+
+BoardPostItem: title, content 두 줄
+
+여기까지 되면 “TS 타입 + FlatList + 조건부 렌더링” 조합을 한 번 경험하게 됨.
+
+3단계: 입력 영역 + 타입 토글 (채팅/게시판 작성 기능)
+목표: 화면 아래에서
+
+모드 버튼: “채팅 / 게시글” 토글
+
+TextInput + 전송 버튼 → items 배열에 push
+
+여기서 중요한 포인트:
+
+messageType을 useState<'chat' | 'post'>('chat') 로 관리
+
+handleSend에서:
+
+if messageType === 'chat' 이면 ChatMessage 형태의 객체 생성
+
+else 이면 BoardPost 형태의 객체 생성
+
+둘 다 ChatBoardItem로 통합되는 구조
+
+이 단계에서 TS가 도움 주는 지점:
+
+newItem = { type: 'chat', ... } 를 만들 때, 빠진 필드가 있으면 빨간줄로 알려줌.
+
+JS였다면 런타임에서야 알 실수를 이 단계에서 다 잡음.
+
+4단계: onLongPress + 모달 동작만 먼저 붙이기 (내용 변경 X)
+이제 “채팅을 꾹 눌렀을 때 모달 띄우기”까지만 구현해요.
+
+ChatMessageItem에 onLongPress 추가:
+
+ChatMessageItem의 Props에 onLongPress?: (item: ChatMessage) => void 추가
+
+아이템 View를 TouchableOpacity로 감싸고 onLongPress={() => onLongPress?.(item)}.
+​
+
+MainScreen에서:
+
+const [selectedItem, setSelectedItem] = useState<ChatMessage | null>(null);
+
+const [modalVisible, setModalVisible] = useState(false);
+
+handleLongPress = (item: ChatMessage) => { setSelectedItem(item); setModalVisible(true); }
+
+모달 컴포넌트에 visible={modalVisible}로 연결
+
+이 시점까지는 **“롱프레스 → 모달 열림”**만 확인하면 돼.
+모달 안에 “게시판으로 변경” 버튼은 아직 동작 안 해도 됨.
+
+5단계: “채팅 → 게시판으로 변경” 알고리즘 생각해보기
+이제 핵심 로직:
+
+특정 id를 가진 ChatMessage를 찾아서,
+그 자리에 BoardPost로 형태를 바꿔 끼우는 것.
+
+순서를 머릿속으로 정리해보면:
+
+selectedItem에 있는 ChatMessage 기준으로
+
+setItems(prev => prev.map(item => { ... })) 사용
+
+item.id === selectedItem.id 인 경우:
+
+ChatMessage → BoardPost로 변환:
+
+id, createdAt 그대로
+
+type: 'post'
+
+title: selectedItem.text
+
+content: '' (또는 기본 텍스트)
+
+likes: 0, commentsCount: 0
+
+나머지 아이템은 그대로 반환
+
+이때 TS는 item이 ChatBoardItem이기 때문에,
+
+if (item.type === 'chat') 블록 안에서는 자동으로 ChatMessage로 좁혀주고
+
+'post'로 새 객체를 만들면 BoardPost로 인식하게 돼.
+
+실제 코드 짜기 전에, 이 알고리즘을 JS 느낌으로 먼저 써보고
+그걸 나중에 TS로 옮기는 방식으로 가면 부담이 덜 함.
