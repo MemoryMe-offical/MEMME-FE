@@ -12,6 +12,8 @@
 		4C04A6DFEC0666D3CAFD7C5F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */; };
 		761780ED2CA45674006654EE /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 761780EC2CA45674006654EE /* AppDelegate.swift */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		B03F5050FB1D42B88CB690A2 /* PretendardVariable.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A2BB456B031349A4BB1A4EA2 /* PretendardVariable.ttf */; };
+		FDA9F45FF35748B3A117B13C /* Paprika-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8CBCFC3DC7ED4060BE5E9208 /* Paprika-Regular.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +26,8 @@
 		5DCACB8F33CDC322A6C60F78 /* libPods-MEMME.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-MEMME.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		761780EC2CA45674006654EE /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = MEMME/AppDelegate.swift; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = MEMME/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		8CBCFC3DC7ED4060BE5E9208 /* Paprika-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Paprika-Regular.ttf"; path = "../src/assets/fonts/Paprika-Regular.ttf"; sourceTree = "<group>"; };
+		A2BB456B031349A4BB1A4EA2 /* PretendardVariable.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = PretendardVariable.ttf; path = ../src/assets/fonts/PretendardVariable.ttf; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
@@ -60,6 +64,16 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		3133F694453B4EC7ACEAB8E8 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				8CBCFC3DC7ED4060BE5E9208 /* Paprika-Regular.ttf */,
+				A2BB456B031349A4BB1A4EA2 /* PretendardVariable.ttf */,
+			);
+			name = Resources;
+			path = "";
+			sourceTree = "<group>";
+		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
 			isa = PBXGroup;
 			children = (
@@ -75,6 +89,7 @@
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
+				3133F694453B4EC7ACEAB8E8 /* Resources */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -161,6 +176,8 @@
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				4C04A6DFEC0666D3CAFD7C5F /* PrivacyInfo.xcprivacy in Resources */,
+				FDA9F45FF35748B3A117B13C /* Paprika-Regular.ttf in Resources */,
+				B03F5050FB1D42B88CB690A2 /* PretendardVariable.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
