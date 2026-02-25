@@ -24,6 +24,7 @@ const LoginScreen = () => {
   const handleLogin = () => {
     // TODO: 로그인 API 연동
     console.log('로그인:', email, password);
+    navigation.navigate('Main');
   
   };
 
