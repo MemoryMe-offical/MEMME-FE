@@ -7,6 +7,7 @@ import {
   Text,
   Image,
   KeyboardAvoidingView,
+  Alert,
 } from 'react-native';
 import { BoardPost, ChatBoardItem } from '../types/chatBoard.type';
 import ChatMessageItem from '../components/chat/ChatMessageItem';
@@ -77,6 +78,41 @@ const MainScreen = () => {
   const handlePostPress = (post: BoardPost) => setSelectedPost(post);
   const handleCloseSheet = () => setSelectedPost(null);
 
+  const handleConvertToChat = () => {
+    if (!selectedPost) {
+      return;
+    }
+    const post = selectedPost;
+    Alert.alert(
+      '채팅으로 변환',
+      '정말 채팅으로 변환하시겠습니까? 채팅으로 변환한다면, 제목을 제외한 모든 내용이 삭제됩니다.',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '변환',
+          style: 'destructive',
+          onPress: () => {
+            setItems(prev =>
+              prev.map(item =>
+                item.id === post.id
+                  ? {
+                      id: post.id,
+                      userId: post.userId,
+                      type: 'chat' as const,
+                      bookMark: post.bookMark,
+                      text: post.title,
+                      createdAt: post.createdAt,
+                    }
+                  : item,
+              ),
+            );
+            handleCloseSheet();
+          },
+        },
+      ],
+    );
+  };
+
   const handleSend = () => {
     if (!inputText.trim()) {
       return;
@@ -107,7 +143,7 @@ const MainScreen = () => {
           />
         </TouchableOpacity>
 
-        <Text style={styles['main-header-title']}>이지은</Text>
+        <Text style={styles['main-header-title']}>나와의 채팅</Text>
 
         <View style={styles['main-header-rightButtons']}>
           <TouchableOpacity style={styles['main-header-iconButton']}>
@@ -173,7 +209,11 @@ const MainScreen = () => {
         </View>
       </KeyboardAvoidingView>
 
-      <BoardPostBottomSheet post={selectedPost} onClose={handleCloseSheet} />
+      <BoardPostBottomSheet
+        post={selectedPost}
+        onClose={handleCloseSheet}
+        onConvertToChat={handleConvertToChat}
+      />
     </View>
   );
 };

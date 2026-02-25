@@ -92,4 +92,32 @@ export const boardPostBottomSheetStyles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
     lineHeight: 24,
   },
+
+  // 시트 하단 액션 영역
+  'sheet-footer': {
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 24,
+    borderTopWidth: 1,
+    borderTopColor: '#EEF3FF',
+  },
+
+  // 시트 하단 - 채팅으로 변환 버튼
+  'sheet-footer-convertButton': {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#EEF3FF',
+    gap: 6,
+  },
+
+  // 시트 하단 - 채팅으로 변환 버튼 텍스트
+  'sheet-footer-convertButton-text': {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#588DFF',
+    fontFamily: 'PretendardVariable',
+  },
 });
