@@ -17,9 +17,10 @@ const formatTime = (isoString: string): string => {
 interface BoardPostItemProps {
   item: BoardPost;
   onPress: (post: BoardPost) => void;
+  onLongPress: (post: BoardPost) => void;
 }
 
-const BoardPostItem = ({ item, onPress }: BoardPostItemProps) => (
+const BoardPostItem = ({ item, onPress, onLongPress }: BoardPostItemProps) => (
   <View style={styles['boardPostItem-row']}>
     <Text style={styles['boardPostItem-time']}>
       {formatTime(item.createdAt)}
@@ -27,6 +28,8 @@ const BoardPostItem = ({ item, onPress }: BoardPostItemProps) => (
     <TouchableOpacity
       style={styles['boardPostItem-bubble']}
       onPress={() => onPress(item)}
+      onLongPress={() => onLongPress(item)}
+      delayLongPress={400}
       activeOpacity={0.75}>
       <Text style={styles['boardPostItem-bubble-title']}>{item.title}</Text>
       {item.content ? (

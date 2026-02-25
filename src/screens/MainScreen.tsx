@@ -13,6 +13,7 @@ import { BoardPost, ChatBoardItem } from '../types/chatBoard.type';
 import ChatMessageItem from '../components/chat/ChatMessageItem';
 import BoardPostItem from '../components/board/BoardPostItem';
 import BoardPostBottomSheet from '../components/board/BoardPostBottomSheet';
+import ContextMenu from '../components/common/ContextMenu';
 import { mainStyles as styles } from '../styles/MainScreen.styles';
 
 // 테스트용 하드코딩 데이터
@@ -73,10 +74,57 @@ const MainScreen = () => {
   const [items, setItems] = useState<ChatBoardItem[]>(initItems);
   const [inputText, setInputText] = useState('');
   const [selectedPost, setSelectedPost] = useState<BoardPost | null>(null);
+  const [contextMenuItem, setContextMenuItem] = useState<ChatBoardItem | null>(null);
   const flatListRef = useRef<FlatList<ChatBoardItem>>(null);
 
   const handlePostPress = (post: BoardPost) => setSelectedPost(post);
   const handleCloseSheet = () => setSelectedPost(null);
+
+  const handleLongPress = (item: ChatBoardItem) => setContextMenuItem(item);
+  const handleCloseContextMenu = () => setContextMenuItem(null);
+
+  const handleContextCopy = () => {
+    if (!contextMenuItem) {
+      return;
+    }
+    const text =
+      contextMenuItem.type === 'chat'
+        ? contextMenuItem.text
+        : contextMenuItem.title;
+    Alert.alert('복사됨', text);
+  };
+
+  const handleContextBookmark = () => {
+    if (!contextMenuItem) {
+      return;
+    }
+    setItems(prev =>
+      prev.map(item =>
+        item.id === contextMenuItem.id
+          ? { ...item, bookMark: !item.bookMark }
+          : item,
+      ),
+    );
+  };
+
+  const handleContextDelete = () => {
+    if (!contextMenuItem) {
+      return;
+    }
+    const id = contextMenuItem.id;
+    Alert.alert(
+      '삭제',
+      '정말 삭제하시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: () => setItems(prev => prev.filter(item => item.id !== id)),
+        },
+      ],
+    );
+  };
 
   const handleConvertToChat = () => {
     if (!selectedPost) {
@@ -181,9 +229,20 @@ const MainScreen = () => {
             }
             renderItem={({ item }) => {
               if (item.type === 'chat') {
-                return <ChatMessageItem item={item} />;
+                return (
+                  <ChatMessageItem
+                    item={item}
+                    onLongPress={handleLongPress}
+                  />
+                );
               }
-              return <BoardPostItem item={item} onPress={handlePostPress} />;
+              return (
+                <BoardPostItem
+                  item={item}
+                  onPress={handlePostPress}
+                  onLongPress={handleLongPress}
+                />
+              );
             }}
           />
         </View>
@@ -213,6 +272,16 @@ const MainScreen = () => {
         post={selectedPost}
         onClose={handleCloseSheet}
         onConvertToChat={handleConvertToChat}
+      />
+
+      <ContextMenu
+        visible={contextMenuItem !== null}
+        itemType={contextMenuItem?.type ?? 'chat'}
+        isBookmarked={contextMenuItem?.bookMark ?? false}
+        onCopy={handleContextCopy}
+        onBookmark={handleContextBookmark}
+        onDelete={handleContextDelete}
+        onClose={handleCloseContextMenu}
       />
     </View>
   );
