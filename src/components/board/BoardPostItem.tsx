@@ -1,7 +1,7 @@
 // 게시물 아이템 컴포넌트
 
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { BoardPost } from '../../types/chatBoard.type';
 import { boardPostItemStyles as styles } from '../../styles/BoardPostItem.styles';
 
@@ -14,19 +14,27 @@ const formatTime = (isoString: string): string => {
   return `${isAM ? '오전' : '오후'} ${displayHours}:${minutes.toString().padStart(2, '0')}`;
 };
 
-const BoardPostItem = ({ item }: { item: BoardPost }) => (
+interface BoardPostItemProps {
+  item: BoardPost;
+  onPress: (post: BoardPost) => void;
+}
+
+const BoardPostItem = ({ item, onPress }: BoardPostItemProps) => (
   <View style={styles['boardPostItem-row']}>
     <Text style={styles['boardPostItem-time']}>
       {formatTime(item.createdAt)}
     </Text>
-    <View style={styles['boardPostItem-bubble']}>
+    <TouchableOpacity
+      style={styles['boardPostItem-bubble']}
+      onPress={() => onPress(item)}
+      activeOpacity={0.75}>
       <Text style={styles['boardPostItem-bubble-title']}>{item.title}</Text>
       {item.content ? (
         <Text style={styles['boardPostItem-bubble-content']} numberOfLines={2}>
           {item.content}
         </Text>
       ) : null}
-    </View>
+    </TouchableOpacity>
   </View>
 );
 

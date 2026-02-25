@@ -8,9 +8,10 @@ import {
   Image,
   KeyboardAvoidingView,
 } from 'react-native';
-import { ChatBoardItem } from '../types/chatBoard.type';
+import { BoardPost, ChatBoardItem } from '../types/chatBoard.type';
 import ChatMessageItem from '../components/chat/ChatMessageItem';
 import BoardPostItem from '../components/board/BoardPostItem';
+import BoardPostBottomSheet from '../components/board/BoardPostBottomSheet';
 import { mainStyles as styles } from '../styles/MainScreen.styles';
 
 // 테스트용 하드코딩 데이터
@@ -70,7 +71,11 @@ const initItems: ChatBoardItem[] = [
 const MainScreen = () => {
   const [items, setItems] = useState<ChatBoardItem[]>(initItems);
   const [inputText, setInputText] = useState('');
+  const [selectedPost, setSelectedPost] = useState<BoardPost | null>(null);
   const flatListRef = useRef<FlatList<ChatBoardItem>>(null);
+
+  const handlePostPress = (post: BoardPost) => setSelectedPost(post);
+  const handleCloseSheet = () => setSelectedPost(null);
 
   const handleSend = () => {
     if (!inputText.trim()) {
@@ -142,7 +147,7 @@ const MainScreen = () => {
               if (item.type === 'chat') {
                 return <ChatMessageItem item={item} />;
               }
-              return <BoardPostItem item={item} />;
+              return <BoardPostItem item={item} onPress={handlePostPress} />;
             }}
           />
         </View>
@@ -167,6 +172,8 @@ const MainScreen = () => {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      <BoardPostBottomSheet post={selectedPost} onClose={handleCloseSheet} />
     </View>
   );
 };
