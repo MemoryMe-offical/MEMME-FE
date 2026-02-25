@@ -63,10 +63,6 @@ const RootNavigator = () => {
             <Stack.Screen
                 name="Main"
                 component={MainScreen}
-                options={{ 
-                    title: "홈",
-                    headerShown: true, // 메인 화면만 헤더 보이기
-                }}
             />
         </Stack.Navigator>
     )
