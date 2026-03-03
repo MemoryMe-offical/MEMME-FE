@@ -58,4 +58,12 @@ export const contextMenuStyles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
     fontWeight: '500',
   },
+
+  // 항목 텍스트 (변환 — 파란색)
+  'contextMenu-item-text--convert': {
+    fontSize: 15,
+    color: '#588DFF',
+    fontFamily: 'PretendardVariable',
+    fontWeight: '500',
+  },
 });

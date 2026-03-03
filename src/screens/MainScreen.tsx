@@ -9,10 +9,11 @@ import {
   KeyboardAvoidingView,
   Alert,
 } from 'react-native';
-import { BoardPost, ChatBoardItem } from '../types/chatBoard.type';
+import { BoardPost, ChatBoardItem, ChatMessage } from '../types/chatBoard.type';
 import ChatMessageItem from '../components/chat/ChatMessageItem';
 import BoardPostItem from '../components/board/BoardPostItem';
 import BoardPostBottomSheet from '../components/board/BoardPostBottomSheet';
+import BoardPostEditModal from '../components/board/BoardPostEditModal';
 import ContextMenu from '../components/common/ContextMenu';
 import { mainStyles as styles } from '../styles/MainScreen.styles';
 
@@ -74,12 +75,24 @@ const MainScreen = () => {
   const [items, setItems] = useState<ChatBoardItem[]>(initItems);
   const [inputText, setInputText] = useState('');
   const [selectedPost, setSelectedPost] = useState<BoardPost | null>(null);
+  const [editingPost, setEditingPost] = useState<BoardPost | null>(null);
   const [contextMenuItem, setContextMenuItem] = useState<ChatBoardItem | null>(null);
   const flatListRef = useRef<FlatList<ChatBoardItem>>(null);
 
+  // ── 게시물 바텀시트 ──
   const handlePostPress = (post: BoardPost) => setSelectedPost(post);
   const handleCloseSheet = () => setSelectedPost(null);
 
+  // ── 게시물 수정 모달 ──
+  const handleOpenEdit = () => setEditingPost(selectedPost);
+  const handleCloseEdit = () => setEditingPost(null);
+  const handleSaveEdit = (updated: BoardPost) => {
+    setItems(prev => prev.map(item => item.id === updated.id ? updated : item));
+    setSelectedPost(updated); // 바텀시트도 업데이트된 내용으로 갱신
+    setEditingPost(null);
+  };
+
+  // ── 롱프레스 컨텍스트 메뉴 ──
   const handleLongPress = (item: ChatBoardItem) => setContextMenuItem(item);
   const handleCloseContextMenu = () => setContextMenuItem(null);
 
@@ -107,6 +120,57 @@ const MainScreen = () => {
     );
   };
 
+  const handleContextConvert = () => {
+    if (!contextMenuItem) {
+      return;
+    }
+    if (contextMenuItem.type === 'chat') {
+      // 채팅 → 게시물: 비파괴적, Alert 없이 바로 변환 후 바텀시트 오픈
+      const chat = contextMenuItem as ChatMessage;
+      const newPost: BoardPost = {
+        id: chat.id,
+        userId: chat.userId,
+        type: 'post',
+        bookMark: chat.bookMark,
+        title: chat.text,
+        content: '',
+        createdAt: chat.createdAt,
+      };
+      setItems(prev => prev.map(item => item.id === chat.id ? newPost : item));
+      setSelectedPost(newPost); // 바텀시트 자동 오픈 (편집 유도)
+    } else {
+      // 게시물 → 채팅: 파괴적, Alert 확인 필요
+      const post = contextMenuItem as BoardPost;
+      Alert.alert(
+        '채팅으로 변환',
+        '정말 채팅으로 변환하시겠습니까? 채팅으로 변환한다면, 제목을 제외한 모든 내용이 삭제됩니다.',
+        [
+          { text: '취소', style: 'cancel' },
+          {
+            text: '변환',
+            style: 'destructive',
+            onPress: () => {
+              setItems(prev =>
+                prev.map(item =>
+                  item.id === post.id
+                    ? {
+                        id: post.id,
+                        userId: post.userId,
+                        type: 'chat' as const,
+                        bookMark: post.bookMark,
+                        text: post.title,
+                        createdAt: post.createdAt,
+                      }
+                    : item,
+                ),
+              );
+            },
+          },
+        ],
+      );
+    }
+  };
+
   const handleContextDelete = () => {
     if (!contextMenuItem) {
       return;
@@ -126,41 +190,7 @@ const MainScreen = () => {
     );
   };
 
-  const handleConvertToChat = () => {
-    if (!selectedPost) {
-      return;
-    }
-    const post = selectedPost;
-    Alert.alert(
-      '채팅으로 변환',
-      '정말 채팅으로 변환하시겠습니까? 채팅으로 변환한다면, 제목을 제외한 모든 내용이 삭제됩니다.',
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '변환',
-          style: 'destructive',
-          onPress: () => {
-            setItems(prev =>
-              prev.map(item =>
-                item.id === post.id
-                  ? {
-                      id: post.id,
-                      userId: post.userId,
-                      type: 'chat' as const,
-                      bookMark: post.bookMark,
-                      text: post.title,
-                      createdAt: post.createdAt,
-                    }
-                  : item,
-              ),
-            );
-            handleCloseSheet();
-          },
-        },
-      ],
-    );
-  };
-
+  // ── 새 채팅 전송 ──
   const handleSend = () => {
     if (!inputText.trim()) {
       return;
@@ -271,7 +301,13 @@ const MainScreen = () => {
       <BoardPostBottomSheet
         post={selectedPost}
         onClose={handleCloseSheet}
-        onConvertToChat={handleConvertToChat}
+        onEdit={handleOpenEdit}
+      />
+
+      <BoardPostEditModal
+        post={editingPost}
+        onClose={handleCloseEdit}
+        onSave={handleSaveEdit}
       />
 
       <ContextMenu
@@ -280,6 +316,7 @@ const MainScreen = () => {
         isBookmarked={contextMenuItem?.bookMark ?? false}
         onCopy={handleContextCopy}
         onBookmark={handleContextBookmark}
+        onConvert={handleContextConvert}
         onDelete={handleContextDelete}
         onClose={handleCloseContextMenu}
       />

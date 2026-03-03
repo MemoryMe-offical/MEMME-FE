@@ -102,8 +102,8 @@ export const boardPostBottomSheetStyles = StyleSheet.create({
     borderTopColor: '#EEF3FF',
   },
 
-  // 시트 하단 - 채팅으로 변환 버튼
-  'sheet-footer-convertButton': {
+  // 시트 하단 - 수정 버튼
+  'sheet-footer-editButton': {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -113,8 +113,8 @@ export const boardPostBottomSheetStyles = StyleSheet.create({
     gap: 6,
   },
 
-  // 시트 하단 - 채팅으로 변환 버튼 텍스트
-  'sheet-footer-convertButton-text': {
+  // 시트 하단 - 수정 버튼 텍스트
+  'sheet-footer-editButton-text': {
     fontSize: 14,
     fontWeight: '600',
     color: '#588DFF',

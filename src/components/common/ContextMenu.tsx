@@ -16,6 +16,7 @@ interface ContextMenuProps {
   isBookmarked: boolean;
   onCopy: () => void;
   onBookmark: () => void;
+  onConvert: () => void;
   onDelete: () => void;
   onClose: () => void;
 }
@@ -26,6 +27,7 @@ const ContextMenu = ({
   isBookmarked,
   onCopy,
   onBookmark,
+  onConvert,
   onDelete,
   onClose,
 }: ContextMenuProps) => {
@@ -62,6 +64,8 @@ const ContextMenu = ({
   };
 
   const copyLabel = itemType === 'chat' ? '내용 복사' : '제목 복사';
+  const convertIcon = itemType === 'chat' ? '📌' : '💬';
+  const convertLabel = itemType === 'chat' ? '게시물로 변환' : '채팅으로 변환';
 
   return (
     <Modal
@@ -106,6 +110,17 @@ const ContextMenu = ({
             <Text style={styles['contextMenu-item-text']}>
               {isBookmarked ? '북마크 해제' : '북마크'}
             </Text>
+          </TouchableOpacity>
+
+          <View style={styles['contextMenu-separator']} />
+
+          {/* 변환 */}
+          <TouchableOpacity
+            style={styles['contextMenu-item']}
+            onPress={() => handleAction(onConvert)}
+            activeOpacity={0.6}>
+            <Text style={styles['contextMenu-item-icon']}>{convertIcon}</Text>
+            <Text style={styles['contextMenu-item-text--convert']}>{convertLabel}</Text>
           </TouchableOpacity>
 
           <View style={styles['contextMenu-separator']} />

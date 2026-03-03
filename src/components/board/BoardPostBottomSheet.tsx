@@ -30,10 +30,10 @@ const formatFullTime = (isoString: string): string => {
 interface Props {
   post: BoardPost | null;
   onClose: () => void;
-  onConvertToChat: () => void;
+  onEdit: () => void;
 }
 
-const BoardPostBottomSheet = ({ post, onClose, onConvertToChat }: Props) => {
+const BoardPostBottomSheet = ({ post, onClose, onEdit }: Props) => {
   const slideAnim = useRef(new Animated.Value(0)).current;
   const visible = post !== null;
 
@@ -100,11 +100,11 @@ const BoardPostBottomSheet = ({ post, onClose, onConvertToChat }: Props) => {
         {/* 하단 액션 */}
         <View style={styles['sheet-footer']}>
           <TouchableOpacity
-            style={styles['sheet-footer-convertButton']}
-            onPress={onConvertToChat}
+            style={styles['sheet-footer-editButton']}
+            onPress={onEdit}
             activeOpacity={0.75}>
-            <Text style={styles['sheet-footer-convertButton-text']}>
-              💬 채팅으로 변환
+            <Text style={styles['sheet-footer-editButton-text']}>
+              ✏️ 수정
             </Text>
           </TouchableOpacity>
         </View>

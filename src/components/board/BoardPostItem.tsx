@@ -33,7 +33,7 @@ const BoardPostItem = ({ item, onPress, onLongPress }: BoardPostItemProps) => (
       activeOpacity={0.75}>
       <Text style={styles['boardPostItem-bubble-title']}>{item.title}</Text>
       {item.content ? (
-        <Text style={styles['boardPostItem-bubble-content']} numberOfLines={2}>
+        <Text style={styles['boardPostItem-bubble-content']} numberOfLines={4}>
           {item.content}
         </Text>
       ) : null}
