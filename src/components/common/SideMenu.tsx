@@ -37,12 +37,15 @@ const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress }: Prop
     }
   }, [visible, slideAnim]);
 
-  const handleClose = () => {
+  const handleClose = (callback?: () => void) => {
     Animated.timing(slideAnim, {
       toValue: SIDE_MENU_WIDTH,
       duration: 220,
       useNativeDriver: true,
-    }).start(() => onClose());
+    }).start(() => {
+      onClose();
+      callback?.();
+    });
   };
 
   const bookmarkedItems = items.filter(item => item.bookMark);
@@ -136,7 +139,7 @@ const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress }: Prop
                       key={item.id}
                       style={styles['sideMenu-bookmark-card']}
                       activeOpacity={0.7}
-                      onPress={() => { handleClose(); onBookmarkPress(item); }}>
+                      onPress={() => handleClose(() => onBookmarkPress(item))}>
                       <View
                         style={[
                           styles['sideMenu-bookmark-accent'],
