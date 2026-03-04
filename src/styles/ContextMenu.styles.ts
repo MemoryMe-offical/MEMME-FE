@@ -38,11 +38,6 @@ export const contextMenuStyles = StyleSheet.create({
     marginHorizontal: 14,
   },
 
-  // 항목 아이콘
-  'contextMenu-item-icon': {
-    fontSize: 17,
-  },
-
   // 항목 텍스트 (기본)
   'contextMenu-item-text': {
     fontSize: 15,

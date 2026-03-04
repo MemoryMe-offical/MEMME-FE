@@ -9,6 +9,7 @@ import {
   Animated,
 } from 'react-native';
 import { contextMenuStyles as styles } from '../../styles/ContextMenu.styles';
+import { BookmarkFilledIcon, BookmarkIcon, CopyIcon, ConvertIcon, TrashIcon } from './Icons';
 
 interface ContextMenuProps {
   visible: boolean;
@@ -64,7 +65,6 @@ const ContextMenu = ({
   };
 
   const copyLabel = itemType === 'chat' ? '내용 복사' : '제목 복사';
-  const convertIcon = itemType === 'chat' ? '📌' : '💬';
   const convertLabel = itemType === 'chat' ? '게시물로 변환' : '채팅으로 변환';
 
   return (
@@ -93,7 +93,7 @@ const ContextMenu = ({
             style={styles['contextMenu-item']}
             onPress={() => handleAction(onCopy)}
             activeOpacity={0.6}>
-            <Text style={styles['contextMenu-item-icon']}>📋</Text>
+            <CopyIcon color="#1A1A1A" size={18} />
             <Text style={styles['contextMenu-item-text']}>{copyLabel}</Text>
           </TouchableOpacity>
 
@@ -104,9 +104,9 @@ const ContextMenu = ({
             style={styles['contextMenu-item']}
             onPress={() => handleAction(onBookmark)}
             activeOpacity={0.6}>
-            <Text style={styles['contextMenu-item-icon']}>
-              {isBookmarked ? '★' : '☆'}
-            </Text>
+            {isBookmarked
+              ? <BookmarkFilledIcon color="#FF9500" size={18} />
+              : <BookmarkIcon color="#AABBCC" size={18} />}
             <Text style={styles['contextMenu-item-text']}>
               {isBookmarked ? '북마크 해제' : '북마크'}
             </Text>
@@ -119,7 +119,7 @@ const ContextMenu = ({
             style={styles['contextMenu-item']}
             onPress={() => handleAction(onConvert)}
             activeOpacity={0.6}>
-            <Text style={styles['contextMenu-item-icon']}>{convertIcon}</Text>
+            <ConvertIcon color="#588DFF" size={18} />
             <Text style={styles['contextMenu-item-text--convert']}>{convertLabel}</Text>
           </TouchableOpacity>
 
@@ -130,7 +130,7 @@ const ContextMenu = ({
             style={styles['contextMenu-item']}
             onPress={() => handleAction(onDelete)}
             activeOpacity={0.6}>
-            <Text style={styles['contextMenu-item-icon']}>🗑️</Text>
+            <TrashIcon color="#FF3B30" size={18} />
             <Text style={styles['contextMenu-item-text--danger']}>삭제</Text>
           </TouchableOpacity>
         </Animated.View>

@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { BoardPost } from '../../types/chatBoard.type';
 import { boardPostEditModalStyles as styles } from '../../styles/BoardPostEditModal.styles';
+import { CameraIcon, CalendarIcon, ClockIcon } from '../common/Icons';
 
 interface Props {
   post: BoardPost | null;
@@ -97,7 +98,7 @@ const BoardPostEditModal = ({ post, onClose, onSave }: Props) => {
           <View style={styles['editModal-section-divider']} />
           <Text style={styles['editModal-section-label']}>미디어</Text>
           <TouchableOpacity style={styles['editModal-placeholder-row']} disabled>
-            <Text style={styles['editModal-placeholder-icon']}>📷</Text>
+            <CameraIcon color="#3A3A3A" size={18} />
             <Text style={styles['editModal-placeholder-text']}>사진 / 영상 / 파일</Text>
             <Text style={styles['editModal-placeholder-badge']}>준비 중</Text>
           </TouchableOpacity>
@@ -106,13 +107,13 @@ const BoardPostEditModal = ({ post, onClose, onSave }: Props) => {
           <View style={styles['editModal-section-divider']} />
           <Text style={styles['editModal-section-label']}>일정</Text>
           <TouchableOpacity style={styles['editModal-placeholder-row']} disabled>
-            <Text style={styles['editModal-placeholder-icon']}>📅</Text>
+            <CalendarIcon color="#3A3A3A" size={18} />
             <Text style={styles['editModal-placeholder-text']}>시작 날짜 및 시간</Text>
             <Text style={styles['editModal-placeholder-badge']}>준비 중</Text>
           </TouchableOpacity>
           <View style={styles['editModal-placeholder-separator']} />
           <TouchableOpacity style={styles['editModal-placeholder-row']} disabled>
-            <Text style={styles['editModal-placeholder-icon']}>⏰</Text>
+            <ClockIcon color="#3A3A3A" size={18} />
             <Text style={styles['editModal-placeholder-text']}>마감 날짜 및 시간</Text>
             <Text style={styles['editModal-placeholder-badge']}>준비 중</Text>
           </TouchableOpacity>

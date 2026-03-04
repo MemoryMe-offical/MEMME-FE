@@ -121,11 +121,6 @@ export const boardPostEditModalStyles = StyleSheet.create({
     opacity: 0.45,
   },
 
-  // 플레이스홀더 아이콘
-  'editModal-placeholder-icon': {
-    fontSize: 18,
-  },
-
   // 플레이스홀더 텍스트
   'editModal-placeholder-text': {
     flex: 1,

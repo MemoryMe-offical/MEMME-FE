@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { BoardPost } from '../../types/chatBoard.type';
 import { boardPostBottomSheetStyles as styles } from '../../styles/BoardPostBottomSheet.styles';
+import { CloseIcon, EditIcon } from '../common/Icons';
 
 const SHEET_HEIGHT = Dimensions.get('window').height * 0.55;
 
@@ -79,8 +80,8 @@ const BoardPostBottomSheet = ({ post, onClose, onEdit }: Props) => {
         {/* 헤더 */}
         <View style={styles['sheet-header']}>
           <Text style={styles['sheet-header-label']}>게시물</Text>
-          <TouchableOpacity onPress={handleClose}>
-            <Text style={styles['sheet-header-closeButton']}>✕</Text>
+          <TouchableOpacity onPress={handleClose} style={{ padding: 4 }}>
+            <CloseIcon color="#9DAFC8" size={14} />
           </TouchableOpacity>
         </View>
 
@@ -103,9 +104,8 @@ const BoardPostBottomSheet = ({ post, onClose, onEdit }: Props) => {
             style={styles['sheet-footer-editButton']}
             onPress={onEdit}
             activeOpacity={0.75}>
-            <Text style={styles['sheet-footer-editButton-text']}>
-              ✏️ 수정
-            </Text>
+            <EditIcon color="#588DFF" size={14} />
+            <Text style={styles['sheet-footer-editButton-text']}>수정</Text>
           </TouchableOpacity>
         </View>
       </Animated.View>

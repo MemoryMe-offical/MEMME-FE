@@ -53,13 +53,6 @@ export const boardPostBottomSheetStyles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
   },
 
-  // 시트 헤더 - 닫기 버튼
-  'sheet-header-closeButton': {
-    fontSize: 18,
-    color: '#9DAFC8',
-    padding: 4,
-  },
-
   // 시트 본문 스크롤 영역
   'sheet-body': {
     paddingHorizontal: 20,

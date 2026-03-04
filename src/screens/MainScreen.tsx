@@ -15,6 +15,8 @@ import BoardPostItem from '../components/board/BoardPostItem';
 import BoardPostBottomSheet from '../components/board/BoardPostBottomSheet';
 import BoardPostEditModal from '../components/board/BoardPostEditModal';
 import ContextMenu from '../components/common/ContextMenu';
+import SideMenu from '../components/common/SideMenu';
+import { HamburgerIcon, PlusIcon, SearchIcon, SendIcon } from '../components/common/Icons';
 import { mainStyles as styles } from '../styles/MainScreen.styles';
 
 // 테스트용 하드코딩 데이터
@@ -77,6 +79,7 @@ const MainScreen = () => {
   const [selectedPost, setSelectedPost] = useState<BoardPost | null>(null);
   const [editingPost, setEditingPost] = useState<BoardPost | null>(null);
   const [contextMenuItem, setContextMenuItem] = useState<ChatBoardItem | null>(null);
+  const [sideMenuVisible, setSideMenuVisible] = useState(false);
   const flatListRef = useRef<FlatList<ChatBoardItem>>(null);
 
   // ── 게시물 바텀시트 ──
@@ -190,6 +193,18 @@ const MainScreen = () => {
     );
   };
 
+  // ── 사이드 메뉴 북마크 탭 ──
+  const handleBookmarkPress = (item: ChatBoardItem) => {
+    if (item.type === 'post') {
+      setSelectedPost(item as BoardPost);
+    } else {
+      const index = items.findIndex(i => i.id === item.id);
+      if (index !== -1) {
+        flatListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
+      }
+    }
+  };
+
   // ── 새 채팅 전송 ──
   const handleSend = () => {
     if (!inputText.trim()) {
@@ -225,10 +240,12 @@ const MainScreen = () => {
 
         <View style={styles['main-header-rightButtons']}>
           <TouchableOpacity style={styles['main-header-iconButton']}>
-            <Text style={styles['main-header-iconText']}>🔍</Text>
+            <SearchIcon color="#1A1A1A" size={20} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles['main-header-iconButton']}>
-            <Text style={styles['main-header-iconText']}>☰</Text>
+          <TouchableOpacity
+            style={styles['main-header-iconButton']}
+            onPress={() => setSideMenuVisible(true)}>
+            <HamburgerIcon color="#1A1A1A" size={20} />
           </TouchableOpacity>
         </View>
       </View>
@@ -280,7 +297,7 @@ const MainScreen = () => {
         {/* 입력 바 */}
         <View style={styles['main-inputBar']}>
           <TouchableOpacity style={styles['main-inputBar-plusButton']}>
-            <Text style={styles['main-inputBar-plusButton-text']}>+</Text>
+            <PlusIcon color="#888" size={22} />
           </TouchableOpacity>
           <TextInput
             style={styles['main-inputBar-input']}
@@ -293,10 +310,18 @@ const MainScreen = () => {
           <TouchableOpacity
             style={styles['main-inputBar-sendButton']}
             onPress={handleSend}>
-            <Text style={styles['main-inputBar-sendButton-text']}>↑</Text>
+            <SendIcon color="#FFFFFF" size={17} />
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      <SideMenu
+        visible={sideMenuVisible}
+        items={items}
+        onClose={() => setSideMenuVisible(false)}
+        onSettings={() => {}}
+        onBookmarkPress={handleBookmarkPress}
+      />
 
       <BoardPostBottomSheet
         post={selectedPost}
