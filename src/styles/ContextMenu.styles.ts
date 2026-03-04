@@ -38,11 +38,6 @@ export const contextMenuStyles = StyleSheet.create({
     marginHorizontal: 14,
   },
 
-  // 항목 아이콘
-  'contextMenu-item-icon': {
-    fontSize: 17,
-  },
-
   // 항목 텍스트 (기본)
   'contextMenu-item-text': {
     fontSize: 15,
@@ -55,6 +50,14 @@ export const contextMenuStyles = StyleSheet.create({
   'contextMenu-item-text--danger': {
     fontSize: 15,
     color: '#FF3B30',
+    fontFamily: 'PretendardVariable',
+    fontWeight: '500',
+  },
+
+  // 항목 텍스트 (변환 — 파란색)
+  'contextMenu-item-text--convert': {
+    fontSize: 15,
+    color: '#588DFF',
     fontFamily: 'PretendardVariable',
     fontWeight: '500',
   },
