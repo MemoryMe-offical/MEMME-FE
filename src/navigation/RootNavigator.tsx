@@ -7,6 +7,8 @@ import MainScreen from '../screens/MainScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
 import TermsScreen from '../screens/Termsscreen';
+import EncryptionTestScreen from '../screens/EncryptionTestScreen';
+
 
 // 네비게이션에서 사용할 화면 목록과 파라미터 타입 정의
 export type RootStackParamList = {
@@ -16,6 +18,7 @@ export type RootStackParamList = {
     Login: undefined;
     Signup: undefined;
     Terms: undefined;
+    EncryptionTest: undefined;
 }
 
 // Stack 형태의 Navigator 생성 함수
@@ -63,6 +66,12 @@ const RootNavigator = () => {
             <Stack.Screen
                 name="Main"
                 component={MainScreen}
+            />
+
+            <Stack.Screen
+            name="EncryptionTest"
+            component={EncryptionTestScreen}
+            options={{ title: '암호화 테스트' }}
             />
         </Stack.Navigator>
     )
