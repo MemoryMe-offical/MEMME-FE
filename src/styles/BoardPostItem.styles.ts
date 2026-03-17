@@ -25,7 +25,7 @@ export const boardPostItemStyles = StyleSheet.create({
     borderBottomRightRadius: 4,
     paddingHorizontal: 14,
     paddingVertical: 10,
-    maxWidth: '72%',
+    maxWidth: '80%',
   },
 
   // 게시판 아이템 - 말풍선 - 제목

@@ -16,7 +16,7 @@ export const mainStyles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#EEF3FF',
   },
 
   // 메인 - 헤더 - 프로필 버튼
@@ -55,12 +55,6 @@ export const mainStyles = StyleSheet.create({
   // 메인 - 헤더 - 아이콘 버튼
   'main-header-iconButton': {
     padding: 4,
-  },
-
-  // 메인 - 헤더 - 아이콘 텍스트
-  'main-header-iconText': {
-    fontSize: 20,
-    color: '#1A1A1A',
   },
 
   // 메인 - 바디 (KeyboardAvoidingView)
@@ -108,6 +102,8 @@ export const mainStyles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: '#FFFFFF',
     gap: 8,
+    borderTopLeftRadius: 25,
+    borderTopRightRadius: 25,
   },
 
   // 메인 - 입력 바 - 플러스 버튼
@@ -116,14 +112,6 @@ export const mainStyles = StyleSheet.create({
     height: 36,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-
-  // 메인 - 입력 바 - 플러스 버튼 - 텍스트
-  'main-inputBar-plusButton-text': {
-    fontSize: 26,
-    color: '#888',
-    fontWeight: '300',
-    lineHeight: 30,
   },
 
   // 메인 - 입력 바 - 입력창
@@ -149,11 +137,5 @@ export const mainStyles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // 메인 - 입력 바 - 전송 버튼 - 텍스트
-  'main-inputBar-sendButton-text': {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-    lineHeight: 20,
-  },
 });
+

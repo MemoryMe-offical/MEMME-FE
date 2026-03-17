@@ -1,0 +1,217 @@
+// 햄버거 메뉴 - 우측 슬라이드 패널
+
+import React, { useEffect, useRef } from 'react';
+import {
+  Modal,
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  Animated,
+  Image,
+} from 'react-native';
+import { BoardPost, ChatBoardItem, ChatMessage } from '../../types/chatBoard.type';
+import { CloseIcon, EditIcon, SettingsIcon } from './Icons';
+import { SIDE_MENU_WIDTH, sideMenuStyles as styles } from '../../styles/SideMenu.styles';
+
+interface Props {
+  visible: boolean;
+  items: ChatBoardItem[];
+  onClose: () => void;
+  onSettings: () => void;
+  onBookmarkPress: (item: ChatBoardItem) => void;
+}
+
+const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress }: Props) => {
+  const slideAnim = useRef(new Animated.Value(SIDE_MENU_WIDTH)).current;
+
+  useEffect(() => {
+    if (visible) {
+      slideAnim.setValue(SIDE_MENU_WIDTH);
+      Animated.spring(slideAnim, {
+        toValue: 0,
+        bounciness: 3,
+        speed: 14,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible, slideAnim]);
+
+  const handleClose = () => {
+    Animated.timing(slideAnim, {
+      toValue: SIDE_MENU_WIDTH,
+      duration: 220,
+      useNativeDriver: true,
+    }).start(() => onClose());
+  };
+
+  const bookmarkedItems = items.filter(item => item.bookMark);
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="none"
+      onRequestClose={handleClose}>
+      <View style={styles['sideMenu-overlay']}>
+        {/* 백드롭 */}
+        <TouchableOpacity
+          style={styles['sideMenu-backdrop']}
+          activeOpacity={1}
+          onPress={handleClose}
+        />
+
+        {/* 패널 */}
+        <Animated.View
+          style={[styles['sideMenu-panel'], { transform: [{ translateX: slideAnim }] }]}>
+
+          {/* 파란 헤더 (버튼만) */}
+          <View style={styles['sideMenu-headerBg']}>
+            <View style={styles['sideMenu-header']}>
+              <TouchableOpacity style={styles['sideMenu-header-btn']} onPress={handleClose}>
+                <CloseIcon color="rgba(255,255,255,0.85)" size={16} />
+              </TouchableOpacity>
+              <TouchableOpacity style={styles['sideMenu-header-btn']} onPress={onSettings}>
+                <SettingsIcon color="rgba(255,255,255,0.85)" size={18} />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* 흰 프로필 영역 (아바타가 파란/흰 경계에 걸침) */}
+          <View style={styles['sideMenu-profileSection']}>
+            <Image
+              source={require('../../assets/imgs/mainart.png')}
+              style={styles['sideMenu-profile-avatar']}
+            />
+            <View style={styles['sideMenu-profile-nameRow']}>
+              <Text style={styles['sideMenu-profile-name']}>사용자 님</Text>
+              <EditIcon color="#9DAFC8" size={14} />
+            </View>
+
+            {/* 스토리지 */}
+            <View style={styles['sideMenu-storage']}>
+              <View style={styles['sideMenu-storage-textRow']}>
+                <Text style={styles['sideMenu-storage-usedText']}>0 GB</Text>
+                <Text style={styles['sideMenu-storage-totalText']}>/ 100 GB</Text>
+                <TouchableOpacity style={styles['sideMenu-storage-detailBtn']}>
+                  <Text style={styles['sideMenu-storage-detailText']}>자세히</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles['sideMenu-storage-barWrapper']}>
+                <View style={styles['sideMenu-storage-barBg']}>
+                  <View style={[styles['sideMenu-storage-barFill'], { width: '0%' }]} />
+                </View>
+                <View style={[styles['sideMenu-storage-barThumb'], { left: 0 }]} />
+              </View>
+            </View>
+          </View>
+
+          {/* 흰 콘텐츠 영역 */}
+          <ScrollView style={styles['sideMenu-scroll']} showsVerticalScrollIndicator={false}>
+
+            {/* 북마크 */}
+            <View style={styles['sideMenu-section']}>
+              <View style={styles['sideMenu-section-header']}>
+                <Text style={styles['sideMenu-section-title']}>북마크</Text>
+                {bookmarkedItems.length > 0 && (
+                  <Text style={styles['sideMenu-section-count']}>{bookmarkedItems.length}</Text>
+                )}
+              </View>
+
+              {bookmarkedItems.length === 0 ? (
+                <Text style={styles['sideMenu-empty-text']}>북마크된 항목이 없습니다</Text>
+              ) : (
+                bookmarkedItems.map(item => {
+                  const isPost = item.type === 'post';
+                  const label = isPost
+                    ? (item as BoardPost).title
+                    : (item as ChatMessage).text;
+                  const accentColor = isPost ? '#FF9500' : '#588DFF';
+                  const badgeBg = isPost ? '#FFF0D9' : '#E8EEFF';
+                  const badgeColor = isPost ? '#FF9500' : '#588DFF';
+                  const badgeLabel = isPost ? '게시물' : '채팅';
+
+                  return (
+                    <TouchableOpacity
+                      key={item.id}
+                      style={styles['sideMenu-bookmark-card']}
+                      activeOpacity={0.7}
+                      onPress={() => { handleClose(); onBookmarkPress(item); }}>
+                      <View
+                        style={[
+                          styles['sideMenu-bookmark-accent'],
+                          { backgroundColor: accentColor },
+                        ]}
+                      />
+                      <Text style={styles['sideMenu-bookmark-label']} numberOfLines={1}>
+                        {label}
+                      </Text>
+                      <View
+                        style={[
+                          styles['sideMenu-bookmark-badge'],
+                          { backgroundColor: badgeBg },
+                        ]}>
+                        <Text
+                          style={[
+                            styles['sideMenu-bookmark-badgeText'],
+                            { color: badgeColor },
+                          ]}>
+                          {badgeLabel}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })
+              )}
+            </View>
+
+            <View style={styles['sideMenu-divider']} />
+
+            {/* 사진 */}
+            <View style={styles['sideMenu-section']}>
+              <View style={styles['sideMenu-section-header']}>
+                <Text style={styles['sideMenu-section-title']}>사진</Text>
+                <Text style={styles['sideMenu-section-size']}>0 GB</Text>
+              </View>
+              <View style={styles['sideMenu-placeholder-box']}>
+                <Text style={styles['sideMenu-placeholder-text']}>준비 중</Text>
+                <Text style={styles['sideMenu-placeholder-subText']}>사진을 추가하면 이곳에 표시됩니다</Text>
+              </View>
+            </View>
+
+            <View style={styles['sideMenu-divider']} />
+
+            {/* 동영상 */}
+            <View style={styles['sideMenu-section']}>
+              <View style={styles['sideMenu-section-header']}>
+                <Text style={styles['sideMenu-section-title']}>동영상</Text>
+                <Text style={styles['sideMenu-section-size']}>0 GB</Text>
+              </View>
+              <View style={styles['sideMenu-placeholder-box']}>
+                <Text style={styles['sideMenu-placeholder-text']}>준비 중</Text>
+                <Text style={styles['sideMenu-placeholder-subText']}>동영상을 추가하면 이곳에 표시됩니다</Text>
+              </View>
+            </View>
+
+            <View style={styles['sideMenu-divider']} />
+
+            {/* 파일 */}
+            <View style={styles['sideMenu-section']}>
+              <View style={styles['sideMenu-section-header']}>
+                <Text style={styles['sideMenu-section-title']}>파일</Text>
+              </View>
+              <View style={styles['sideMenu-placeholder-box']}>
+                <Text style={styles['sideMenu-placeholder-text']}>준비 중</Text>
+                <Text style={styles['sideMenu-placeholder-subText']}>파일을 추가하면 이곳에 표시됩니다</Text>
+              </View>
+            </View>
+
+            <View style={{ height: 40 }} />
+          </ScrollView>
+        </Animated.View>
+      </View>
+    </Modal>
+  );
+};
+
+export default SideMenu;
