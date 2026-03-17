@@ -138,6 +138,20 @@ const LoginScreen = () => {
             <Text style={styles['login-signupContainer-link']}>회원가입</Text>
           </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          style={{
+            marginTop: 20,
+            padding: 15,
+            backgroundColor: '#6c757d',
+            borderRadius: 12,
+            alignItems: 'center',
+          }}
+          onPress={() => navigation.navigate('EncryptionTest')}>
+          <Text style={{ color: '#fff', fontWeight: 'bold' }}>
+            🧪 암호화 테스트 (개발용)
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
   );
