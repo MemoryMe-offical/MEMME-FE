@@ -104,10 +104,10 @@ const SplashScreen = ({ navigation }: Props) => {
           },
         ]}>
         <Image
-          source={require('../assets/imgs/mainart.png')}
+          source={require('../assets/imgs/artV1.png')}
           style={[
             styles['splash-characterContainer-image'],
-            { transform: [{ rotate: '-21deg' }] }, // 이미지에 직접 회전
+            // { transform: [{ rotate: '-21deg' }] }, 
           ]}
         />
       </Animated.View>
