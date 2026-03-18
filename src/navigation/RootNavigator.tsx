@@ -11,6 +11,7 @@ import BoardPostDetailScreen from '../screens/BoardPostDetailScreen';
 import { BoardPost } from '../types/chatBoard.type';
 import EncryptionTestScreen from '../screens/EncryptionTestScreen';
 import DevicePairingScreen from '../screens/DevicePairingScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 
 // 네비게이션에서 사용할 화면 목록과 파라미터 타입 정의
 export type RootStackParamList = {
@@ -27,6 +28,7 @@ export type RootStackParamList = {
     };
     EncryptionTest: undefined;
     DevicePairing: undefined;
+    ForgotPassword: undefined;
 }
 
 // Stack 형태의 Navigator 생성 함수
@@ -92,6 +94,12 @@ const RootNavigator = () => {
                 name="DevicePairing"
                 component={DevicePairingScreen}
                 options={{ title: '기기 페어링' }}
+            />
+
+            <Stack.Screen
+                name="ForgotPassword"
+                component={ForgotPasswordScreen}
+                options={{ title: '비밀번호 찾기' }}
             />
         </Stack.Navigator>
     )

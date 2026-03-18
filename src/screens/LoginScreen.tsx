@@ -20,28 +20,30 @@ const LoginScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [autoLogin, setAutoLogin] = useState(false);
 
   const handleLogin = () => {
     // TODO: 로그인 API 연동
-    console.log('로그인:', email, password);
+    console.log('로그인:', { email, password, autoLogin });
     navigation.navigate('Main');
-  
   };
 
   const handleKakaoLogin = () => {
     // TODO: 카카오 로그인 연동
     console.log('카카오 로그인');
-   
   };
 
   const handleAppleLogin = () => {
     // TODO: 애플 로그인 연동
     console.log('애플 로그인');
-    
   };
 
   const handleSignup = () => {
     navigation.navigate('Terms');
+  };
+
+  const handleFindPassword = () => {
+    navigation.navigate('ForgotPassword');
   };
 
   return (
@@ -55,11 +57,6 @@ const LoginScreen = () => {
         
         {/* 로고 영역 */}
         <View style={styles['login-logoContainer']}>
-          <Image
-            source={require('../assets/imgs/mainlogo.png')}
-            style={styles['login-logoContainer-logoImage']}
-            resizeMode="contain"
-          />
           <Text style={styles['login-logoContainer-title']}>Memme</Text>
           <Text style={styles['login-logoContainer-subtitle']}>
             나를 기억하고 기록하는 공간
@@ -87,6 +84,33 @@ const LoginScreen = () => {
             secureTextEntry
             autoComplete="password"
           />
+
+          {/* ⭐ 자동 로그인 & 비밀번호 찾기 */}
+          <View style={styles['login-inputContainer-optionsRow']}>
+            <TouchableOpacity
+              style={styles['login-inputContainer-optionsRow-autoLogin']}
+              onPress={() => setAutoLogin(!autoLogin)}>
+              <View style={[
+                styles['login-inputContainer-optionsRow-autoLogin-checkbox'],
+                autoLogin && styles['login-inputContainer-optionsRow-autoLogin-checkbox-checked']
+              ]}>
+                {autoLogin && (
+                  <Text style={styles['login-inputContainer-optionsRow-autoLogin-checkbox-check']}>
+                    ✓
+                  </Text>
+                )}
+              </View>
+              <Text style={styles['login-inputContainer-optionsRow-autoLogin-text']}>
+                자동 로그인
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={handleFindPassword}>
+              <Text style={styles['login-inputContainer-optionsRow-findPassword']}>
+                비밀번호 찾기
+              </Text>
+            </TouchableOpacity>
+          </View>
           
           <TouchableOpacity
             style={styles['login-inputContainer-loginButton']}
@@ -124,7 +148,6 @@ const LoginScreen = () => {
             <Image
               source={require('../assets/imgs/appleLogin.png')}
               style={styles['login-socialContainer-appleButton-image']}
-       
             />
           </TouchableOpacity>
         </View>
@@ -139,6 +162,7 @@ const LoginScreen = () => {
           </TouchableOpacity>
         </View>
 
+        {/* 개발용 암호화 테스트 버튼 */}
         <TouchableOpacity
           style={{
             marginTop: 20,

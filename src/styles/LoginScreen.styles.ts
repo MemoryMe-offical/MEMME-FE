@@ -51,7 +51,6 @@ export const loginStyles = StyleSheet.create({
 
   // 로그인 - 입력 컨테이너 - 입력
   'login-inputContainer-input': {
-    backgroundColor: '#F8F9FA',
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 16,
@@ -59,6 +58,61 @@ export const loginStyles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: '#E9ECEF',
+    fontFamily: 'PretendardVariable',
+  },
+
+  // 로그인 - 입력 컨테이너 - 옵션 행
+  'login-inputContainer-optionsRow': {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+
+  // 로그인 - 입력 컨테이너 - 옵션 행 - 자동 로그인
+  'login-inputContainer-optionsRow-autoLogin': {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  // 로그인 - 입력 컨테이너 - 옵션 행 - 자동 로그인 - 체크박스
+  'login-inputContainer-optionsRow-autoLogin-checkbox': {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: '#DDE1E6',
+    backgroundColor: '#FFFFFF',
+    marginRight: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // 로그인 - 입력 컨테이너 - 옵션 행 - 자동 로그인 - 체크박스 (체크됨)
+  'login-inputContainer-optionsRow-autoLogin-checkbox-checked': {
+    borderColor: '#588DFF',
+    backgroundColor: '#588DFF',
+  },
+
+  // 로그인 - 입력 컨테이너 - 옵션 행 - 자동 로그인 - 체크박스 - 체크
+  'login-inputContainer-optionsRow-autoLogin-checkbox-check': {
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+
+  // 로그인 - 입력 컨테이너 - 옵션 행 - 자동 로그인 - 텍스트
+  'login-inputContainer-optionsRow-autoLogin-text': {
+    fontSize: 14,
+    color: '#333',
+    fontFamily: 'PretendardVariable',
+  },
+
+  // 로그인 - 입력 컨테이너 - 옵션 행 - 비밀번호 찾기
+  'login-inputContainer-optionsRow-findPassword': {
+    fontSize: 14,
+    color: '#999',
+    textDecorationLine: 'underline',
     fontFamily: 'PretendardVariable',
   },
 
@@ -129,7 +183,7 @@ export const loginStyles = StyleSheet.create({
   // 로그인 - 소셜 컨테이너 - 카카오 버튼 - 이미지
   'login-socialContainer-kakaoButton-image': {
     width: '100%',
-    height: 55,  // 높이 고정
+    height: 55,
   },
 
   // 로그인 - 소셜 컨테이너 - 애플 버튼
@@ -146,9 +200,8 @@ export const loginStyles = StyleSheet.create({
   // 로그인 - 소셜 컨테이너 - 애플 버튼 - 이미지
   'login-socialContainer-appleButton-image': {
     width: '100%',
-    height: 50,  // 높이 고정 (카카오와 동일)
+    height: 50,
   },
-
 
   // 로그인 - 회원가입 컨테이너
   'login-signupContainer': {

@@ -45,7 +45,6 @@ const TermsScreen = () => {
     const newTerms = { ...terms, [key]: !terms[key] };
     setTerms(newTerms);
     
-    // 모든 약관이 체크되었는지 확인
     const allTermsChecked = Object.values(newTerms).every(v => v);
     setAllChecked(allTermsChecked);
   };
@@ -74,7 +73,7 @@ const TermsScreen = () => {
     setModalVisible(true);
   };
 
-  // 다음 단계로 (회원가입 화면)
+  // 다음 단계로
   const handleNext = () => {
     if (!terms.service || !terms.privacy || !terms.age) {
       Alert.alert('알림', '필수 약관에 모두 동의해주세요.');
@@ -88,7 +87,7 @@ const TermsScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles['terms-container']}>
+    <SafeAreaView style={styles['terms-container']} edges={['top']}>
       {/* 헤더 */}
       <View style={styles['terms-header']}>
         <TouchableOpacity
@@ -100,8 +99,10 @@ const TermsScreen = () => {
         <View style={styles['terms-header-placeholder']} />
       </View>
 
+      {/* ⭐ contentContainerStyle 추가 */}
       <ScrollView
         style={styles['terms-scrollView']}
+        contentContainerStyle={styles['terms-scrollView-content']}
         showsVerticalScrollIndicator={false}>
         
         {/* 안내 문구 */}
@@ -212,7 +213,7 @@ const TermsScreen = () => {
         </View>
       </ScrollView>
 
-      {/* 다음 버튼 */}
+      {/* ⭐ 하단 버튼 (고정) */}
       <View style={styles['terms-bottomSection']}>
         <TouchableOpacity
           style={[
@@ -234,7 +235,7 @@ const TermsScreen = () => {
         transparent={false}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}>
-        <SafeAreaView style={styles['terms-modal']}>
+        <SafeAreaView style={styles['terms-modal']} edges={['top']}>
           <View style={styles['terms-modal-header']}>
             <Text style={styles['terms-modal-header-title']}>
               {modalContent.title}
@@ -248,11 +249,14 @@ const TermsScreen = () => {
               {modalContent.content}
             </Text>
           </ScrollView>
-          <TouchableOpacity
-            style={styles['terms-modal-confirmButton']}
-            onPress={() => setModalVisible(false)}>
-            <Text style={styles['terms-modal-confirmButton-text']}>확인</Text>
-          </TouchableOpacity>
+          {/* ⭐ 모달 확인 버튼도 하단 고정 */}
+          <View style={styles['terms-modal-confirmButtonSection']}>
+            <TouchableOpacity
+              style={styles['terms-modal-confirmButton']}
+              onPress={() => setModalVisible(false)}>
+              <Text style={styles['terms-modal-confirmButton-text']}>확인</Text>
+            </TouchableOpacity>
+          </View>
         </SafeAreaView>
       </Modal>
     </SafeAreaView>
