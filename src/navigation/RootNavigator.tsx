@@ -34,7 +34,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const RootNavigator = () => {
     return (
-        <Stack.Navigator 
+        <Stack.Navigator
             initialRouteName="Splash"
             screenOptions={{
                 headerShown: false, // 모든 화면의 헤더 숨김
@@ -45,31 +45,31 @@ const RootNavigator = () => {
                 name="Splash"
                 component={SplashScreen}
             />
-            
+
             {/* 온보딩 화면 */}
             <Stack.Screen
                 name="Onboarding"
                 component={OnboardingScreen}
             />
 
-             {/* 로그인 화면 */}
-             <Stack.Screen
+            {/* 로그인 화면 */}
+            <Stack.Screen
                 name="Login"
                 component={LoginScreen}
             />
 
-             {/* 회원가입 화면 */}
-             <Stack.Screen
+            {/* 회원가입 화면 */}
+            <Stack.Screen
                 name="Signup"
                 component={SignupScreen}
             />
-            
-             {/* 이용약관 화면 */}
-             <Stack.Screen
+
+            {/* 이용약관 화면 */}
+            <Stack.Screen
                 name="Terms"
                 component={TermsScreen}
             />
-            
+
             {/* 메인 화면 */}
             <Stack.Screen
                 name="Main"

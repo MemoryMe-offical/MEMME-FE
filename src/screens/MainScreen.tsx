@@ -7,8 +7,10 @@ import {
   Text,
   Image,
   KeyboardAvoidingView,
+  Platform,
   Alert,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { BoardPost, ChatBoardItem, ChatMessage } from '../types/chatBoard.type';
@@ -131,6 +133,7 @@ const initItems: ChatBoardItem[] = [
 ];
 
 const MainScreen = () => {
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Main'>>();
   const [items, setItems] = useState<ChatBoardItem[]>(initItems);
   const [inputText, setInputText] = useState('');
@@ -286,7 +289,7 @@ const MainScreen = () => {
   return (
     <View style={styles['main-safeArea']}>
       {/* 헤더 */}
-      <View style={styles['main-header']}>
+      <View style={[styles['main-header'], { paddingTop: 12 + insets.top }]}>
         <TouchableOpacity style={styles['main-header-profileButton']}>
           <Image
             source={require('../assets/imgs/mainart.png')}
@@ -310,7 +313,7 @@ const MainScreen = () => {
 
       <KeyboardAvoidingView
         style={styles['main-body']}
-        behavior="padding">
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {/* 채팅 영역 (워터마크 + 메시지 리스트) */}
         <View style={styles['main-content']}>
           {/* 배경 워터마크 */}
@@ -353,7 +356,7 @@ const MainScreen = () => {
         </View>
 
         {/* 입력 바 */}
-        <View style={styles['main-inputBar']}>
+        <View style={[styles['main-inputBar'], { paddingBottom: 10 + insets.bottom }]}>
           <TouchableOpacity style={styles['main-inputBar-plusButton']}>
             <PlusIcon color="#000000" size={22} />
           </TouchableOpacity>
