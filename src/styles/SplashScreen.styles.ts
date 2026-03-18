@@ -43,15 +43,15 @@ export const splashStyles = StyleSheet.create({
   // 스플래시 - 캐릭터 컨테이너 (하단)
   'splash-characterContainer': {
     position: 'absolute',
-    bottom: -SCREEN_HEIGHT * 0.35,  // 하단 밖으로
-    left: SCREEN_WIDTH * 0.1,    // 왼쪽 밖으로
+    bottom: -SCREEN_HEIGHT * 0.2,  
+    left: SCREEN_WIDTH * 0.05,    // 왼쪽 밖으로
     overflow: 'visible',            // 넘치는 부분 보이게
   },
 
   // 스플래시 - 캐릭터 컨테이너 - 이미지
   'splash-characterContainer-image': {
-    width: SCREEN_WIDTH * 1.3,      // 이미지 크기 140%
-    height: SCREEN_HEIGHT * 0.9,    // 이미지 높이 90%
+    width: SCREEN_WIDTH ,      
+    height: SCREEN_HEIGHT,    
     resizeMode: 'contain',
   },
 });

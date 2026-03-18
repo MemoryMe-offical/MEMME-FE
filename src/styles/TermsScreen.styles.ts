@@ -1,4 +1,12 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform, Dimensions } from 'react-native';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const isIOS = Platform.OS === 'ios';
+const isIPhoneX = isIOS && SCREEN_HEIGHT >= 812;
+
+// SafeAreaView 사용 시 자동으로 처리되므로 추가 패딩 불필요
+const BOTTOM_PADDING = 0;
 
 export const termsStyles = StyleSheet.create({
   // 약관 - 메인 컨테이너
@@ -45,6 +53,11 @@ export const termsStyles = StyleSheet.create({
   // 약관 - 스크롤뷰
   'terms-scrollView': {
     flex: 1,
+  },
+
+  // 약관 - 스크롤뷰 컨텐츠 컨테이너 ⭐ 추가
+  'terms-scrollView-content': {
+    paddingBottom: 100, // 하단 버튼 높이만큼 여유 공간
   },
 
   // 약관 - 안내 섹션
@@ -164,10 +177,15 @@ export const termsStyles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
   },
 
-  // 약관 - 하단 섹션
+  // 약관 - 하단 섹션 ⭐ 수정 (position: absolute)
   'terms-bottomSection': {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     padding: 20,
-    paddingBottom: 34,
+    paddingBottom: isIPhoneX ? 34 : 20, // iPhone X 홈 인디케이터
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#F0F0F0',
   },
@@ -237,11 +255,18 @@ export const termsStyles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
   },
 
+  // 약관 - 모달 - 확인 버튼 섹션 ⭐ 추가
+  'terms-modal-confirmButtonSection': {
+    padding: 20,
+    paddingBottom: isIPhoneX ? 34 : 20,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+
   // 약관 - 모달 - 확인 버튼
   'terms-modal-confirmButton': {
     backgroundColor: '#588DFF',
-    margin: 20,
-    marginTop: 0,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
