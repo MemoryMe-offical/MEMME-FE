@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -27,8 +27,19 @@ const TermsScreen = () => {
 
   const [modalVisible, setModalVisible] = useState(false);
   const [modalContent, setModalContent] = useState({ title: '', content: '' });
+  const [modalReady, setModalReady] = useState(false); // ⭐ 추가
 
-  // 전체 동의 토글
+  // ⭐ 모달이 열릴 때 레이아웃 준비
+  useEffect(() => {
+    if (modalVisible) {
+      setModalReady(false);
+      // 다음 프레임에서 레이아웃 활성화
+      requestAnimationFrame(() => {
+        setModalReady(true);
+      });
+    }
+  }, [modalVisible]);
+
   const handleAllCheck = () => {
     const newValue = !allChecked;
     setAllChecked(newValue);
@@ -40,7 +51,6 @@ const TermsScreen = () => {
     });
   };
 
-  // 개별 약관 토글
   const handleTermCheck = (key: keyof typeof terms) => {
     const newTerms = { ...terms, [key]: !terms[key] };
     setTerms(newTerms);
@@ -49,7 +59,6 @@ const TermsScreen = () => {
     setAllChecked(allTermsChecked);
   };
 
-  // 약관 상세 보기
   const showTermDetail = (type: 'service' | 'privacy' | 'marketing') => {
     let title = '';
     let content = '';
@@ -73,7 +82,6 @@ const TermsScreen = () => {
     setModalVisible(true);
   };
 
-  // 다음 단계로
   const handleNext = () => {
     if (!terms.service || !terms.privacy || !terms.age) {
       Alert.alert('알림', '필수 약관에 모두 동의해주세요.');
@@ -99,7 +107,6 @@ const TermsScreen = () => {
         <View style={styles['terms-header-placeholder']} />
       </View>
 
-      {/* ⭐ contentContainerStyle 추가 */}
       <ScrollView
         style={styles['terms-scrollView']}
         contentContainerStyle={styles['terms-scrollView-content']}
@@ -130,16 +137,14 @@ const TermsScreen = () => {
 
         {/* 개별 약관 */}
         <View style={styles['terms-itemsContainer']}>
-          {/* 서비스 이용약관 (필수) */}
+          {/* 서비스 이용약관 */}
           <View style={styles['terms-item']}>
             <TouchableOpacity
               style={styles['terms-item-checkSection']}
               onPress={() => handleTermCheck('service')}>
               <View style={styles['terms-item-checkSection-checkbox']}>
                 {terms.service && (
-                  <Text style={styles['terms-item-checkSection-checkbox-check']}>
-                    ✓
-                  </Text>
+                  <Text style={styles['terms-item-checkSection-checkbox-check']}>✓</Text>
                 )}
               </View>
               <Text style={styles['terms-item-checkSection-text']}>
@@ -151,16 +156,14 @@ const TermsScreen = () => {
             </TouchableOpacity>
           </View>
 
-          {/* 개인정보 처리방침 (필수) */}
+          {/* 개인정보 처리방침 */}
           <View style={styles['terms-item']}>
             <TouchableOpacity
               style={styles['terms-item-checkSection']}
               onPress={() => handleTermCheck('privacy')}>
               <View style={styles['terms-item-checkSection-checkbox']}>
                 {terms.privacy && (
-                  <Text style={styles['terms-item-checkSection-checkbox-check']}>
-                    ✓
-                  </Text>
+                  <Text style={styles['terms-item-checkSection-checkbox-check']}>✓</Text>
                 )}
               </View>
               <Text style={styles['terms-item-checkSection-text']}>
@@ -172,16 +175,14 @@ const TermsScreen = () => {
             </TouchableOpacity>
           </View>
 
-          {/* 만 14세 이상 (필수) */}
+          {/* 만 14세 이상 */}
           <View style={styles['terms-item']}>
             <TouchableOpacity
               style={styles['terms-item-checkSection']}
               onPress={() => handleTermCheck('age')}>
               <View style={styles['terms-item-checkSection-checkbox']}>
                 {terms.age && (
-                  <Text style={styles['terms-item-checkSection-checkbox-check']}>
-                    ✓
-                  </Text>
+                  <Text style={styles['terms-item-checkSection-checkbox-check']}>✓</Text>
                 )}
               </View>
               <Text style={styles['terms-item-checkSection-text']}>
@@ -190,16 +191,14 @@ const TermsScreen = () => {
             </TouchableOpacity>
           </View>
 
-          {/* 마케팅 정보 수신 (선택) */}
+          {/* 마케팅 정보 수신 */}
           <View style={styles['terms-item']}>
             <TouchableOpacity
               style={styles['terms-item-checkSection']}
               onPress={() => handleTermCheck('marketing')}>
               <View style={styles['terms-item-checkSection-checkbox']}>
                 {terms.marketing && (
-                  <Text style={styles['terms-item-checkSection-checkbox-check']}>
-                    ✓
-                  </Text>
+                  <Text style={styles['terms-item-checkSection-checkbox-check']}>✓</Text>
                 )}
               </View>
               <Text style={styles['terms-item-checkSection-text']}>
@@ -213,7 +212,7 @@ const TermsScreen = () => {
         </View>
       </ScrollView>
 
-      {/* ⭐ 하단 버튼 (고정) */}
+      {/* 다음 버튼 */}
       <View style={styles['terms-bottomSection']}>
         <TouchableOpacity
           style={[
@@ -223,45 +222,57 @@ const TermsScreen = () => {
           ]}
           onPress={handleNext}
           disabled={!terms.service || !terms.privacy || !terms.age}>
-          <Text style={styles['terms-bottomSection-nextButton-text']}>
-            다음
-          </Text>
+          <Text style={styles['terms-bottomSection-nextButton-text']}>다음</Text>
         </TouchableOpacity>
       </View>
 
+      {/* ⭐ 약관 상세 모달 - 수정 */}
       {/* 약관 상세 모달 */}
-      <Modal
-        animationType="slide"
-        transparent={false}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}>
-        <SafeAreaView style={styles['terms-modal']} edges={['top']}>
-          <View style={styles['terms-modal-header']}>
-            <Text style={styles['terms-modal-header-title']}>
-              {modalContent.title}
-            </Text>
-            <TouchableOpacity onPress={() => setModalVisible(false)}>
-              <Text style={styles['terms-modal-header-closeButton']}>✕</Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView style={styles['terms-modal-content']}>
-            <Text style={styles['terms-modal-content-text']}>
-              {modalContent.content}
-            </Text>
-          </ScrollView>
-          {/* ⭐ 모달 확인 버튼도 하단 고정 */}
-          <View style={styles['terms-modal-confirmButtonSection']}>
-            <TouchableOpacity
-              style={styles['terms-modal-confirmButton']}
-              onPress={() => setModalVisible(false)}>
-              <Text style={styles['terms-modal-confirmButton-text']}>확인</Text>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-      </Modal>
+<Modal
+  animationType="slide"
+  transparent={false}
+  visible={modalVisible}
+  onRequestClose={() => setModalVisible(false)}
+  onShow={() => {
+    // ⭐ 모달이 완전히 표시된 후 강제 리렌더
+    setTimeout(() => {
+      setModalContent({ ...modalContent });
+    }, 100);
+  }}>
+  <View style={styles['terms-modal']}>
+    {/* ⭐ SafeAreaView 제거, 직접 패딩 */}
+    <View style={styles['terms-modal-header-safe']}>
+      <View style={styles['terms-modal-header']}>
+        <Text style={styles['terms-modal-header-title']}>
+          {modalContent.title}
+        </Text>
+        <TouchableOpacity 
+          onPress={() => setModalVisible(false)}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+          <Text style={styles['terms-modal-header-closeButton']}>✕</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+    
+    <ScrollView style={styles['terms-modal-content']}>
+      <Text style={styles['terms-modal-content-text']}>
+        {modalContent.content}
+      </Text>
+    </ScrollView>
+    
+    <View style={styles['terms-modal-confirmButtonSection']}>
+      <TouchableOpacity
+        style={styles['terms-modal-confirmButton']}
+        onPress={() => setModalVisible(false)}>
+        <Text style={styles['terms-modal-confirmButton-text']}>확인</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
     </SafeAreaView>
   );
 };
+
 
 // 실제 약관 내용
 const SERVICE_TERMS = `제1조 (목적)
