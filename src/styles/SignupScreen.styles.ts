@@ -52,6 +52,17 @@ export const signupStyles = StyleSheet.create({
     flex: 1,
   },
 
+  // 회원가입 - 스크롤뷰
+  'signup-scrollView': {
+    flex: 1,
+  },
+
+  // 회원가입 - 스크롤 컨텐츠
+  'signup-scrollContent': {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+
   // 회원가입 - 안내 섹션
   'signup-infoSection': {
     paddingHorizontal: 24,
@@ -146,6 +157,35 @@ export const signupStyles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
   },
 
+  // ⭐ 회원가입 - 입력 컨테이너 - 비밀번호 래퍼
+  'signup-inputContainer-passwordWrapper': {
+    position: 'relative',
+    width: '100%',
+  },
+
+  // ⭐ 회원가입 - 입력 컨테이너 - 비밀번호 래퍼 - 입력
+  'signup-inputContainer-passwordWrapper-input': {
+    width: '100%',
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    paddingRight: 50, // 아이콘 공간
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
+    fontFamily: 'PretendardVariable',
+  },
+
+  // ⭐ 회원가입 - 입력 컨테이너 - 비밀번호 래퍼 - 아이콘 버튼
+  'signup-inputContainer-passwordWrapper-iconButton': {
+    position: 'absolute',
+    right: 16,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+
   // 회원가입 - 입력 컨테이너 - 인증 완료 메시지
   'signup-inputContainer-verifiedMessage': {
     backgroundColor: '#E8F5E9',
@@ -160,6 +200,38 @@ export const signupStyles = StyleSheet.create({
     color: '#2E7D32',
     fontSize: 14,
     fontWeight: '600',
+    fontFamily: 'PretendardVariable',
+  },
+
+  // ⭐ 회원가입 - 입력 컨테이너 - 에러 메시지
+  'signup-inputContainer-errorMessage': {
+    backgroundColor: '#FFEBEE',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+
+  // ⭐ 회원가입 - 입력 컨테이너 - 에러 메시지 - 텍스트
+  'signup-inputContainer-errorMessage-text': {
+    color: '#C62828',
+    fontSize: 13,
+    fontFamily: 'PretendardVariable',
+  },
+
+  // ⭐ 회원가입 - 입력 컨테이너 - 정보 메시지
+  'signup-inputContainer-infoMessage': {
+    backgroundColor: '#E3F2FD',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+
+  // ⭐ 회원가입 - 입력 컨테이너 - 정보 메시지 - 텍스트
+  'signup-inputContainer-infoMessage-text': {
+    color: '#1565C0',
+    fontSize: 13,
     fontFamily: 'PretendardVariable',
   },
 
@@ -179,6 +251,13 @@ export const signupStyles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
+  },
+
+  // ⭐ 회원가입 - 입력 컨테이너 - 가입 버튼 (비활성화)
+  'signup-inputContainer-signupButton-disabled': {
+    backgroundColor: '#DDE1E6',
+    shadowOpacity: 0,
+    elevation: 0,
   },
 
   // 회원가입 - 입력 컨테이너 - 가입 버튼 - 텍스트
@@ -209,5 +288,7 @@ export const signupStyles = StyleSheet.create({
     color: '#588DFF',
     fontWeight: '600',
     fontFamily: 'PretendardVariable',
+    textDecorationLine: 'underline',
   },
+
 });
