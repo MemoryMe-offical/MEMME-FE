@@ -1,5 +1,18 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Platform, Dimensions,StatusBar } from 'react-native';
 
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
+const isIOS = Platform.OS === 'ios';
+const isIPhoneX = isIOS && SCREEN_HEIGHT >= 812;
+
+const getStatusBarHeight = () => {
+  if (isIOS) {
+    return isIPhoneX ? 44 : 20; // iPhone X 이상: 44, 이하: 20
+  }
+  return StatusBar.currentHeight || 0;
+};
+
+const STATUS_BAR_HEIGHT = getStatusBarHeight();
 export const termsStyles = StyleSheet.create({
   // 약관 - 메인 컨테이너
   'terms-container': {
@@ -45,6 +58,11 @@ export const termsStyles = StyleSheet.create({
   // 약관 - 스크롤뷰
   'terms-scrollView': {
     flex: 1,
+  },
+
+  // 약관 - 스크롤뷰 컨텐츠 컨테이너
+  'terms-scrollView-content': {
+    paddingBottom: 100, // 하단 버튼 높이만큼 여유 공간
   },
 
   // 약관 - 안내 섹션
@@ -166,8 +184,13 @@ export const termsStyles = StyleSheet.create({
 
   // 약관 - 하단 섹션
   'terms-bottomSection': {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     padding: 20,
-    paddingBottom: 34,
+    paddingBottom: isIPhoneX ? 34 : 20, // iPhone X 홈 인디케이터
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#F0F0F0',
   },
@@ -199,14 +222,21 @@ export const termsStyles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
   },
 
+  // ⭐ 약관 - 모달 - 헤더 세이프 영역 (새로 추가)
+  'terms-modal-header-safe': {
+    paddingTop: STATUS_BAR_HEIGHT, // 상태바 높이만큼 패딩
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+  },
+
   // 약관 - 모달 - 헤더
   'terms-modal-header': {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
   },
 
   // 약관 - 모달 - 헤더 - 타이틀
@@ -215,12 +245,14 @@ export const termsStyles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     fontFamily: 'PretendardVariable',
+    flex: 1,
   },
 
   // 약관 - 모달 - 헤더 - 닫기 버튼
   'terms-modal-header-closeButton': {
     fontSize: 24,
     color: '#999',
+    paddingLeft: 20, // ⭐ 터치 영역 확보
   },
 
   // 약관 - 모달 - 컨텐츠
@@ -237,11 +269,18 @@ export const termsStyles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
   },
 
+  // 약관 - 모달 - 확인 버튼 섹션
+  'terms-modal-confirmButtonSection': {
+    padding: 20,
+    paddingBottom: isIPhoneX ? 14 + 20 : 20,
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+
   // 약관 - 모달 - 확인 버튼
   'terms-modal-confirmButton': {
     backgroundColor: '#588DFF',
-    margin: 20,
-    marginTop: 0,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
