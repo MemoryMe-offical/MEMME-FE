@@ -11,7 +11,7 @@ import {
   Image,
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
-import DocumentPicker from 'react-native-document-picker';
+import { pick, types, isErrorWithCode, errorCodes } from '@react-native-documents/picker';
 import { createMasterKey, deleteMasterKey } from '../crypto/keyManager';
 import { getOrCreateDeviceId } from '../crypto/deviceManager';
 import { generateRSAKeyPair, savePrivateKey, loadPrivateKey } from '../crypto/rsaKeyManager';
@@ -307,8 +307,8 @@ const handleInit = async () => {
     }
 
     try {
-      const result = await DocumentPicker.pick({
-        type: [DocumentPicker.types.allFiles],
+      const result = await pick({
+        type: [types.allFiles],
       });
 
       setLoading(true);
@@ -363,7 +363,7 @@ const handleInit = async () => {
         ]
       );
     } catch (error: any) {
-      if (!DocumentPicker.isCancel(error)) {
+      if (!isErrorWithCode(error, errorCodes.OPERATION_CANCELED)) {
         addLog(`파일 암호화 실패: ${error.message}`);
         Alert.alert('❌ 실패', error.message);
       }
