@@ -1,7 +1,7 @@
 // 게시물 카드 컴포넌트 (드롭다운, 아코디언 서브아이템, 자세히 버튼)
 
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, LayoutAnimation, Platform, UIManager } from 'react-native';
+import React, { useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, Animated } from 'react-native';
 import { BoardPost, SubPostItem } from '../../types/chatBoard.type';
 import { boardPostCardStyles as styles } from '../../styles/BoardPostCard.styles';
 import {
@@ -9,11 +9,6 @@ import {
   ChevronUpIcon,
   MoreIcon,
 } from '../common/Icons';
-
-// Android에서 LayoutAnimation 활성화
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 const formatTime = (isoString: string): string => {
   const date = new Date(isoString);
@@ -34,20 +29,51 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
   const [isExpanded, setIsExpanded] = useState(true);
 
   const isGroup = Array.isArray(item.subItems) && item.subItems.length > 0;
+  const initialExpandedId = isGroup && item.subItems!.length > 0 ? item.subItems![0].id : null;
 
-  // 아코디언: 현재 열린 서브아이템 ID (단일 선택, 기본: 첫 번째)
-  const [expandedSubId, setExpandedSubId] = useState<string | null>(
-    isGroup && item.subItems!.length > 0 ? item.subItems![0].id : null,
+  const [expandedSubId, setExpandedSubId] = useState<string | null>(initialExpandedId);
+
+  // 서브아이템별 Animated.Value (0=닫힘, 1=열림)
+  const animatedValues = useRef<Record<string, Animated.Value>>(
+    isGroup
+      ? Object.fromEntries(
+          item.subItems!.map(sub => [
+            sub.id,
+            new Animated.Value(sub.id === initialExpandedId ? 1 : 0),
+          ]),
+        )
+      : {},
   );
 
   const toggleSubItem = (subId: string) => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpandedSubId(prev => (prev === subId ? null : subId));
-  };
+    const isClosing = expandedSubId === subId;
+    const prevId = expandedSubId;
 
-  const handleCardExpand = () => {
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setIsExpanded(prev => !prev);
+    setExpandedSubId(isClosing ? null : subId);
+
+    const animations: Animated.CompositeAnimation[] = [];
+
+    // 이전 항목 닫기
+    if (prevId && prevId !== subId) {
+      animations.push(
+        Animated.timing(animatedValues.current[prevId], {
+          toValue: 0,
+          duration: 220,
+          useNativeDriver: false,
+        }),
+      );
+    }
+
+    // 현재 항목 열기 or 닫기
+    animations.push(
+      Animated.timing(animatedValues.current[subId], {
+        toValue: isClosing ? 0 : 1,
+        duration: 280,
+        useNativeDriver: false,
+      }),
+    );
+
+    Animated.parallel(animations).start();
   };
 
   return (
@@ -68,7 +94,7 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
             <TouchableOpacity onPress={() => onContextMenu(item)} hitSlop={8}>
               <MoreIcon color="#FFFFFF" size={20} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleCardExpand} hitSlop={8}>
+            <TouchableOpacity onPress={() => setIsExpanded(prev => !prev)} hitSlop={8}>
               {isExpanded
                 ? <ChevronUpIcon color="#FFFFFF" size={20} />
                 : <ChevronDownIcon color="#FFFFFF" size={20} />}
@@ -76,7 +102,7 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
           </View>
         </View>
 
-        {/* 접힌 상태 — 활성 서브아이템 제목만 표시 */}
+        {/* 접힌 상태 */}
         {!isExpanded && isGroup && (
           <View style={styles['card-collapsed-subtitle-row']}>
             <Text style={styles['card-collapsed-subtitle-text']} numberOfLines={1}>
@@ -91,8 +117,7 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
         {isExpanded && (
           <View style={styles['card-inner-card']}>
             {isGroup
-              ? /* 그룹 게시물: 아코디언 */
-                item.subItems!.map((sub: SubPostItem, idx: number) => {
+              ? item.subItems!.map((sub: SubPostItem, idx: number) => {
                   const isSubExpanded = expandedSubId === sub.id;
                   const isLast = idx === item.subItems!.length - 1;
                   return (
@@ -108,31 +133,40 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
                           : <ChevronDownIcon color="#555555" size={16} />}
                       </TouchableOpacity>
 
-                      {/* 아코디언 내용 (펼쳐진 경우) */}
-                      {isSubExpanded && (
-                        <View>
-                          <View style={styles['card-section-divider']} />
-                          <View style={styles['card-section-row']}>
-                            <Text style={styles['card-section-label']}>내용</Text>
-                            <Text style={styles['card-content-text']} numberOfLines={3}>
-                              {sub.content}
-                            </Text>
-                          </View>
-                          <View style={styles['card-section-divider']} />
-                          <View style={styles['card-section-row']}>
-                            <Text style={styles['card-section-label']}>사진</Text>
-                          </View>
-                          <View style={styles['card-section-divider']} />
-                          <View style={styles['card-section-row']}>
-                            <Text style={styles['card-section-label']}>링크</Text>
-                          </View>
-                          <TouchableOpacity
-                            style={styles['card-detail-row']}
-                            onPress={() => onDetailPress(item, sub.id)}>
-                            <Text style={styles['card-detail-btn']}>자세히 {'>'}</Text>
-                          </TouchableOpacity>
+                      {/* 애니메이션 콘텐츠 */}
+                      <Animated.View
+                        style={{
+                          maxHeight: animatedValues.current[sub.id].interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [0, 500],
+                          }),
+                          opacity: animatedValues.current[sub.id].interpolate({
+                            inputRange: [0, 0.4, 1],
+                            outputRange: [0, 0, 1],
+                          }),
+                          overflow: 'hidden',
+                        }}>
+                        <View style={styles['card-section-divider']} />
+                        <View style={styles['card-section-row']}>
+                          <Text style={styles['card-section-label']}>내용</Text>
+                          <Text style={styles['card-content-text']} numberOfLines={3}>
+                            {sub.content}
+                          </Text>
                         </View>
-                      )}
+                        <View style={styles['card-section-divider']} />
+                        <View style={styles['card-section-row']}>
+                          <Text style={styles['card-section-label']}>사진</Text>
+                        </View>
+                        <View style={styles['card-section-divider']} />
+                        <View style={styles['card-section-row']}>
+                          <Text style={styles['card-section-label']}>링크</Text>
+                        </View>
+                        <TouchableOpacity
+                          style={styles['card-detail-row']}
+                          onPress={() => onDetailPress(item, sub.id)}>
+                          <Text style={styles['card-detail-btn']}>자세히 {'>'}</Text>
+                        </TouchableOpacity>
+                      </Animated.View>
 
                       {/* 아이템 사이 구분선 (마지막 제외) */}
                       {!isLast && <View style={styles['sub-accordion-divider']} />}
