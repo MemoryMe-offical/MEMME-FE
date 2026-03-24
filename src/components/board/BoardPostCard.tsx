@@ -35,22 +35,14 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
 
   const isGroup = Array.isArray(item.subItems) && item.subItems.length > 0;
 
-  // 아코디언: 펼쳐진 서브아이템 ID 집합 (기본: 첫 번째만 열림)
-  const [expandedSubIds, setExpandedSubIds] = useState<Set<string>>(
-    new Set(isGroup && item.subItems!.length > 0 ? [item.subItems![0].id] : []),
+  // 아코디언: 현재 열린 서브아이템 ID (단일 선택, 기본: 첫 번째)
+  const [expandedSubId, setExpandedSubId] = useState<string | null>(
+    isGroup && item.subItems!.length > 0 ? item.subItems![0].id : null,
   );
 
   const toggleSubItem = (subId: string) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpandedSubIds(prev => {
-      const next = new Set(prev);
-      if (next.has(subId)) {
-        next.delete(subId);
-      } else {
-        next.add(subId);
-      }
-      return next;
-    });
+    setExpandedSubId(prev => (prev === subId ? null : subId));
   };
 
   const handleCardExpand = () => {
@@ -88,8 +80,8 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
         {!isExpanded && isGroup && (
           <View style={styles['card-collapsed-subtitle-row']}>
             <Text style={styles['card-collapsed-subtitle-text']} numberOfLines={1}>
-              {[...expandedSubIds][0]
-                ? item.subItems!.find(s => s.id === [...expandedSubIds][0])?.title ?? item.subItems![0].title
+              {expandedSubId
+                ? item.subItems!.find(s => s.id === expandedSubId)?.title ?? item.subItems![0].title
                 : item.subItems![0].title}
             </Text>
           </View>
@@ -101,7 +93,7 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
             {isGroup
               ? /* 그룹 게시물: 아코디언 */
                 item.subItems!.map((sub: SubPostItem, idx: number) => {
-                  const isSubExpanded = expandedSubIds.has(sub.id);
+                  const isSubExpanded = expandedSubId === sub.id;
                   const isLast = idx === item.subItems!.length - 1;
                   return (
                     <View key={sub.id}>

@@ -140,6 +140,7 @@ const MainScreen = () => {
   const [contextMenuItem, setContextMenuItem] = useState<ChatBoardItem | null>(null);
   const [sideMenuVisible, setSideMenuVisible] = useState(false);
   const flatListRef = useRef<FlatList<ChatBoardItem>>(null);
+  const shouldScrollToEnd = useRef(false);
 
   // ── 컨텍스트 메뉴 (롱프레스 / ... 버튼) ──
   const handleContextMenu = (item: ChatBoardItem) => setContextMenuItem(item);
@@ -279,11 +280,9 @@ const MainScreen = () => {
       text: inputText.trim(),
       createdAt: new Date().toISOString(),
     };
+    shouldScrollToEnd.current = true;
     setItems(prev => [...prev, newItem]);
     setInputText('');
-    setTimeout(() => {
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }, 100);
   };
 
   return (
@@ -332,9 +331,12 @@ const MainScreen = () => {
             contentContainerStyle={styles['main-listContent']}
             keyboardDismissMode="interactive"
             keyboardShouldPersistTaps="handled"
-            onContentSizeChange={() =>
-              flatListRef.current?.scrollToEnd({ animated: false })
-            }
+            onContentSizeChange={() => {
+              if (shouldScrollToEnd.current) {
+                shouldScrollToEnd.current = false;
+                flatListRef.current?.scrollToEnd({ animated: false });
+              }
+            }}
             renderItem={({ item }) => {
               if (item.type === 'chat') {
                 return (
