@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 
 export const boardPostCardStyles = StyleSheet.create({
-  // 행 컨테이너 (채팅과 동일한 우측 정렬 구조)
+  // 행 컨테이너
   'card-row': {
     flexDirection: 'row',
     justifyContent: 'flex-end',
@@ -18,21 +18,21 @@ export const boardPostCardStyles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
   },
 
-  // 카드 전체 래퍼
+  // 카드 전체 래퍼 — 연한 파란 배경 (헤더 아래 바디 영역)
   'card-wrapper': {
     maxWidth: '85%',
-    minWidth: 200,
+    minWidth: 220,
     borderRadius: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#cfdfff',
     shadowColor: '#3A6FCC',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 4,
     overflow: 'hidden',
   },
 
-  // 파란색 헤더
+  // 헤더 — 진한 파란 배경 + 흰색 텍스트/아이콘
   'card-header': {
     flexDirection: 'row',
     alignItems: 'center',
@@ -44,8 +44,8 @@ export const boardPostCardStyles = StyleSheet.create({
   // 헤더 제목 텍스트
   'card-header-title': {
     flex: 1,
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
     color: '#FFFFFF',
     fontFamily: 'PretendardVariable',
   },
@@ -57,34 +57,51 @@ export const boardPostCardStyles = StyleSheet.create({
     gap: 10,
   },
 
-  // 바디 영역
-  'card-body': {
+  // 내부 흰색 카드
+  'card-inner-card': {
+    margin: 12,
+    borderRadius: 12,
+    backgroundColor: '#f4f8ff',
+    overflow: 'hidden',
+  },
+
+  // 내부 카드 서브아이템 제목 — 가운데 정렬
+  'card-inner-title': {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#2663ef',
+    fontFamily: 'PretendardVariable',
+    textAlign: 'center',
     paddingHorizontal: 16,
     paddingTop: 14,
-    paddingBottom: 10,
+    paddingBottom: 14,
   },
 
-  // 서브아이템 제목 (그룹일 때만 표시)
-  'card-body-subtitle': {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    fontFamily: 'PretendardVariable',
-    marginBottom: 8,
+  // 섹션 구분선
+  'card-section-divider': {
+    height: 1,
+    backgroundColor: '#E8EAED',
   },
 
-  // "내용" 섹션 레이블
+  // 섹션 행 (내용 / 사진 / 링크)
+  'card-section-row': {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    minHeight: 52,
+  },
+
+  // "내용" / "사진" / "링크" 섹션 레이블
   'card-section-label': {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#8899AA',
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#2663ef',
     fontFamily: 'PretendardVariable',
-    marginBottom: 5,
+    marginBottom: 6,
   },
 
   // 본문 텍스트
   'card-content-text': {
-    fontSize: 14,
+    fontSize: 13,
     color: '#333333',
     fontFamily: 'PretendardVariable',
     lineHeight: 20,
@@ -94,8 +111,8 @@ export const boardPostCardStyles = StyleSheet.create({
   'card-detail-row': {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: 8,
-    paddingBottom: 4,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
   },
 
   // "자세히 >" 버튼 텍스트
@@ -108,10 +125,12 @@ export const boardPostCardStyles = StyleSheet.create({
 
   // 접힌 상태 서브아이템 제목 행
   'card-collapsed-subtitle-row': {
+    marginHorizontal: 12,
+    marginBottom: 12,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: '#E8EEF8',
+    paddingVertical: 12,
   },
 
   // 접힌 상태 서브아이템 제목 텍스트
@@ -122,29 +141,27 @@ export const boardPostCardStyles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // 서브탭 행 (하단)
+  // 서브탭 행 — 세로로 쌓인 전체 너비 버튼들
   'card-subtab-row': {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: 'column',
     gap: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#E8EEF8',
+    paddingHorizontal: 12,
+    paddingTop: 4,
+    paddingBottom: 12,
   },
 
-  // 서브탭 버튼
+  // 서브탭 버튼 — 전체 너비, 흰색 배경
   'card-subtab-btn': {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: '#EEF3FF',
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
   },
 
   // 서브탭 버튼 텍스트
   'card-subtab-text': {
-    fontSize: 13,
-    color: '#588DFF',
+    fontSize: 14,
+    color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
     fontWeight: '500',
   },

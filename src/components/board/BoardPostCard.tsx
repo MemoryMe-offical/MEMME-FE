@@ -54,6 +54,7 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
         onLongPress={() => onContextMenu(item)}
         delayLongPress={400}
         style={styles['card-wrapper']}>
+
         {/* 헤더 */}
         <View style={styles['card-header']}>
           <Text style={styles['card-header-title']} numberOfLines={1}>
@@ -71,7 +72,7 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
           </View>
         </View>
 
-        {/* 접힌 상태 서브아이템 제목 */}
+        {/* 접힌 상태 */}
         {!isExpanded && isGroup && activeSubItem && (
           <View style={styles['card-collapsed-subtitle-row']}>
             <Text style={styles['card-collapsed-subtitle-text']} numberOfLines={2}>
@@ -80,19 +81,36 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
           </View>
         )}
 
-        {/* 바디 */}
+        {/* 펼쳐진 상태 — 내부 흰색 카드 */}
         {isExpanded && (
-          <View style={styles['card-body']}>
-            {/* 그룹일 때 활성 서브아이템 제목 */}
+          <View style={styles['card-inner-card']}>
+            {/* 서브아이템 제목 (그룹일 때만) */}
             {isGroup && activeSubItem && (
-              <Text style={styles['card-body-subtitle']}>{activeSubItem.title}</Text>
+              <Text style={styles['card-inner-title']}>{activeSubItem.title}</Text>
             )}
 
-            <Text style={styles['card-section-label']}>내용</Text>
-            <Text style={styles['card-content-text']} numberOfLines={3}>
-              {isGroup ? (activeSubItem?.content ?? '') : item.content}
-            </Text>
+            {/* 내용 섹션 */}
+            <View style={styles['card-section-divider']} />
+            <View style={styles['card-section-row']}>
+              <Text style={styles['card-section-label']}>내용</Text>
+              <Text style={styles['card-content-text']} numberOfLines={3}>
+                {isGroup ? (activeSubItem?.content ?? '') : item.content}
+              </Text>
+            </View>
 
+            {/* 사진 섹션 */}
+            <View style={styles['card-section-divider']} />
+            <View style={styles['card-section-row']}>
+              <Text style={styles['card-section-label']}>사진</Text>
+            </View>
+
+            {/* 링크 섹션 */}
+            <View style={styles['card-section-divider']} />
+            <View style={styles['card-section-row']}>
+              <Text style={styles['card-section-label']}>링크</Text>
+            </View>
+
+            {/* 자세히 버튼 */}
             <TouchableOpacity style={styles['card-detail-row']} onPress={handleDetailPress}>
               <Text style={styles['card-detail-btn']}>자세히 {'>'}</Text>
             </TouchableOpacity>
