@@ -1,7 +1,7 @@
-// 게시물 카드 컴포넌트 (드롭다운, 서브탭, 자세히 버튼)
+// 게시물 카드 컴포넌트 (드롭다운, 아코디언 서브아이템, 자세히 버튼)
 
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity, LayoutAnimation, Platform, UIManager } from 'react-native';
 import { BoardPost, SubPostItem } from '../../types/chatBoard.type';
 import { boardPostCardStyles as styles } from '../../styles/BoardPostCard.styles';
 import {
@@ -9,6 +9,11 @@ import {
   ChevronUpIcon,
   MoreIcon,
 } from '../common/Icons';
+
+// Android에서 LayoutAnimation 활성화
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 const formatTime = (isoString: string): string => {
   const date = new Date(isoString);
@@ -27,23 +32,30 @@ interface BoardPostCardProps {
 
 const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
-  const [activeSubIndex, setActiveSubIndex] = useState(0);
 
   const isGroup = Array.isArray(item.subItems) && item.subItems.length > 0;
-  const activeSubItem: SubPostItem | null = isGroup ? (item.subItems![activeSubIndex] ?? null) : null;
-  const inactiveSubItems = isGroup
-    ? item.subItems!.filter((_, i) => i !== activeSubIndex)
-    : [];
 
-  const handleSubTabPress = (subItem: SubPostItem) => {
-    const idx = item.subItems!.findIndex(s => s.id === subItem.id);
-    if (idx !== -1) {
-      setActiveSubIndex(idx);
-    }
+  // 아코디언: 펼쳐진 서브아이템 ID 집합 (기본: 첫 번째만 열림)
+  const [expandedSubIds, setExpandedSubIds] = useState<Set<string>>(
+    new Set(isGroup && item.subItems!.length > 0 ? [item.subItems![0].id] : []),
+  );
+
+  const toggleSubItem = (subId: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedSubIds(prev => {
+      const next = new Set(prev);
+      if (next.has(subId)) {
+        next.delete(subId);
+      } else {
+        next.add(subId);
+      }
+      return next;
+    });
   };
 
-  const handleDetailPress = () => {
-    onDetailPress(item, activeSubItem?.id);
+  const handleCardExpand = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setIsExpanded(prev => !prev);
   };
 
   return (
@@ -64,7 +76,7 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
             <TouchableOpacity onPress={() => onContextMenu(item)} hitSlop={8}>
               <MoreIcon color="#FFFFFF" size={20} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setIsExpanded(prev => !prev)} hitSlop={8}>
+            <TouchableOpacity onPress={handleCardExpand} hitSlop={8}>
               {isExpanded
                 ? <ChevronUpIcon color="#FFFFFF" size={20} />
                 : <ChevronDownIcon color="#FFFFFF" size={20} />}
@@ -72,63 +84,92 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
           </View>
         </View>
 
-        {/* 접힌 상태 */}
-        {!isExpanded && isGroup && activeSubItem && (
+        {/* 접힌 상태 — 활성 서브아이템 제목만 표시 */}
+        {!isExpanded && isGroup && (
           <View style={styles['card-collapsed-subtitle-row']}>
-            <Text style={styles['card-collapsed-subtitle-text']} numberOfLines={2}>
-              {activeSubItem.title}
+            <Text style={styles['card-collapsed-subtitle-text']} numberOfLines={1}>
+              {[...expandedSubIds][0]
+                ? item.subItems!.find(s => s.id === [...expandedSubIds][0])?.title ?? item.subItems![0].title
+                : item.subItems![0].title}
             </Text>
           </View>
         )}
 
-        {/* 펼쳐진 상태 — 내부 흰색 카드 */}
+        {/* 펼쳐진 상태 */}
         {isExpanded && (
           <View style={styles['card-inner-card']}>
-            {/* 서브아이템 제목 (그룹일 때만) */}
-            {isGroup && activeSubItem && (
-              <Text style={styles['card-inner-title']}>{activeSubItem.title}</Text>
-            )}
+            {isGroup
+              ? /* 그룹 게시물: 아코디언 */
+                item.subItems!.map((sub: SubPostItem, idx: number) => {
+                  const isSubExpanded = expandedSubIds.has(sub.id);
+                  const isLast = idx === item.subItems!.length - 1;
+                  return (
+                    <View key={sub.id}>
+                      {/* 아코디언 헤더 */}
+                      <TouchableOpacity
+                        style={styles['sub-accordion-header']}
+                        onPress={() => toggleSubItem(sub.id)}
+                        activeOpacity={0.7}>
+                        <Text style={styles['sub-accordion-title']}>{sub.title}</Text>
+                        {isSubExpanded
+                          ? <ChevronUpIcon color="#555555" size={16} />
+                          : <ChevronDownIcon color="#555555" size={16} />}
+                      </TouchableOpacity>
 
-            {/* 내용 섹션 */}
-            <View style={styles['card-section-divider']} />
-            <View style={styles['card-section-row']}>
-              <Text style={styles['card-section-label']}>내용</Text>
-              <Text style={styles['card-content-text']} numberOfLines={3}>
-                {isGroup ? (activeSubItem?.content ?? '') : item.content}
-              </Text>
-            </View>
+                      {/* 아코디언 내용 (펼쳐진 경우) */}
+                      {isSubExpanded && (
+                        <View>
+                          <View style={styles['card-section-divider']} />
+                          <View style={styles['card-section-row']}>
+                            <Text style={styles['card-section-label']}>내용</Text>
+                            <Text style={styles['card-content-text']} numberOfLines={3}>
+                              {sub.content}
+                            </Text>
+                          </View>
+                          <View style={styles['card-section-divider']} />
+                          <View style={styles['card-section-row']}>
+                            <Text style={styles['card-section-label']}>사진</Text>
+                          </View>
+                          <View style={styles['card-section-divider']} />
+                          <View style={styles['card-section-row']}>
+                            <Text style={styles['card-section-label']}>링크</Text>
+                          </View>
+                          <TouchableOpacity
+                            style={styles['card-detail-row']}
+                            onPress={() => onDetailPress(item, sub.id)}>
+                            <Text style={styles['card-detail-btn']}>자세히 {'>'}</Text>
+                          </TouchableOpacity>
+                        </View>
+                      )}
 
-            {/* 사진 섹션 */}
-            <View style={styles['card-section-divider']} />
-            <View style={styles['card-section-row']}>
-              <Text style={styles['card-section-label']}>사진</Text>
-            </View>
-
-            {/* 링크 섹션 */}
-            <View style={styles['card-section-divider']} />
-            <View style={styles['card-section-row']}>
-              <Text style={styles['card-section-label']}>링크</Text>
-            </View>
-
-            {/* 자세히 버튼 */}
-            <TouchableOpacity style={styles['card-detail-row']} onPress={handleDetailPress}>
-              <Text style={styles['card-detail-btn']}>자세히 {'>'}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* 서브탭 (그룹이고 펼쳐진 상태, 비활성 서브아이템 있을 때) */}
-        {isExpanded && isGroup && inactiveSubItems.length > 0 && (
-          <View style={styles['card-subtab-row']}>
-            {inactiveSubItems.map(sub => (
-              <TouchableOpacity
-                key={sub.id}
-                style={styles['card-subtab-btn']}
-                onPress={() => handleSubTabPress(sub)}
-                activeOpacity={0.7}>
-                <Text style={styles['card-subtab-text']}>{sub.title}</Text>
-              </TouchableOpacity>
-            ))}
+                      {/* 아이템 사이 구분선 (마지막 제외) */}
+                      {!isLast && <View style={styles['sub-accordion-divider']} />}
+                    </View>
+                  );
+                })
+              : /* 단일 게시물 */
+                <View>
+                  <View style={styles['card-section-row']}>
+                    <Text style={styles['card-section-label']}>내용</Text>
+                    <Text style={styles['card-content-text']} numberOfLines={3}>
+                      {item.content}
+                    </Text>
+                  </View>
+                  <View style={styles['card-section-divider']} />
+                  <View style={styles['card-section-row']}>
+                    <Text style={styles['card-section-label']}>사진</Text>
+                  </View>
+                  <View style={styles['card-section-divider']} />
+                  <View style={styles['card-section-row']}>
+                    <Text style={styles['card-section-label']}>링크</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles['card-detail-row']}
+                    onPress={() => onDetailPress(item)}>
+                    <Text style={styles['card-detail-btn']}>자세히 {'>'}</Text>
+                  </TouchableOpacity>
+                </View>
+            }
           </View>
         )}
       </TouchableOpacity>

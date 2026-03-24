@@ -141,6 +141,30 @@ export const boardPostCardStyles = StyleSheet.create({
     fontWeight: '600',
   },
 
+  // 아코디언 서브아이템 헤더 (제목 + 열기/닫기 아이콘)
+  'sub-accordion-header': {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+
+  // 아코디언 서브아이템 제목
+  'sub-accordion-title': {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    fontFamily: 'PretendardVariable',
+  },
+
+  // 아코디언 아이템 사이 구분선
+  'sub-accordion-divider': {
+    height: 1,
+    backgroundColor: '#D0DAFA',
+    marginHorizontal: 16,
+  },
+
   // 서브탭 행 — 세로로 쌓인 전체 너비 버튼들
   'card-subtab-row': {
     flexDirection: 'column',
