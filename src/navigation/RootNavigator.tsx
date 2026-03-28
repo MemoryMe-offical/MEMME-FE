@@ -9,7 +9,6 @@ import SignupScreen from '../screens/SignupScreen';
 import TermsScreen from '../screens/Termsscreen';
 import BoardPostDetailScreen from '../screens/BoardPostDetailScreen';
 import { BoardPost } from '../types/chatBoard.type';
-import EncryptionTestScreen from '../screens/EncryptionTestScreen';
 import DevicePairingScreen from '../screens/DevicePairingScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 
@@ -82,12 +81,6 @@ const RootNavigator = () => {
             <Stack.Screen
                 name="BoardPostDetail"
                 component={BoardPostDetailScreen}
-            />
-
-            <Stack.Screen
-                name="EncryptionTest"
-                component={EncryptionTestScreen}
-                options={{ title: '암호화 테스트' }}
             />
 
             <Stack.Screen

@@ -34,8 +34,8 @@ const onboardingData: OnboardingItem[] = [
   },
   {
     id: '2',
-    title: 'AI가 링크 내용을\n자동으로 요약',
-    description: 'YouTube, 블로그, 뉴스\n긴 콘텐츠를 3줄로 정리해드립니다',
+    title: '묶어서 게시글로\n링크는 AI가 요약',
+    description: '흩어진 메모를 게시글로 정리하고\nYouTube, 블로그는 핵심만 추려드려요',
     image: require('../assets/imgs/onbording2.png'),
   },
   {
