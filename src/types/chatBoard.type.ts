@@ -18,11 +18,19 @@ export interface ChatMessage extends BaseItem {
     text: string; // 메시지 내용
 }
 
+// 게시물 하위 항목 타입 (그룹 게시물의 각 내용)
+export interface SubPostItem {
+    id: string;
+    title: string;
+    content: string;
+}
+
 // 게시판 글 타입
 export interface BoardPost extends BaseItem {
     type: 'post';
-    title: string; // 제목
-    content: string; // 내용
+    title: string; // 단일: 게시물 제목 / 그룹: 그룹명
+    content: string; // 단일 게시물일 때 사용
+    subItems?: SubPostItem[]; // 하위 게시물 (있으면 그룹으로 동작)
 }
 
 // 메인 화면의 리스트에 들어갈 통합 아이템 타입

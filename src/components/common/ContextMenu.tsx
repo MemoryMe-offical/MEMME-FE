@@ -93,8 +93,8 @@ const ContextMenu = ({
             style={styles['contextMenu-item']}
             onPress={() => handleAction(onCopy)}
             activeOpacity={0.6}>
-            <CopyIcon color="#1A1A1A" size={18} />
             <Text style={styles['contextMenu-item-text']}>{copyLabel}</Text>
+            <CopyIcon color="#3A3A3A" size={20} />
           </TouchableOpacity>
 
           <View style={styles['contextMenu-separator']} />
@@ -104,12 +104,12 @@ const ContextMenu = ({
             style={styles['contextMenu-item']}
             onPress={() => handleAction(onBookmark)}
             activeOpacity={0.6}>
-            {isBookmarked
-              ? <BookmarkFilledIcon color="#FF9500" size={18} />
-              : <BookmarkIcon color="#AABBCC" size={18} />}
             <Text style={styles['contextMenu-item-text']}>
               {isBookmarked ? '북마크 해제' : '북마크'}
             </Text>
+            {isBookmarked
+              ? <BookmarkFilledIcon color="#FF9500" size={20} />
+              : <BookmarkIcon color="#3A3A3A" size={20} />}
           </TouchableOpacity>
 
           <View style={styles['contextMenu-separator']} />
@@ -119,8 +119,8 @@ const ContextMenu = ({
             style={styles['contextMenu-item']}
             onPress={() => handleAction(onConvert)}
             activeOpacity={0.6}>
-            <ConvertIcon color="#588DFF" size={18} />
-            <Text style={styles['contextMenu-item-text--convert']}>{convertLabel}</Text>
+            <Text style={styles['contextMenu-item-text']}>{convertLabel}</Text>
+            <ConvertIcon color="#3A3A3A" size={20} />
           </TouchableOpacity>
 
           <View style={styles['contextMenu-separator']} />
@@ -130,8 +130,8 @@ const ContextMenu = ({
             style={styles['contextMenu-item']}
             onPress={() => handleAction(onDelete)}
             activeOpacity={0.6}>
-            <TrashIcon color="#FF3B30" size={18} />
             <Text style={styles['contextMenu-item-text--danger']}>삭제</Text>
+            <TrashIcon color="#FF3B30" size={20} />
           </TouchableOpacity>
         </Animated.View>
       </Animated.View>

@@ -20,8 +20,8 @@ export const SearchIcon = ({ color = '#1A1A1A', size = 20, style }: IconProps) =
   <MCI name="magnify" color={color} size={size} style={style} />
 );
 
-export const SendIcon = ({ color = '#FFFFFF', size = 18, style }: IconProps) => (
-  <MCI name="send" color={color} size={size} style={style} />
+export const SendIcon = ({ color = '#FFFFFF', size = 18, style,  }: IconProps) => (
+  <MCI name="send" color={color} size={size} style={[{ transform: [{ rotate: '-30deg' }] }, style]} />
 );
 
 export const PlusIcon = ({ color = '#888', size = 22, style }: IconProps) => (
@@ -66,4 +66,20 @@ export const BookmarkIcon = ({ color = '#AABBCC', size = 18, style }: IconProps)
 
 export const BookmarkFilledIcon = ({ color = '#FF9500', size = 18, style }: IconProps) => (
   <MCI name="bookmark" color={color} size={size} style={style} />
+);
+
+export const MoreIcon = ({ color = '#1A1A1A', size = 20, style }: IconProps) => (
+  <MCI name="dots-horizontal" color={color} size={size} style={style} />
+);
+
+export const ChevronDownIcon = ({ color = '#1A1A1A', size = 18, style }: IconProps) => (
+  <MCI name="chevron-down" color={color} size={size} style={style} />
+);
+
+export const ChevronUpIcon = ({ color = '#1A1A1A', size = 18, style }: IconProps) => (
+  <MCI name="chevron-up" color={color} size={size} style={style} />
+);
+
+export const ArrowLeftIcon = ({ color = '#1A1A1A', size = 22, style }: IconProps) => (
+  <MCI name="arrow-left" color={color} size={size} style={style} />
 );
