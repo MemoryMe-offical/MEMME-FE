@@ -1,7 +1,5 @@
-// 게시물 카드 컴포넌트 (드롭다운, 아코디언 서브아이템, 자세히 버튼)
-
 import React, { useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, Animated, Image, Linking } from 'react-native';
 import { BoardPost, SubPostItem } from '../../types/chatBoard.type';
 import { boardPostCardStyles as styles } from '../../styles/BoardPostCard.styles';
 import {
@@ -25,15 +23,50 @@ interface BoardPostCardProps {
   onDetailPress: (post: BoardPost, subItemId?: string) => void;
 }
 
+// OG 카드 컴포넌트
+const OgCard = ({ url, ogData }: { url: string; ogData?: BoardPost['ogData'] }) => (
+  <TouchableOpacity
+    style={styles['card-og-card']}
+    onPress={() => Linking.openURL(url)}
+    activeOpacity={0.8}>
+    {ogData?.imageUrl && (
+      <Image
+        source={{ uri: ogData.imageUrl }}
+        style={styles['card-og-image']}
+        resizeMode="cover"
+      />
+    )}
+    <View style={styles['card-og-text']}>
+      {ogData?.siteName && (
+        <Text style={styles['card-og-sitename']}>{ogData.siteName}</Text>
+      )}
+      <Text style={styles['card-og-title']} numberOfLines={2}>
+        {ogData?.title || url}
+      </Text>
+      {ogData?.description && (
+        <Text style={styles['card-og-desc']} numberOfLines={2}>
+          {ogData.description}
+        </Text>
+      )}
+      <Text style={styles['card-og-url']} numberOfLines={1}>{url}</Text>
+    </View>
+  </TouchableOpacity>
+);
+
+// 링크 섹션
+const LinkSection = ({ item }: { item: BoardPost }) => (
+  <View style={styles['card-section-row']}>
+    <Text style={styles['card-section-label']}>링크</Text>
+    {item.url && <OgCard url={item.url} ogData={item.ogData} />}
+  </View>
+);
+
 const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
-
   const isGroup = Array.isArray(item.subItems) && item.subItems.length > 0;
   const initialExpandedId = isGroup && item.subItems!.length > 0 ? item.subItems![0].id : null;
-
   const [expandedSubId, setExpandedSubId] = useState<string | null>(initialExpandedId);
 
-  // 서브아이템별 Animated.Value (0=닫힘, 1=열림)
   const animatedValues = useRef<Record<string, Animated.Value>>(
     isGroup
       ? Object.fromEntries(
@@ -48,12 +81,9 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
   const toggleSubItem = (subId: string) => {
     const isClosing = expandedSubId === subId;
     const prevId = expandedSubId;
-
     setExpandedSubId(isClosing ? null : subId);
 
     const animations: Animated.CompositeAnimation[] = [];
-
-    // 이전 항목 닫기
     if (prevId && prevId !== subId) {
       animations.push(
         Animated.timing(animatedValues.current[prevId], {
@@ -63,8 +93,6 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
         }),
       );
     }
-
-    // 현재 항목 열기 or 닫기
     animations.push(
       Animated.timing(animatedValues.current[subId], {
         toValue: isClosing ? 0 : 1,
@@ -72,7 +100,6 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
         useNativeDriver: false,
       }),
     );
-
     Animated.parallel(animations).start();
   };
 
@@ -122,7 +149,6 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
                   const isLast = idx === item.subItems!.length - 1;
                   return (
                     <View key={sub.id}>
-                      {/* 아코디언 헤더 */}
                       <TouchableOpacity
                         style={styles['sub-accordion-header']}
                         onPress={() => toggleSubItem(sub.id)}
@@ -133,7 +159,6 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
                           : <ChevronDownIcon color="#555555" size={16} />}
                       </TouchableOpacity>
 
-                      {/* 애니메이션 콘텐츠 */}
                       <Animated.View
                         style={{
                           maxHeight: animatedValues.current[sub.id].interpolate({
@@ -158,9 +183,7 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
                           <Text style={styles['card-section-label']}>사진</Text>
                         </View>
                         <View style={styles['card-section-divider']} />
-                        <View style={styles['card-section-row']}>
-                          <Text style={styles['card-section-label']}>링크</Text>
-                        </View>
+                        <LinkSection item={item} />
                         <TouchableOpacity
                           style={styles['card-detail-row']}
                           onPress={() => onDetailPress(item, sub.id)}>
@@ -168,13 +191,11 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
                         </TouchableOpacity>
                       </Animated.View>
 
-                      {/* 아이템 사이 구분선 (마지막 제외) */}
                       {!isLast && <View style={styles['sub-accordion-divider']} />}
                     </View>
                   );
                 })
-              : /* 단일 게시물 */
-                <View>
+              : <View>
                   <View style={styles['card-section-row']}>
                     <Text style={styles['card-section-label']}>내용</Text>
                     <Text style={styles['card-content-text']} numberOfLines={3}>
@@ -186,9 +207,7 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
                     <Text style={styles['card-section-label']}>사진</Text>
                   </View>
                   <View style={styles['card-section-divider']} />
-                  <View style={styles['card-section-row']}>
-                    <Text style={styles['card-section-label']}>링크</Text>
-                  </View>
+                  <LinkSection item={item} />
                   <TouchableOpacity
                     style={styles['card-detail-row']}
                     onPress={() => onDetailPress(item)}>

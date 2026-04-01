@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   View,
   FlatList,
@@ -9,11 +9,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  AppState,
+  NativeModules,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { BoardPost, ChatBoardItem, ChatMessage } from '../types/chatBoard.type';
+import ReceiveSharingIntent from 'react-native-receive-sharing-intent';
+import { BoardPost, ChatBoardItem, ChatMessage, OgData } from '../types/chatBoard.type';
 import ChatMessageItem from '../components/chat/ChatMessageItem';
 import BoardPostCard from '../components/board/BoardPostCard';
 import ContextMenu from '../components/common/ContextMenu';
@@ -22,8 +26,6 @@ import { HamburgerIcon, PlusIcon, SearchIcon, SendIcon } from '../components/com
 import { mainStyles as styles } from '../styles/MainScreen.styles';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 
-
-// 테스트용 하드코딩 데이터
 const initItems: ChatBoardItem[] = [
   {
     id: '1',
@@ -80,7 +82,6 @@ const initItems: ChatBoardItem[] = [
     text: '내일 팀 발표 준비 마저 하기. 슬라이드 7장까지 완성했고 마무리 멘트만 남았음',
     createdAt: new Date(2026, 1, 25, 17, 52, 0).toISOString(),
   },
-  // [케이스 A] 단일 게시물 — 내용 긴 경우 (3줄 truncation 확인)
   {
     id: '7',
     userId: '24',
@@ -90,7 +91,6 @@ const initItems: ChatBoardItem[] = [
     content: '3월 여행 일정 정리\n\n1일차: 인천 출발 → 오사카 도착, 난바 숙소 체크인, 도톤보리 저녁\n2일차: 유니버설 스튜디오 재팬 종일\n3일차: 교토 당일치기 (금각사, 아라시야마, 기온)\n4일차: 오사카 쇼핑 (신사이바시, 아메리카무라) → 귀국',
     createdAt: new Date(2026, 1, 26, 9, 0, 0).toISOString(),
   },
-  // [케이스 B] 그룹 게시물 — 하위 항목 2개 (탭 1개만 보이는 최소 케이스)
   {
     id: '8',
     userId: '24',
@@ -104,7 +104,6 @@ const initItems: ChatBoardItem[] = [
     ],
     createdAt: new Date(2026, 1, 26, 11, 0, 0).toISOString(),
   },
-  // [케이스 C] 단일 게시물 — 내용 없음 (빈 content 엣지 케이스)
   {
     id: '9',
     userId: '24',
@@ -114,7 +113,6 @@ const initItems: ChatBoardItem[] = [
     content: '',
     createdAt: new Date(2026, 1, 26, 13, 30, 0).toISOString(),
   },
-  // [케이스 D] 그룹 게시물 — 하위 항목 4개 (탭 여러 개 줄바꿈 확인)
   {
     id: '10',
     userId: '24',
@@ -132,6 +130,32 @@ const initItems: ChatBoardItem[] = [
   },
 ];
 
+// OG 메타데이터 fetch
+const fetchOgData = async (url: string): Promise<OgData> => {
+  try {
+    const res = await fetch(url);
+    const html = await res.text();
+
+    const getMeta = (property: string): string => {
+      const match =
+        html.match(new RegExp(`<meta[^>]+property=["']og:${property}["'][^>]+content=["']([^"']+)["']`, 'i')) ||
+        html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:${property}["']`, 'i'));
+      return match?.[1] ?? '';
+    };
+
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+
+    return {
+      title: getMeta('title') || titleMatch?.[1] || url,
+      description: getMeta('description'),
+      imageUrl: getMeta('image'),
+      siteName: getMeta('site_name'),
+    };
+  } catch {
+    return { title: url };
+  }
+};
+
 const MainScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Main'>>();
@@ -141,15 +165,63 @@ const MainScreen = () => {
   const [sideMenuVisible, setSideMenuVisible] = useState(false);
   const flatListRef = useRef<FlatList<ChatBoardItem>>(null);
   const shouldScrollToEnd = useRef(false);
+  const { SharedDefaultsModule } = NativeModules;
+  const nativeShareModule =
+  Platform.OS === 'ios'
+    ? NativeModules.SharedDefaultsModule
+    : NativeModules.SharedIntentModule;
 
-  // ── 컨텍스트 메뉴 (롱프레스 / ... 버튼) ──
+  const handleSharedUrl = async (url: string) => {
+    console.log('handleSharedUrl 호출됨:', url);
+  
+    const ogData = await fetchOgData(url);
+  
+    const newItem: BoardPost = {
+      id: Date.now().toString(),
+      userId: '24',
+      type: 'post',
+      bookMark: false,
+      title: ogData.title || url,
+      content: ogData.description || '',
+      url,
+      ogData,
+      createdAt: new Date().toISOString(),
+    };
+  
+    shouldScrollToEnd.current = true;
+    setItems(prev => [...prev, newItem]);
+  };
+  
+  useEffect(() => {
+    const getShared = async () => {
+      const url = await nativeShareModule?.getSharedURL();
+  
+      console.log('🔥 RN에서 받은 값:', url);
+  
+      if (typeof url === 'string' && url.startsWith('http')) {
+        await handleSharedUrl(url);
+        await nativeShareModule?.clearSharedURL();
+      }
+    };
+  
+    getShared();
+  
+    const sub = AppState.addEventListener('change', (state) => {
+      console.log('AppState changed:', state);
+      if (state === 'active') {
+        getShared();
+      }
+    });
+  
+    return () => sub.remove();
+  }, []);
+
+  // ── 컨텍스트 메뉴 ──
   const handleContextMenu = (item: ChatBoardItem) => setContextMenuItem(item);
   const handleCloseContextMenu = () => setContextMenuItem(null);
 
   const handleContextCopy = () => {
-    if (!contextMenuItem) {
-      return;
-    }
+    if (!contextMenuItem) return;
     const text =
       contextMenuItem.type === 'chat'
         ? contextMenuItem.text
@@ -158,9 +230,7 @@ const MainScreen = () => {
   };
 
   const handleContextBookmark = () => {
-    if (!contextMenuItem) {
-      return;
-    }
+    if (!contextMenuItem) return;
     setItems(prev =>
       prev.map(item =>
         item.id === contextMenuItem.id
@@ -171,11 +241,8 @@ const MainScreen = () => {
   };
 
   const handleContextConvert = () => {
-    if (!contextMenuItem) {
-      return;
-    }
+    if (!contextMenuItem) return;
     if (contextMenuItem.type === 'chat') {
-      // 채팅 → 게시물: 비파괴적, 바로 변환
       const chat = contextMenuItem as ChatMessage;
       const newPost: BoardPost = {
         id: chat.id,
@@ -188,7 +255,6 @@ const MainScreen = () => {
       };
       setItems(prev => prev.map(item => item.id === chat.id ? newPost : item));
     } else {
-      // 게시물 → 채팅: 파괴적, Alert 확인 필요
       const post = contextMenuItem as BoardPost;
       Alert.alert(
         '채팅으로 변환',
@@ -221,9 +287,7 @@ const MainScreen = () => {
   };
 
   const handleContextDelete = () => {
-    if (!contextMenuItem) {
-      return;
-    }
+    if (!contextMenuItem) return;
     const id = contextMenuItem.id;
     Alert.alert(
       '삭제',
@@ -239,7 +303,7 @@ const MainScreen = () => {
     );
   };
 
-  // ── 자세히 → 상세 스크린 ──
+  // ── 상세 스크린 ──
   const handleDetailPress = (post: BoardPost, subItemId?: string) => {
     navigation.navigate('BoardPostDetail', {
       post,
@@ -269,9 +333,7 @@ const MainScreen = () => {
 
   // ── 새 채팅 전송 ──
   const handleSend = () => {
-    if (!inputText.trim()) {
-      return;
-    }
+    if (!inputText.trim()) return;
     const newItem: ChatBoardItem = {
       id: Date.now().toString(),
       userId: '24',
@@ -285,6 +347,125 @@ const MainScreen = () => {
     setInputText('');
   };
 
+  // 링크 형식
+  const getDomainFromUrl = (url?: string) => {
+    if (!url) return '';
+  
+    const match = url.match(/^https?:\/\/(?:www\.)?([^/]+)/i);
+    return match?.[1] ?? url;
+  };
+  
+  const LinkPreviewItem = ({
+    item,
+    onLongPress,
+  }: {
+    item: BoardPost;
+    onLongPress: (item: ChatBoardItem) => void;
+  }) => {
+    const domain = getDomainFromUrl(item.url);
+    const hasPreview = !!item.ogData?.imageUrl;
+  
+    if (!item.url) return null;
+  
+    // 썸네일 없으면 링크만
+    if (!hasPreview) {
+      return (
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => Linking.openURL(item.url!)}
+          onLongPress={() => onLongPress(item)}
+          style={{
+            alignSelf: 'flex-end',
+            maxWidth: '78%',
+            marginBottom: 10,
+            backgroundColor: '#F7E600',
+            paddingHorizontal: 14,
+            paddingVertical: 12,
+            borderRadius: 18,
+          }}
+        >
+          <Text
+            style={{
+              color: '#1B1B1B',
+              fontSize: 15,
+              textDecorationLine: 'underline',
+            }}
+          >
+            {item.url}
+          </Text>
+        </TouchableOpacity>
+      );
+    }
+  
+    // 썸네일 있으면 카톡 스타일
+    return (
+      <TouchableOpacity
+        activeOpacity={0.9}
+        onPress={() => Linking.openURL(item.url!)}
+        onLongPress={() => onLongPress(item)}
+        style={{
+          alignSelf: 'flex-end',
+          width: 270,
+          marginBottom: 10,
+          borderRadius: 18,
+          overflow: 'hidden',
+          backgroundColor: '#2F2F2F',
+        }}
+      >
+        <Image
+          source={{ uri: item.ogData?.imageUrl }}
+          style={{
+            width: '100%',
+            height: 180,
+            backgroundColor: '#D9D9D9',
+          }}
+          resizeMode="cover"
+        />
+  
+        <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
+          {!!item.title && item.title !== item.url && (
+            <Text
+              numberOfLines={1}
+              style={{
+                color: '#FFFFFF',
+                fontSize: 16,
+                fontWeight: '700',
+                marginBottom: 6,
+              }}
+            >
+              {item.title}
+            </Text>
+          )}
+  
+          {!!item.content && (
+            <Text
+              numberOfLines={2}
+              style={{
+                color: '#BDBDBD',
+                fontSize: 14,
+                marginBottom: 8,
+              }}
+            >
+              {item.content}
+            </Text>
+          )}
+  
+          <Text
+            numberOfLines={1}
+            style={{
+              color: '#4DA3FF',
+              fontSize: 15,
+              textDecorationLine: 'underline',
+            }}
+          >
+            {domain}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+
   return (
     <View style={styles['main-safeArea']}>
       {/* 헤더 */}
@@ -295,9 +476,7 @@ const MainScreen = () => {
             style={styles['main-header-profileButton-image']}
           />
         </TouchableOpacity>
-
         <Text style={styles['main-header-title']}>나와의 채팅</Text>
-
         <View style={styles['main-header-rightButtons']}>
           <TouchableOpacity style={styles['main-header-iconButton']}>
             <SearchIcon color="#1A1A1A" size={20} />
@@ -313,9 +492,7 @@ const MainScreen = () => {
       <KeyboardAvoidingView
         style={styles['main-body']}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        {/* 채팅 영역 (워터마크 + 메시지 리스트) */}
         <View style={styles['main-content']}>
-          {/* 배경 워터마크 */}
           <View style={styles['main-watermark']} pointerEvents="none">
             <Image
               source={require('../assets/imgs/mainlogo.png')}
@@ -323,7 +500,6 @@ const MainScreen = () => {
             />
           </View>
 
-          {/* 메시지 리스트 */}
           <FlatList<ChatBoardItem>
             ref={flatListRef}
             data={items}
@@ -346,6 +522,16 @@ const MainScreen = () => {
                   />
                 );
               }
+            
+              if (item.url) {
+                return (
+                  <LinkPreviewItem
+                    item={item as BoardPost}
+                    onLongPress={handleContextMenu}
+                  />
+                );
+              }
+            
               return (
                 <BoardPostCard
                   item={item}
@@ -357,7 +543,6 @@ const MainScreen = () => {
           />
         </View>
 
-        {/* 입력 바 */}
         <View style={[styles['main-inputBar'], { paddingBottom: 10 + insets.bottom }]}>
           <TouchableOpacity style={styles['main-inputBar-plusButton']}>
             <PlusIcon color="#000000" size={22} />

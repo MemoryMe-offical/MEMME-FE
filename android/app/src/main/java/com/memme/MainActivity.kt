@@ -1,5 +1,7 @@
 package com.memme
 
+import android.content.Intent
+import android.os.Bundle
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
 import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnabled
@@ -7,16 +9,30 @@ import com.facebook.react.defaults.DefaultReactActivityDelegate
 
 class MainActivity : ReactActivity() {
 
-  /**
-   * Returns the name of the main component registered from JavaScript. This is used to schedule
-   * rendering of the component.
-   */
   override fun getMainComponentName(): String = "MEMME"
 
-  /**
-   * Returns the instance of the [ReactActivityDelegate]. We use [DefaultReactActivityDelegate]
-   * which allows you to enable New Architecture with a single boolean flags [fabricEnabled]
-   */
   override fun createReactActivityDelegate(): ReactActivityDelegate =
       DefaultReactActivityDelegate(this, mainComponentName, fabricEnabled)
+
+  override fun onCreate(savedInstanceState: Bundle?) {
+    super.onCreate(null)
+    handleShareIntent(intent)
+  }
+
+  override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    setIntent(intent)
+    handleShareIntent(intent)
+  }
+
+  private fun handleShareIntent(intent: Intent?) {
+    if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
+      val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
+
+      if (!sharedText.isNullOrBlank()) {
+        val prefs = getSharedPreferences("memme_share", MODE_PRIVATE)
+        prefs.edit().putString("sharedURL", sharedText).apply()
+      }
+    }
+  }
 }

@@ -189,4 +189,43 @@ export const boardPostCardStyles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
     fontWeight: '500',
   },
+
+  // BoardPostCard.styles.ts에 추가
+'card-og-card': {
+  marginTop: 6,
+  borderRadius: 8,
+  borderWidth: 1,
+  borderColor: '#E0E0E0',
+  overflow: 'hidden' as const,
+  backgroundColor: '#FAFAFA',
+  flex: 1,
+},
+'card-og-image': {
+  width: '100%' as const,
+  height: 140,
+  backgroundColor: '#EEEEEE',
+},
+'card-og-text': {
+  padding: 10,
+  gap: 3,
+},
+'card-og-sitename': {
+  fontSize: 11,
+  color: '#888888',
+},
+'card-og-title': {
+  fontSize: 13,
+  fontWeight: '600' as const,
+  color: '#1A1A1A',
+},
+'card-og-desc': {
+  fontSize: 12,
+  color: '#555555',
+  lineHeight: 17,
+},
+'card-og-url': {
+  fontSize: 11,
+  color: '#AAAAAA',
+  marginTop: 2,
+},
 });
