@@ -56,7 +56,11 @@ const LoginScreen = () => {
     setTimeout(() => {
       console.log('로그인:', { email, password, autoLogin });
       setLoading(false);
-      navigation.navigate('Main');
+    
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Main' }],
+      });
     }, 1000);
   };
 
