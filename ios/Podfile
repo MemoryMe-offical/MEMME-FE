@@ -23,6 +23,10 @@ target 'MEMME' do
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
+  target 'Memme_share_target' do
+    inherit! :search_paths
+  end
+
   post_install do |installer|
     react_native_post_install(
       installer,
