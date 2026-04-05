@@ -24,6 +24,7 @@ export type RootStackParamList = {
         post: BoardPost;
         subItemId?: string;
         onSave?: (updated: BoardPost) => void;
+        startEditing?: boolean;
     };
     EncryptionTest: undefined;
     DevicePairing: undefined;

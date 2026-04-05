@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, Animated, Image, Linking } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, Image, Linking, Alert } from 'react-native';
 import { BoardPost, SubPostItem } from '../../types/chatBoard.type';
 import { boardPostCardStyles as styles } from '../../styles/BoardPostCard.styles';
 import {
@@ -21,14 +21,23 @@ interface BoardPostCardProps {
   item: BoardPost;
   onContextMenu: (post: BoardPost) => void;
   onDetailPress: (post: BoardPost, subItemId?: string) => void;
+  onPress?: (post: BoardPost) => void;
 }
 
-// OG 카드 컴포넌트
+const normalizeUrl = (url: string) =>
+  /^https?:\/\//i.test(url) ? url : `https://${url}`;
+
+const openUrl = async (url: string) => {
+  try {
+    await Linking.openURL(normalizeUrl(url));
+  } catch {
+    Alert.alert('오류', '링크를 여는 중 문제가 발생했습니다.');
+  }
+};
+
+// OG 카드 (링크 미리보기 + 바로가기 버튼)
 const OgCard = ({ url, ogData }: { url: string; ogData?: BoardPost['ogData'] }) => (
-  <TouchableOpacity
-    style={styles['card-og-card']}
-    onPress={() => Linking.openURL(url)}
-    activeOpacity={0.8}>
+  <View style={styles['card-og-card']}>
     {ogData?.imageUrl && (
       <Image
         source={{ uri: ogData.imageUrl }}
@@ -36,78 +45,63 @@ const OgCard = ({ url, ogData }: { url: string; ogData?: BoardPost['ogData'] }) 
         resizeMode="cover"
       />
     )}
-    <View style={styles['card-og-text']}>
-      {ogData?.siteName && (
-        <Text style={styles['card-og-sitename']}>{ogData.siteName}</Text>
-      )}
-      <Text style={styles['card-og-title']} numberOfLines={2}>
-        {ogData?.title || url}
-      </Text>
-      {ogData?.description && (
-        <Text style={styles['card-og-desc']} numberOfLines={2}>
-          {ogData.description}
+    <View style={styles['card-og-body']}>
+      <View style={styles['card-og-text']}>
+        {ogData?.siteName && (
+          <Text style={styles['card-og-sitename']}>{ogData.siteName}</Text>
+        )}
+        <Text style={styles['card-og-title']} numberOfLines={2}>
+          {ogData?.title || url}
         </Text>
-      )}
-      <Text style={styles['card-og-url']} numberOfLines={1}>{url}</Text>
+        {ogData?.description && (
+          <Text style={styles['card-og-desc']} numberOfLines={2}>
+            {ogData.description}
+          </Text>
+        )}
+        <Text style={styles['card-og-url']} numberOfLines={1}>{url}</Text>
+      </View>
+      <TouchableOpacity
+        style={styles['card-og-goto']}
+        onPress={() =>
+          Alert.alert('링크 열기', '링크가 열립니다. 이동하시겠습니까?', [
+            { text: '취소', style: 'cancel' },
+            { text: '이동', onPress: () => openUrl(url) },
+          ])
+        }
+        activeOpacity={0.8}>
+        <Text style={styles['card-og-goto-text']}>바로가기</Text>
+      </TouchableOpacity>
     </View>
-  </TouchableOpacity>
-);
-
-// 링크 섹션
-const LinkSection = ({ item }: { item: BoardPost }) => (
-  <View style={styles['card-section-row']}>
-    <Text style={styles['card-section-label']}>링크</Text>
-    {item.url && <OgCard url={item.url} ogData={item.ogData} />}
   </View>
 );
 
-const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProps) => {
+// 링크 섹션 (url 없으면 숨김)
+const LinkSection = ({ url, ogData }: { url?: string; ogData?: BoardPost['ogData'] }) => {
+  if (!url) return null;
+  return (
+    <View style={styles['card-section-row']}>
+      <Text style={styles['card-section-label']}>링크</Text>
+      <OgCard url={url} ogData={ogData} />
+    </View>
+  );
+};
+
+const BoardPostCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardPostCardProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const isGroup = Array.isArray(item.subItems) && item.subItems.length > 0;
   const initialExpandedId = isGroup && item.subItems!.length > 0 ? item.subItems![0].id : null;
   const [expandedSubId, setExpandedSubId] = useState<string | null>(initialExpandedId);
 
-  const animatedValues = useRef<Record<string, Animated.Value>>(
-    isGroup
-      ? Object.fromEntries(
-          item.subItems!.map(sub => [
-            sub.id,
-            new Animated.Value(sub.id === initialExpandedId ? 1 : 0),
-          ]),
-        )
-      : {},
-  );
-
   const toggleSubItem = (subId: string) => {
-    const isClosing = expandedSubId === subId;
-    const prevId = expandedSubId;
-    setExpandedSubId(isClosing ? null : subId);
-
-    const animations: Animated.CompositeAnimation[] = [];
-    if (prevId && prevId !== subId) {
-      animations.push(
-        Animated.timing(animatedValues.current[prevId], {
-          toValue: 0,
-          duration: 220,
-          useNativeDriver: false,
-        }),
-      );
-    }
-    animations.push(
-      Animated.timing(animatedValues.current[subId], {
-        toValue: isClosing ? 0 : 1,
-        duration: 280,
-        useNativeDriver: false,
-      }),
-    );
-    Animated.parallel(animations).start();
+    setExpandedSubId(prev => prev === subId ? null : subId);
   };
 
   return (
     <View style={styles['card-row']}>
       <Text style={styles['card-time']}>{formatTime(item.createdAt)}</Text>
       <TouchableOpacity
-        activeOpacity={1}
+        activeOpacity={0.97}
+        onPress={() => onPress?.(item)}
         onLongPress={() => onContextMenu(item)}
         delayLongPress={400}
         style={styles['card-wrapper']}>
@@ -159,60 +153,59 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
                           : <ChevronDownIcon color="#555555" size={16} />}
                       </TouchableOpacity>
 
-                      <Animated.View
-                        style={{
-                          maxHeight: animatedValues.current[sub.id].interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [0, 500],
-                          }),
-                          opacity: animatedValues.current[sub.id].interpolate({
-                            inputRange: [0, 0.4, 1],
-                            outputRange: [0, 0, 1],
-                          }),
-                          overflow: 'hidden',
-                        }}>
-                        <View style={styles['card-section-divider']} />
-                        <View style={styles['card-section-row']}>
-                          <Text style={styles['card-section-label']}>내용</Text>
-                          <Text style={styles['card-content-text']} numberOfLines={3}>
-                            {sub.content}
-                          </Text>
+                      {isSubExpanded && (
+                        <View>
+                          {!!sub.content && (
+                            <>
+                              <View style={styles['card-section-divider']} />
+                              <View style={styles['card-section-row']}>
+                                <Text style={styles['card-section-label']}>내용</Text>
+                                <Text style={styles['card-content-text']} numberOfLines={3}>
+                                  {sub.content}
+                                </Text>
+                              </View>
+                            </>
+                          )}
+                          {!!sub.imageUris?.length && (
+                            <>
+                              <View style={styles['card-section-divider']} />
+                              <View style={styles['card-section-row']}>
+                                <Text style={styles['card-section-label']}>사진</Text>
+                              </View>
+                            </>
+                          )}
+                          {!!(sub.url || item.url) && <View style={styles['card-section-divider']} />}
+                          <LinkSection url={sub.url ?? item.url} ogData={sub.ogData ?? item.ogData} />
                         </View>
-                        <View style={styles['card-section-divider']} />
-                        <View style={styles['card-section-row']}>
-                          <Text style={styles['card-section-label']}>사진</Text>
-                        </View>
-                        <View style={styles['card-section-divider']} />
-                        <LinkSection item={item} />
-                        <TouchableOpacity
-                          style={styles['card-detail-row']}
-                          onPress={() => onDetailPress(item, sub.id)}>
-                          <Text style={styles['card-detail-btn']}>자세히 {'>'}</Text>
-                        </TouchableOpacity>
-                      </Animated.View>
+                      )}
 
                       {!isLast && <View style={styles['sub-accordion-divider']} />}
                     </View>
                   );
                 })
               : <View>
-                  <View style={styles['card-section-row']}>
-                    <Text style={styles['card-section-label']}>내용</Text>
-                    <Text style={styles['card-content-text']} numberOfLines={3}>
-                      {item.content}
-                    </Text>
-                  </View>
-                  <View style={styles['card-section-divider']} />
-                  <View style={styles['card-section-row']}>
-                    <Text style={styles['card-section-label']}>사진</Text>
-                  </View>
-                  <View style={styles['card-section-divider']} />
-                  <LinkSection item={item} />
-                  <TouchableOpacity
-                    style={styles['card-detail-row']}
-                    onPress={() => onDetailPress(item)}>
-                    <Text style={styles['card-detail-btn']}>자세히 {'>'}</Text>
-                  </TouchableOpacity>
+                  {!!item.content && (
+                    <>
+                      <View style={styles['card-section-row']}>
+                        <Text style={styles['card-section-label']}>내용</Text>
+                        <Text style={styles['card-content-text']} numberOfLines={3}>
+                          {item.content}
+                        </Text>
+                      </View>
+                      {!!(item.imageUris?.length || item.url) && (
+                        <View style={styles['card-section-divider']} />
+                      )}
+                    </>
+                  )}
+                  {!!item.imageUris?.length && (
+                    <>
+                      <View style={styles['card-section-row']}>
+                        <Text style={styles['card-section-label']}>사진</Text>
+                      </View>
+                      {!!item.url && <View style={styles['card-section-divider']} />}
+                    </>
+                  )}
+                  <LinkSection url={item.url} ogData={item.ogData} />
                 </View>
             }
           </View>

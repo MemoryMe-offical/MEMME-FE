@@ -15,6 +15,7 @@ import { loadPrivateKey } from '../crypto/rsaKeyManager';
 import { deriveKEKFromPassword, deriveKEKWithParams, KDFParams } from '../crypto/keyDerivation';
 import CryptoJS from 'crypto-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface PairingData {
   encryptedPrivateKey: string;
@@ -157,6 +158,7 @@ const DevicePairingScreen = () => {
   };
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }} edges={['top', 'bottom']}>
     <ScrollView style={styles['pairing-container']}>
       {loading && (
         <View style={styles['pairing-loadingOverlay']}>
@@ -373,6 +375,7 @@ const DevicePairingScreen = () => {
         </View>
       </View>
     </ScrollView>
+    </SafeAreaView>
   );
 };
 

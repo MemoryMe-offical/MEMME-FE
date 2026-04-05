@@ -1,6 +1,18 @@
-안드로이드 실행
-npm run android
-npx react-native run-android
+<안드로이드 실행>
+
+[개발 빌드] Metro 필요 (코드 수정 즉시 반영, PC 연결 필수)
+  터미널 1: npx react-native start
+  터미널 2: npm run android
+
+[릴리즈 빌드] Metro 불필요 (PC 연결 없이 독립 실행 가능)
+  npm run android:release
+
+-----
+<참고: Android 16 이슈>
+
+Android 16에서 adb 스트리밍 설치(adb install) 방식에 버그가 있어 APK 서명 검증 실패함.
+scripts/run-android.js 및 scripts/run-android-release.js에서 push + pm install 방식으로 우회 처리됨.
+adb reverse tcp:8081 tcp:8081 도 자동 실행됨.
 
 -----
 <상태 관리>
