@@ -17,6 +17,7 @@ export interface SubPostItem {
   id: string;
   title: string;
   content: string;
+  imageUris?: string[];
 }
 
 export interface OgData {
@@ -33,6 +34,7 @@ export interface BoardPost extends BaseItem {
   subItems?: SubPostItem[];
   url?: string;
   ogData?: OgData;
+  imageUris?: string[];
 }
 
 export type ChatBoardItem = ChatMessage | BoardPost;

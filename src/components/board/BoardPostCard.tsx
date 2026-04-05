@@ -21,6 +21,7 @@ interface BoardPostCardProps {
   item: BoardPost;
   onContextMenu: (post: BoardPost) => void;
   onDetailPress: (post: BoardPost, subItemId?: string) => void;
+  onPress?: (post: BoardPost) => void;
 }
 
 // OG 카드 컴포넌트
@@ -61,7 +62,7 @@ const LinkSection = ({ item }: { item: BoardPost }) => (
   </View>
 );
 
-const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProps) => {
+const BoardPostCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardPostCardProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const isGroup = Array.isArray(item.subItems) && item.subItems.length > 0;
   const initialExpandedId = isGroup && item.subItems!.length > 0 ? item.subItems![0].id : null;
@@ -107,7 +108,8 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
     <View style={styles['card-row']}>
       <Text style={styles['card-time']}>{formatTime(item.createdAt)}</Text>
       <TouchableOpacity
-        activeOpacity={1}
+        activeOpacity={0.97}
+        onPress={() => onPress?.(item)}
         onLongPress={() => onContextMenu(item)}
         delayLongPress={400}
         style={styles['card-wrapper']}>
@@ -184,11 +186,6 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
                         </View>
                         <View style={styles['card-section-divider']} />
                         <LinkSection item={item} />
-                        <TouchableOpacity
-                          style={styles['card-detail-row']}
-                          onPress={() => onDetailPress(item, sub.id)}>
-                          <Text style={styles['card-detail-btn']}>자세히 {'>'}</Text>
-                        </TouchableOpacity>
                       </Animated.View>
 
                       {!isLast && <View style={styles['sub-accordion-divider']} />}
@@ -208,11 +205,6 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress }: BoardPostCardProp
                   </View>
                   <View style={styles['card-section-divider']} />
                   <LinkSection item={item} />
-                  <TouchableOpacity
-                    style={styles['card-detail-row']}
-                    onPress={() => onDetailPress(item)}>
-                    <Text style={styles['card-detail-btn']}>자세히 {'>'}</Text>
-                  </TouchableOpacity>
                 </View>
             }
           </View>

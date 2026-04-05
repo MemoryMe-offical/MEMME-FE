@@ -537,6 +537,7 @@ const MainScreen = () => {
                   item={item}
                   onContextMenu={handleContextMenu}
                   onDetailPress={handleDetailPress}
+                  onPress={handleDetailPress}
                 />
               );
             }}
