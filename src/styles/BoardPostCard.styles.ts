@@ -190,39 +190,64 @@ export const boardPostCardStyles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // 링크 바로가기 버튼
-  'card-link-button': {
+  // OG 카드 (링크 미리보기)
+  'card-og-card': {
     marginTop: 6,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#C8D8FF',
-    backgroundColor: '#EEF3FF',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
+    borderColor: '#D8E4FF',
+    overflow: 'hidden',
+    backgroundColor: '#FAFCFF',
+  },
+  'card-og-image': {
+    width: '100%',
+    height: 130,
+    backgroundColor: '#E8EEF8',
+  },
+  'card-og-body': {
+    padding: 10,
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 10,
   },
-  'card-link-button-content': {
+  'card-og-text': {
     flex: 1,
-    marginRight: 10,
+    gap: 2,
   },
-  'card-link-button-title': {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    fontFamily: 'PretendardVariable',
-    marginBottom: 2,
-  },
-  'card-link-button-url': {
+  'card-og-sitename': {
     fontSize: 11,
     color: '#9DAFC8',
     fontFamily: 'PretendardVariable',
   },
-  'card-link-button-action': {
+  'card-og-title': {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: 'PretendardVariable',
+  },
+  'card-og-desc': {
+    fontSize: 12,
+    color: '#6B7E9A',
+    fontFamily: 'PretendardVariable',
+    lineHeight: 17,
+  },
+  'card-og-url': {
+    fontSize: 11,
+    color: '#AABBCC',
+    fontFamily: 'PretendardVariable',
+    marginTop: 2,
+  },
+  'card-og-goto': {
+    backgroundColor: '#588DFF',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    flexShrink: 0,
+  },
+  'card-og-goto-text': {
     fontSize: 12,
     fontWeight: '600',
-    color: '#588DFF',
+    color: '#FFFFFF',
     fontFamily: 'PretendardVariable',
-    flexShrink: 0,
   },
 });

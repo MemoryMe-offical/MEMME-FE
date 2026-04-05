@@ -109,49 +109,54 @@ const LinkButton = ({ url, ogData }: { url: string; ogData?: OgData }) => (
 
 // ── 서브아이템 링크 편집 (인라인) ──
 const SubItemLinkEditor = ({
-  url,
+  inputValue,
+  savedUrl,
   ogData,
   ogLoading,
-  onChangeUrl,
+  onChangeInput,
   onFetch,
   onClear,
 }: {
-  url: string;
+  inputValue: string;
+  savedUrl?: string;
   ogData?: OgData;
   ogLoading: boolean;
-  onChangeUrl: (v: string) => void;
+  onChangeInput: (v: string) => void;
   onFetch: () => void;
   onClear: () => void;
 }) => (
   <View style={styles.subLinkSection}>
+    {/* 링크 입력 필드 */}
     <View style={styles.linkInputRow}>
       <TextInput
         style={styles.linkInput}
-        value={url}
-        onChangeText={v => { onChangeUrl(v); if (!v) onClear(); }}
-        placeholder="링크 URL"
+        value={inputValue}
+        onChangeText={onChangeInput}
+        placeholder={savedUrl ? '새 링크로 대체하기' : '링크 URL'}
         placeholderTextColor="#AABBCC"
         autoCapitalize="none"
         keyboardType="url"
       />
       <TouchableOpacity
-        style={[styles.linkFetchBtn, (!url.trim() || ogLoading) && styles.linkFetchBtnDisabled]}
+        style={[styles.linkFetchBtn, (!inputValue.trim() || ogLoading) && styles.linkFetchBtnDisabled]}
         onPress={onFetch}
-        disabled={ogLoading || !url.trim()}>
+        disabled={ogLoading || !inputValue.trim()}>
         {ogLoading
           ? <ActivityIndicator size="small" color="#FFFFFF" />
           : <Text style={styles.linkFetchText}>확인</Text>}
       </TouchableOpacity>
     </View>
-    {url.trim() && ogData && (
-      <>
+
+    {/* 저장된 링크 미리보기 */}
+    {savedUrl ? (
+      <View style={styles.savedLinkRow}>
+        <OgPreviewCard url={savedUrl} ogData={ogData} />
         <TouchableOpacity style={styles.linkClearBtn} onPress={onClear}>
           <CloseIcon color="#FF3B30" size={12} />
           <Text style={styles.linkClearText}>링크 삭제</Text>
         </TouchableOpacity>
-        <OgPreviewCard url={url} ogData={ogData} />
-      </>
-    )}
+      </View>
+    ) : null}
   </View>
 );
 
@@ -203,13 +208,18 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
   const [editTitle, setEditTitle] = useState(initialPost.title);
   const [editContent, setEditContent] = useState(initialPost.content);
   const [editSubItems, setEditSubItems] = useState<SubPostItem[]>(initialPost.subItems ?? []);
+  // editUrl: 확정된 링크 URL (OG 미리보기 표시용)
   const [editUrl, setEditUrl] = useState(initialPost.url ?? '');
   const [editOgData, setEditOgData] = useState<OgData | undefined>(initialPost.ogData);
+  // editLinkInput: 링크 입력 필드 (확인 후 초기화)
+  const [editLinkInput, setEditLinkInput] = useState('');
   const [editImageUris, setEditImageUris] = useState<string[]>(initialPost.imageUris ?? []);
   const [ogLoading, setOgLoading] = useState(false);
 
   // 서브아이템별 OG 로딩 상태
   const [subOgLoading, setSubOgLoading] = useState<Record<string, boolean>>({});
+  // 서브아이템별 링크 입력 필드
+  const [subLinkInputs, setSubLinkInputs] = useState<Record<string, string>>({});
 
   // 현재 편집 중인 서브아이템 ID
   const [editingSubId, setEditingSubId] = useState<string | null>(null);
@@ -226,13 +236,41 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
     setEditSubItems(subs);
     setEditUrl(post.url ?? '');
     setEditOgData(post.ogData);
+    setEditLinkInput('');
+    setSubLinkInputs({});
     setEditImageUris(post.imageUris ?? []);
-    // 서브아이템이 있으면 첫 번째 자동 선택, 없으면 null
     setEditingSubId(subs.length > 0 ? subs[0].id : null);
     setIsEditing(true);
   };
 
-  const cancelEdit = () => setIsEditing(false);
+  // 변경 여부 판단
+  const isDirty = () => {
+    if (editTitle.trim() !== post.title) return true;
+    if (editContent.trim() !== (post.content ?? '')) return true;
+    if (editUrl !== (post.url ?? '')) return true;
+    if (editImageUris.length !== (post.imageUris ?? []).length) return true;
+    if (editSubItems.length !== (post.subItems ?? []).length) return true;
+    return editSubItems.some((s, i) => {
+      const orig = post.subItems?.[i];
+      return !orig || s.title !== orig.title || s.content !== orig.content ||
+        s.url !== orig.url || (s.imageUris?.length ?? 0) !== (orig.imageUris?.length ?? 0);
+    });
+  };
+
+  const cancelEdit = () => {
+    if (isDirty()) {
+      Alert.alert(
+        '편집 취소',
+        '수정사항이 사라집니다. 나가시겠습니까?',
+        [
+          { text: '계속 편집', style: 'cancel' },
+          { text: '나가기', style: 'destructive', onPress: () => setIsEditing(false) },
+        ],
+      );
+    } else {
+      setIsEditing(false);
+    }
+  };
 
   const handleSave = () => {
     if (!editTitle.trim()) return;
@@ -251,18 +289,36 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
   };
 
   // ── 게시물 링크 OG ──
-  const handleFetchPostOg = async () => {
-    if (!editUrl.trim()) return;
-    setOgLoading(true);
-    const og = await fetchOgData(editUrl.trim());
-    setEditOgData(og);
-    setOgLoading(false);
+  const handleFetchPostOg = () => {
+    const input = editLinkInput.trim();
+    if (!input) return;
+    const doFetch = async () => {
+      setOgLoading(true);
+      const og = await fetchOgData(input);
+      setEditUrl(input);
+      setEditOgData(og);
+      setEditLinkInput('');
+      setOgLoading(false);
+    };
+    if (editUrl) {
+      Alert.alert(
+        '링크 대체',
+        '기존 링크가 대체됩니다. 계속하시겠습니까?',
+        [
+          { text: '취소', style: 'cancel' },
+          { text: '확인', onPress: doFetch },
+        ],
+      );
+    } else {
+      doFetch();
+    }
   };
 
   // ── 서브아이템 핸들러 ──
   const addSubItem = () => {
     const newId = Date.now().toString();
     setEditSubItems(prev => [...prev, { id: newId, title: '', content: '' }]);
+    setSubLinkInputs(prev => ({ ...prev, [newId]: '' }));
     setEditingSubId(newId);
   };
 
@@ -282,6 +338,7 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
           style: 'destructive',
           onPress: () => {
             setEditSubItems(prev => prev.filter(s => s.id !== id));
+            setSubLinkInputs(prev => { const n = { ...prev }; delete n[id]; return n; });
             if (editingSubId === id) setEditingSubId(null);
           },
         },
@@ -289,12 +346,29 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
     );
   };
 
-  const fetchSubOg = async (id: string, url: string) => {
-    if (!url.trim()) return;
-    setSubOgLoading(prev => ({ ...prev, [id]: true }));
-    const og = await fetchOgData(url.trim());
-    updateSubItem(id, { ogData: og });
-    setSubOgLoading(prev => ({ ...prev, [id]: false }));
+  const fetchSubOg = (id: string) => {
+    const input = (subLinkInputs[id] ?? '').trim();
+    if (!input) return;
+    const sub = editSubItems.find(s => s.id === id);
+    const doFetch = async () => {
+      setSubOgLoading(prev => ({ ...prev, [id]: true }));
+      const og = await fetchOgData(input);
+      updateSubItem(id, { url: input, ogData: og });
+      setSubLinkInputs(prev => ({ ...prev, [id]: '' }));
+      setSubOgLoading(prev => ({ ...prev, [id]: false }));
+    };
+    if (sub?.url) {
+      Alert.alert(
+        '링크 대체',
+        '기존 링크가 대체됩니다. 계속하시겠습니까?',
+        [
+          { text: '취소', style: 'cancel' },
+          { text: '확인', onPress: doFetch },
+        ],
+      );
+    } else {
+      doFetch();
+    }
   };
 
   // ── 빈 게시물 판별 ──
@@ -355,34 +429,38 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
 
               <View style={styles.sectionDivider} />
               <Text style={styles.sectionLabel}>링크</Text>
+
+              {/* 링크 입력 필드 */}
               <View style={styles.linkInputRow}>
                 <TextInput
                   style={styles.linkInput}
-                  value={editUrl}
-                  onChangeText={v => { setEditUrl(v); setEditOgData(undefined); }}
-                  placeholder="https://"
+                  value={editLinkInput}
+                  onChangeText={setEditLinkInput}
+                  placeholder={editUrl ? '새 링크로 대체하기' : 'https://'}
                   placeholderTextColor="#AABBCC"
                   autoCapitalize="none"
                   keyboardType="url"
                 />
                 <TouchableOpacity
-                  style={[styles.linkFetchBtn, (!editUrl.trim() || ogLoading) && styles.linkFetchBtnDisabled]}
+                  style={[styles.linkFetchBtn, (!editLinkInput.trim() || ogLoading) && styles.linkFetchBtnDisabled]}
                   onPress={handleFetchPostOg}
-                  disabled={ogLoading || !editUrl.trim()}>
+                  disabled={ogLoading || !editLinkInput.trim()}>
                   {ogLoading
                     ? <ActivityIndicator size="small" color="#FFFFFF" />
-                    : <Text style={styles.linkFetchText}>불러오기</Text>}
+                    : <Text style={styles.linkFetchText}>확인</Text>}
                 </TouchableOpacity>
               </View>
-              {editUrl.trim() && editOgData && (
-                <>
+
+              {/* 저장된 링크 미리보기 */}
+              {editUrl ? (
+                <View style={styles.savedLinkRow}>
+                  <OgPreviewCard url={editUrl} ogData={editOgData} />
                   <TouchableOpacity style={styles.linkClearBtn} onPress={() => { setEditUrl(''); setEditOgData(undefined); }}>
                     <CloseIcon color="#FF3B30" size={12} />
                     <Text style={styles.linkClearText}>링크 삭제</Text>
                   </TouchableOpacity>
-                  <OgPreviewCard url={editUrl} ogData={editOgData} />
-                </>
-              )}
+                </View>
+              ) : null}
 
               <View style={styles.sectionDivider} />
               <Text style={styles.sectionLabel}>사진</Text>
@@ -465,11 +543,12 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
 
                     <Text style={styles.subItemSectionLabel}>링크</Text>
                     <SubItemLinkEditor
-                      url={sub.url ?? ''}
+                      inputValue={subLinkInputs[sub.id] ?? ''}
+                      savedUrl={sub.url}
                       ogData={sub.ogData}
                       ogLoading={subOgLoading[sub.id] ?? false}
-                      onChangeUrl={v => updateSubItem(sub.id, { url: v, ogData: undefined })}
-                      onFetch={() => fetchSubOg(sub.id, sub.url ?? '')}
+                      onChangeInput={v => setSubLinkInputs(prev => ({ ...prev, [sub.id]: v }))}
+                      onFetch={() => fetchSubOg(sub.id)}
                       onClear={() => updateSubItem(sub.id, { url: undefined, ogData: undefined })}
                     />
                   </>
@@ -797,6 +876,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PretendardVariable', letterSpacing: 0.4, marginBottom: 6, marginTop: 4,
   },
   subLinkSection: { marginBottom: 4 },
+  savedLinkRow: { marginBottom: 8 },
 
   addSubItemBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
