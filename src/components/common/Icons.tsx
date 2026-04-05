@@ -83,3 +83,15 @@ export const ChevronUpIcon = ({ color = '#1A1A1A', size = 18, style }: IconProps
 export const ArrowLeftIcon = ({ color = '#1A1A1A', size = 22, style }: IconProps) => (
   <MCI name="arrow-left" color={color} size={size} style={style} />
 );
+
+export const LinkIcon = ({ color = '#1A1A1A', size = 18, style }: IconProps) => (
+  <MCI name="link-variant" color={color} size={size} style={style} />
+);
+
+export const PlusCircleIcon = ({ color = '#588DFF', size = 20, style }: IconProps) => (
+  <MCI name="plus-circle-outline" color={color} size={size} style={style} />
+);
+
+export const ImageIcon = ({ color = '#1A1A1A', size = 18, style }: IconProps) => (
+  <MCI name="image-plus" color={color} size={size} style={style} />
+);

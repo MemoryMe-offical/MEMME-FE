@@ -19,6 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { loginStyles as styles } from '../styles/LoginScreen.styles';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -91,8 +92,9 @@ const LoginScreen = () => {
   };
 
   return (
+    <SafeAreaView style={styles['login-container']} edges={['top', 'bottom']}>
     <KeyboardAvoidingView
-      style={styles['login-container']}
+      style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -250,6 +252,7 @@ const LoginScreen = () => {
         </ScrollView>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
