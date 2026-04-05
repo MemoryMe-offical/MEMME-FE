@@ -25,6 +25,7 @@ import SideMenu from '../components/common/SideMenu';
 import { HamburgerIcon, PlusIcon, SearchIcon, SendIcon } from '../components/common/Icons';
 import { mainStyles as styles } from '../styles/MainScreen.styles';
 import type { RootStackParamList } from '../navigation/RootNavigator';
+import { loadItems, saveItems } from '../utils/storage';
 
 const initItems: ChatBoardItem[] = [
   {
@@ -159,7 +160,8 @@ const fetchOgData = async (url: string): Promise<OgData> => {
 const MainScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Main'>>();
-  const [items, setItems] = useState<ChatBoardItem[]>(initItems);
+  const [items, setItems] = useState<ChatBoardItem[]>([]);
+  const [loaded, setLoaded] = useState(false);
   const [inputText, setInputText] = useState('');
   const [contextMenuItem, setContextMenuItem] = useState<ChatBoardItem | null>(null);
   const [sideMenuVisible, setSideMenuVisible] = useState(false);
@@ -192,6 +194,19 @@ const MainScreen = () => {
     setItems(prev => [...prev, newItem]);
   };
   
+  // ── 초기 로드 ──
+  useEffect(() => {
+    loadItems().then(stored => {
+      setItems(stored ?? initItems);
+      setLoaded(true);
+    });
+  }, []);
+
+  // ── 변경 시 저장 (로드 완료 후부터) ──
+  useEffect(() => {
+    if (loaded) saveItems(items);
+  }, [items, loaded]);
+
   useEffect(() => {
     const getShared = async () => {
       const url = await nativeShareModule?.getSharedURL();
