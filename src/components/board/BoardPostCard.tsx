@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, Animated, Image, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, Animated, Image, Linking, Alert } from 'react-native';
 import { BoardPost, SubPostItem } from '../../types/chatBoard.type';
 import { boardPostCardStyles as styles } from '../../styles/BoardPostCard.styles';
 import {
@@ -24,43 +24,37 @@ interface BoardPostCardProps {
   onPress?: (post: BoardPost) => void;
 }
 
-// OG 카드 컴포넌트
-const OgCard = ({ url, ogData }: { url: string; ogData?: BoardPost['ogData'] }) => (
+// 링크 바로가기 버튼
+const LinkButton = ({ url, ogData }: { url: string; ogData?: BoardPost['ogData'] }) => (
   <TouchableOpacity
-    style={styles['card-og-card']}
-    onPress={() => Linking.openURL(url)}
+    style={styles['card-link-button']}
+    onPress={() =>
+      Alert.alert('링크 열기', '링크가 열립니다. 이동하시겠습니까?', [
+        { text: '취소', style: 'cancel' },
+        { text: '이동', onPress: () => Linking.openURL(url) },
+      ])
+    }
     activeOpacity={0.8}>
-    {ogData?.imageUrl && (
-      <Image
-        source={{ uri: ogData.imageUrl }}
-        style={styles['card-og-image']}
-        resizeMode="cover"
-      />
-    )}
-    <View style={styles['card-og-text']}>
-      {ogData?.siteName && (
-        <Text style={styles['card-og-sitename']}>{ogData.siteName}</Text>
-      )}
-      <Text style={styles['card-og-title']} numberOfLines={2}>
-        {ogData?.title || url}
+    <View style={styles['card-link-button-content']}>
+      <Text style={styles['card-link-button-title']} numberOfLines={1}>
+        {ogData?.title || ogData?.siteName || url}
       </Text>
-      {ogData?.description && (
-        <Text style={styles['card-og-desc']} numberOfLines={2}>
-          {ogData.description}
-        </Text>
-      )}
-      <Text style={styles['card-og-url']} numberOfLines={1}>{url}</Text>
+      <Text style={styles['card-link-button-url']} numberOfLines={1}>{url}</Text>
     </View>
+    <Text style={styles['card-link-button-action']}>바로가기</Text>
   </TouchableOpacity>
 );
 
-// 링크 섹션
-const LinkSection = ({ item }: { item: BoardPost }) => (
-  <View style={styles['card-section-row']}>
-    <Text style={styles['card-section-label']}>링크</Text>
-    {item.url && <OgCard url={item.url} ogData={item.ogData} />}
-  </View>
-);
+// 링크 섹션 (url 없으면 숨김)
+const LinkSection = ({ item }: { item: BoardPost }) => {
+  if (!item.url) return null;
+  return (
+    <View style={styles['card-section-row']}>
+      <Text style={styles['card-section-label']}>링크</Text>
+      <LinkButton url={item.url} ogData={item.ogData} />
+    </View>
+  );
+};
 
 const BoardPostCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardPostCardProps) => {
   const [isExpanded, setIsExpanded] = useState(true);

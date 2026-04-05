@@ -9,6 +9,7 @@ import {
   Linking,
   ActivityIndicator,
   StyleSheet,
+  Alert,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -56,11 +57,23 @@ const formatFullTime = (iso: string) => {
   return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 ${isAM ? '오전' : '오후'} ${(h % 12) || 12}:${d.getMinutes().toString().padStart(2, '0')}`;
 };
 
+// ── 링크 열기 (확인 알림) ──
+const openLinkWithConfirm = (url: string) => {
+  Alert.alert(
+    '링크 열기',
+    '링크가 열립니다. 이동하시겠습니까?',
+    [
+      { text: '취소', style: 'cancel' },
+      { text: '이동', onPress: () => Linking.openURL(url) },
+    ],
+  );
+};
+
 // ── OG 카드 (공유 컴포넌트) ──
 const OgPreviewCard = ({ url, ogData, onPress }: { url: string; ogData?: OgData; onPress?: () => void }) => (
   <TouchableOpacity
     style={styles.ogCard}
-    onPress={onPress ?? (() => Linking.openURL(url))}
+    onPress={onPress ?? (() => openLinkWithConfirm(url))}
     activeOpacity={0.85}>
     {ogData?.imageUrl
       ? <Image source={{ uri: ogData.imageUrl }} style={styles.ogImage} resizeMode="cover" />
@@ -70,6 +83,26 @@ const OgPreviewCard = ({ url, ogData, onPress }: { url: string; ogData?: OgData;
       <Text style={styles.ogTitle} numberOfLines={2}>{ogData?.title || url}</Text>
       {ogData?.description ? <Text style={styles.ogDesc} numberOfLines={2}>{ogData.description}</Text> : null}
       <Text style={styles.ogUrl} numberOfLines={1}>{url}</Text>
+    </View>
+  </TouchableOpacity>
+);
+
+// ── 링크 바로가기 버튼 (뷰 모드) ──
+const LinkButton = ({ url, ogData }: { url: string; ogData?: OgData }) => (
+  <TouchableOpacity
+    style={styles.linkButton}
+    onPress={() => openLinkWithConfirm(url)}
+    activeOpacity={0.8}>
+    <View style={styles.linkButtonContent}>
+      <View style={styles.linkButtonTextWrap}>
+        <Text style={styles.linkButtonTitle} numberOfLines={1}>
+          {ogData?.title || ogData?.siteName || url}
+        </Text>
+        <Text style={styles.linkButtonUrl} numberOfLines={1}>{url}</Text>
+      </View>
+      <View style={styles.linkButtonArrow}>
+        <Text style={styles.linkButtonArrowText}>바로가기</Text>
+      </View>
     </View>
   </TouchableOpacity>
 );
@@ -238,7 +271,22 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
   };
 
   const deleteSubItem = (id: string) => {
-    setEditSubItems(prev => prev.filter(s => s.id !== id));
+    const target = editSubItems.find(s => s.id === id);
+    Alert.alert(
+      '항목 삭제',
+      `'${target?.title || '이 항목'}'을(를) 삭제할까요?`,
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: () => {
+            setEditSubItems(prev => prev.filter(s => s.id !== id));
+            if (editingSubId === id) setEditingSubId(null);
+          },
+        },
+      ],
+    );
   };
 
   const fetchSubOg = async (id: string, url: string) => {
@@ -510,7 +558,7 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
 
                           {sub.url && (
                             <View style={{ marginTop: (sub.content || sub.imageUris?.length) ? 12 : 0 }}>
-                              <OgPreviewCard url={sub.url} ogData={sub.ogData} />
+                              <LinkButton url={sub.url} ogData={sub.ogData} />
                             </View>
                           )}
 
@@ -541,7 +589,7 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
             {!!post.url && (
               <>
                 <Text style={styles.contentLabel}>링크</Text>
-                <OgPreviewCard url={post.url} ogData={post.ogData} />
+                <LinkButton url={post.url} ogData={post.ogData} />
               </>
             )}
           </>
@@ -661,7 +709,28 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  // OG 카드
+  // 링크 바로가기 버튼 (뷰 모드)
+  linkButton: {
+    borderRadius: 12, borderWidth: 1, borderColor: '#C8D8FF',
+    backgroundColor: '#EEF3FF', paddingHorizontal: 16, paddingVertical: 14,
+    flexDirection: 'row', alignItems: 'center', marginTop: 4,
+  },
+  linkButtonContent: { flex: 1, marginRight: 12 },
+  linkButtonTextWrap: {},
+  linkButtonTitle: {
+    fontSize: 14, fontWeight: '600', color: '#1A1A1A',
+    fontFamily: 'PretendardVariable', marginBottom: 3,
+  },
+  linkButtonUrl: { fontSize: 12, color: '#9DAFC8', fontFamily: 'PretendardVariable' },
+  linkButtonArrow: {
+    backgroundColor: '#588DFF', borderRadius: 8,
+    paddingHorizontal: 12, paddingVertical: 6,
+  },
+  linkButtonArrowText: {
+    fontSize: 12, fontWeight: '600', color: '#FFFFFF', fontFamily: 'PretendardVariable',
+  },
+
+  // OG 카드 (편집 미리보기용)
   ogCard: { borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#E4ECFF', marginTop: 4 },
   ogImage: { width: '100%', height: 160, backgroundColor: '#E8EEF8' },
   ogBody: { padding: 12, backgroundColor: '#F8FAFF' },

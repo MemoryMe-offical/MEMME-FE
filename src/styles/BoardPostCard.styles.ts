@@ -190,42 +190,39 @@ export const boardPostCardStyles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // BoardPostCard.styles.ts에 추가
-'card-og-card': {
-  marginTop: 6,
-  borderRadius: 8,
-  borderWidth: 1,
-  borderColor: '#E0E0E0',
-  overflow: 'hidden' as const,
-  backgroundColor: '#FAFAFA',
-  flex: 1,
-},
-'card-og-image': {
-  width: '100%' as const,
-  height: 140,
-  backgroundColor: '#EEEEEE',
-},
-'card-og-text': {
-  padding: 10,
-  gap: 3,
-},
-'card-og-sitename': {
-  fontSize: 11,
-  color: '#888888',
-},
-'card-og-title': {
-  fontSize: 13,
-  fontWeight: '600' as const,
-  color: '#1A1A1A',
-},
-'card-og-desc': {
-  fontSize: 12,
-  color: '#555555',
-  lineHeight: 17,
-},
-'card-og-url': {
-  fontSize: 11,
-  color: '#AAAAAA',
-  marginTop: 2,
-},
+  // 링크 바로가기 버튼
+  'card-link-button': {
+    marginTop: 6,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#C8D8FF',
+    backgroundColor: '#EEF3FF',
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  'card-link-button-content': {
+    flex: 1,
+    marginRight: 10,
+  },
+  'card-link-button-title': {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: 'PretendardVariable',
+    marginBottom: 2,
+  },
+  'card-link-button-url': {
+    fontSize: 11,
+    color: '#9DAFC8',
+    fontFamily: 'PretendardVariable',
+  },
+  'card-link-button-action': {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#588DFF',
+    fontFamily: 'PretendardVariable',
+    flexShrink: 0,
+  },
 });
