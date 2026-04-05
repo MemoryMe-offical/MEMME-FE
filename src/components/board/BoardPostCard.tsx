@@ -24,6 +24,17 @@ interface BoardPostCardProps {
   onPress?: (post: BoardPost) => void;
 }
 
+const normalizeUrl = (url: string) =>
+  /^https?:\/\//i.test(url) ? url : `https://${url}`;
+
+const openUrl = async (url: string) => {
+  try {
+    await Linking.openURL(normalizeUrl(url));
+  } catch {
+    Alert.alert('오류', '링크를 여는 중 문제가 발생했습니다.');
+  }
+};
+
 // OG 카드 (링크 미리보기 + 바로가기 버튼)
 const OgCard = ({ url, ogData }: { url: string; ogData?: BoardPost['ogData'] }) => (
   <View style={styles['card-og-card']}>
@@ -54,7 +65,7 @@ const OgCard = ({ url, ogData }: { url: string; ogData?: BoardPost['ogData'] }) 
         onPress={() =>
           Alert.alert('링크 열기', '링크가 열립니다. 이동하시겠습니까?', [
             { text: '취소', style: 'cancel' },
-            { text: '이동', onPress: () => Linking.openURL(url) },
+            { text: '이동', onPress: () => openUrl(url) },
           ])
         }
         activeOpacity={0.8}>

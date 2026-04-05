@@ -69,14 +69,25 @@ const formatFullTime = (iso: string) => {
   return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 ${isAM ? '오전' : '오후'} ${(h % 12) || 12}:${d.getMinutes().toString().padStart(2, '0')}`;
 };
 
-// ── 링크 열기 (확인 알림) ──
+// ── 링크 열기 ──
+const normalizeUrl = (url: string) =>
+  /^https?:\/\//i.test(url) ? url : `https://${url}`;
+
+const openUrl = async (url: string) => {
+  try {
+    await Linking.openURL(normalizeUrl(url));
+  } catch {
+    Alert.alert('오류', '링크를 여는 중 문제가 발생했습니다.');
+  }
+};
+
 const openLinkWithConfirm = (url: string) => {
   Alert.alert(
     '링크 열기',
     '링크가 열립니다. 이동하시겠습니까?',
     [
       { text: '취소', style: 'cancel' },
-      { text: '이동', onPress: () => Linking.openURL(url) },
+      { text: '이동', onPress: () => openUrl(url) },
     ],
   );
 };
