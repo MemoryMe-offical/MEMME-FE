@@ -1,75 +1,563 @@
-// 게시물 상세 스크린
-
 import React, { useState } from 'react';
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   ScrollView,
+  Image,
+  Linking,
+  ActivityIndicator,
   StyleSheet,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
-import { BoardPost } from '../types/chatBoard.type';
-import BoardPostEditModal from '../components/board/BoardPostEditModal';
-import { ArrowLeftIcon, EditIcon } from '../components/common/Icons';
+import { BoardPost, OgData, SubPostItem } from '../types/chatBoard.type';
+import {
+  ArrowLeftIcon,
+  EditIcon,
+  CloseIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  PlusCircleIcon,
+  ImageIcon,
+} from '../components/common/Icons';
+import { launchImageLibrary } from 'react-native-image-picker';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BoardPostDetail'>;
 
-const BoardPostDetailScreen = ({ route, navigation }: Props) => {
-  const { post: initialPost, subItemId, onSave } = route.params;
-  const [post, setPost] = useState<BoardPost>(initialPost);
-  const [editingPost, setEditingPost] = useState<BoardPost | null>(null);
+// ── OG fetch ──
+const fetchOgData = async (url: string): Promise<OgData> => {
+  try {
+    const res = await fetch(url);
+    const html = await res.text();
+    const getMeta = (prop: string) => {
+      const m =
+        html.match(new RegExp(`<meta[^>]+property=["']og:${prop}["'][^>]+content=["']([^"']+)["']`, 'i')) ||
+        html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:${prop}["']`, 'i'));
+      return m?.[1] ?? '';
+    };
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    return {
+      title: getMeta('title') || titleMatch?.[1] || url,
+      description: getMeta('description'),
+      imageUrl: getMeta('image'),
+      siteName: getMeta('site_name'),
+    };
+  } catch {
+    return { title: url };
+  }
+};
 
-  const subItem = subItemId
-    ? post.subItems?.find(s => s.id === subItemId)
-    : null;
+const formatFullTime = (iso: string) => {
+  const d = new Date(iso);
+  const h = d.getHours();
+  const isAM = h < 12;
+  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 ${isAM ? '오전' : '오후'} ${(h % 12) || 12}:${d.getMinutes().toString().padStart(2, '0')}`;
+};
 
-  const displayTitle = subItem ? subItem.title : post.title;
-  const displayContent = subItem ? subItem.content : post.content;
+// ── OG 카드 (공유 컴포넌트) ──
+const OgPreviewCard = ({ url, ogData, onPress }: { url: string; ogData?: OgData; onPress?: () => void }) => (
+  <TouchableOpacity
+    style={styles.ogCard}
+    onPress={onPress ?? (() => Linking.openURL(url))}
+    activeOpacity={0.85}>
+    {ogData?.imageUrl
+      ? <Image source={{ uri: ogData.imageUrl }} style={styles.ogImage} resizeMode="cover" />
+      : null}
+    <View style={styles.ogBody}>
+      {ogData?.siteName ? <Text style={styles.ogSitename}>{ogData.siteName}</Text> : null}
+      <Text style={styles.ogTitle} numberOfLines={2}>{ogData?.title || url}</Text>
+      {ogData?.description ? <Text style={styles.ogDesc} numberOfLines={2}>{ogData.description}</Text> : null}
+      <Text style={styles.ogUrl} numberOfLines={1}>{url}</Text>
+    </View>
+  </TouchableOpacity>
+);
 
-  const handleSave = (updated: BoardPost) => {
-    setPost(updated);
-    setEditingPost(null);
-    onSave?.(updated);
-  };
-
-  return (
-    <View style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
-          <ArrowLeftIcon color="#1A1A1A" size={22} />
-        </TouchableOpacity>
-        <Text style={styles['header-title']} numberOfLines={1}>
-          {displayTitle}
-        </Text>
-        <TouchableOpacity onPress={() => setEditingPost(post)} hitSlop={8}>
-          <EditIcon color="#588DFF" size={20} />
-        </TouchableOpacity>
-      </View>
-
-      {/* 본문 */}
-      <ScrollView style={styles.body} contentContainerStyle={styles['body-content']}>
-        <Text style={styles['content-label']}>내용</Text>
-        <Text style={styles['content-text']}>{displayContent}</Text>
-      </ScrollView>
-
-      {/* 수정 모달 */}
-      <BoardPostEditModal
-        post={editingPost}
-        onClose={() => setEditingPost(null)}
-        onSave={handleSave}
+// ── 서브아이템 링크 편집 (인라인) ──
+const SubItemLinkEditor = ({
+  url,
+  ogData,
+  ogLoading,
+  onChangeUrl,
+  onFetch,
+  onClear,
+}: {
+  url: string;
+  ogData?: OgData;
+  ogLoading: boolean;
+  onChangeUrl: (v: string) => void;
+  onFetch: () => void;
+  onClear: () => void;
+}) => (
+  <View style={styles.subLinkSection}>
+    <View style={styles.linkInputRow}>
+      <TextInput
+        style={styles.linkInput}
+        value={url}
+        onChangeText={v => { onChangeUrl(v); if (!v) onClear(); }}
+        placeholder="링크 URL"
+        placeholderTextColor="#AABBCC"
+        autoCapitalize="none"
+        keyboardType="url"
       />
+      <TouchableOpacity
+        style={[styles.linkFetchBtn, (!url.trim() || ogLoading) && styles.linkFetchBtnDisabled]}
+        onPress={onFetch}
+        disabled={ogLoading || !url.trim()}>
+        {ogLoading
+          ? <ActivityIndicator size="small" color="#FFFFFF" />
+          : <Text style={styles.linkFetchText}>확인</Text>}
+      </TouchableOpacity>
+    </View>
+    {url.trim() && ogData && (
+      <>
+        <TouchableOpacity style={styles.linkClearBtn} onPress={onClear}>
+          <CloseIcon color="#FF3B30" size={12} />
+          <Text style={styles.linkClearText}>링크 삭제</Text>
+        </TouchableOpacity>
+        <OgPreviewCard url={url} ogData={ogData} />
+      </>
+    )}
+  </View>
+);
+
+// ── 이미지 편집 행 (인라인) ──
+const ImageEditRow = ({
+  uris,
+  onAdd,
+  onRemove,
+}: {
+  uris: string[];
+  onAdd: (newUris: string[]) => void;
+  onRemove: (uri: string) => void;
+}) => {
+  const pick = () => {
+    launchImageLibrary({ mediaType: 'photo', selectionLimit: 10 }, res => {
+      if (res.assets) {
+        const picked = res.assets.map(a => a.uri).filter((u): u is string => !!u);
+        onAdd(picked);
+      }
+    });
+  };
+  return (
+    <View style={styles.imageRow}>
+      {uris.map(uri => (
+        <View key={uri} style={styles.imageThumbWrap}>
+          <Image source={{ uri }} style={styles.imageThumb} />
+          <TouchableOpacity style={styles.imageDeleteOverlay} onPress={() => onRemove(uri)} hitSlop={4}>
+            <CloseIcon color="#FFFFFF" size={12} />
+          </TouchableOpacity>
+        </View>
+      ))}
+      <TouchableOpacity style={styles.imageAddBtn} onPress={pick}>
+        <ImageIcon color="#9DAFC8" size={24} />
+      </TouchableOpacity>
     </View>
   );
 };
 
+// ──────────────────────────────────────────
+// 메인 스크린
+// ──────────────────────────────────────────
+const BoardPostDetailScreen = ({ route, navigation }: Props) => {
+  const { post: initialPost, subItemId, onSave, startEditing } = route.params;
+
+  const [post, setPost] = useState<BoardPost>(initialPost);
+  const [isEditing, setIsEditing] = useState(startEditing ?? false);
+
+  // 편집 임시 상태
+  const [editTitle, setEditTitle] = useState(initialPost.title);
+  const [editContent, setEditContent] = useState(initialPost.content);
+  const [editSubItems, setEditSubItems] = useState<SubPostItem[]>(initialPost.subItems ?? []);
+  const [editUrl, setEditUrl] = useState(initialPost.url ?? '');
+  const [editOgData, setEditOgData] = useState<OgData | undefined>(initialPost.ogData);
+  const [editImageUris, setEditImageUris] = useState<string[]>(initialPost.imageUris ?? []);
+  const [ogLoading, setOgLoading] = useState(false);
+
+  // 서브아이템별 OG 로딩 상태
+  const [subOgLoading, setSubOgLoading] = useState<Record<string, boolean>>({});
+
+  // 현재 편집 중인 서브아이템 ID
+  const [editingSubId, setEditingSubId] = useState<string | null>(null);
+
+  // 뷰 모드 아코디언
+  const [expandedSubId, setExpandedSubId] = useState<string | null>(
+    subItemId ?? (initialPost.subItems?.[0]?.id ?? null),
+  );
+
+  const enterEdit = () => {
+    setEditTitle(post.title);
+    setEditContent(post.content);
+    const subs = post.subItems ?? [];
+    setEditSubItems(subs);
+    setEditUrl(post.url ?? '');
+    setEditOgData(post.ogData);
+    setEditImageUris(post.imageUris ?? []);
+    // 서브아이템이 있으면 첫 번째 자동 선택, 없으면 null
+    setEditingSubId(subs.length > 0 ? subs[0].id : null);
+    setIsEditing(true);
+  };
+
+  const cancelEdit = () => setIsEditing(false);
+
+  const handleSave = () => {
+    if (!editTitle.trim()) return;
+    const updated: BoardPost = {
+      ...post,
+      title: editTitle.trim(),
+      content: editContent.trim(),
+      subItems: editSubItems.length > 0 ? editSubItems : undefined,
+      url: editUrl.trim() || undefined,
+      ogData: editUrl.trim() ? editOgData : undefined,
+      imageUris: editImageUris.length > 0 ? editImageUris : undefined,
+    };
+    setPost(updated);
+    setIsEditing(false);
+    onSave?.(updated);
+  };
+
+  // ── 게시물 링크 OG ──
+  const handleFetchPostOg = async () => {
+    if (!editUrl.trim()) return;
+    setOgLoading(true);
+    const og = await fetchOgData(editUrl.trim());
+    setEditOgData(og);
+    setOgLoading(false);
+  };
+
+  // ── 서브아이템 핸들러 ──
+  const addSubItem = () => {
+    const newId = Date.now().toString();
+    setEditSubItems(prev => [...prev, { id: newId, title: '', content: '' }]);
+    setEditingSubId(newId);
+  };
+
+  const updateSubItem = (id: string, patch: Partial<SubPostItem>) => {
+    setEditSubItems(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
+  };
+
+  const deleteSubItem = (id: string) => {
+    setEditSubItems(prev => prev.filter(s => s.id !== id));
+  };
+
+  const fetchSubOg = async (id: string, url: string) => {
+    if (!url.trim()) return;
+    setSubOgLoading(prev => ({ ...prev, [id]: true }));
+    const og = await fetchOgData(url.trim());
+    updateSubItem(id, { ogData: og });
+    setSubOgLoading(prev => ({ ...prev, [id]: false }));
+  };
+
+  // ── 빈 게시물 판별 ──
+  const isEmpty =
+    !post.content?.trim() &&
+    !post.subItems?.length &&
+    !post.url &&
+    !post.imageUris?.length;
+
+  // ──────────────────────────────────────────
+  // 편집 모드
+  // ──────────────────────────────────────────
+  if (isEditing) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={cancelEdit} style={styles.headerSideBtn}>
+            <Text style={styles.cancelText}>취소</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerCenterTitle}>게시물 수정</Text>
+          <TouchableOpacity
+            onPress={handleSave}
+            style={[styles.headerSideBtn, styles.headerSideBtnRight]}
+            disabled={!editTitle.trim()}
+            activeOpacity={0.6}>
+            <Text style={[styles.saveText, !editTitle.trim() && styles.saveTextDisabled]}>저장</Text>
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView
+          style={styles.body}
+          contentContainerStyle={styles.editBodyContent}
+          keyboardShouldPersistTaps="handled">
+
+          {/* 제목 */}
+          <TextInput
+            style={styles.editTitleInput}
+            value={editTitle}
+            onChangeText={setEditTitle}
+            placeholder="제목"
+            placeholderTextColor="#AABBCC"
+            maxLength={100}
+          />
+          <View style={styles.divider} />
+
+          {/* 서브아이템이 없을 때만 내용/사진/링크 표시 */}
+          {editSubItems.length === 0 && (
+            <>
+              <TextInput
+                style={styles.editContentInput}
+                value={editContent}
+                onChangeText={setEditContent}
+                placeholder="내용을 입력하세요"
+                placeholderTextColor="#AABBCC"
+                multiline
+                textAlignVertical="top"
+              />
+
+              <View style={styles.sectionDivider} />
+              <Text style={styles.sectionLabel}>링크</Text>
+              <View style={styles.linkInputRow}>
+                <TextInput
+                  style={styles.linkInput}
+                  value={editUrl}
+                  onChangeText={v => { setEditUrl(v); setEditOgData(undefined); }}
+                  placeholder="https://"
+                  placeholderTextColor="#AABBCC"
+                  autoCapitalize="none"
+                  keyboardType="url"
+                />
+                <TouchableOpacity
+                  style={[styles.linkFetchBtn, (!editUrl.trim() || ogLoading) && styles.linkFetchBtnDisabled]}
+                  onPress={handleFetchPostOg}
+                  disabled={ogLoading || !editUrl.trim()}>
+                  {ogLoading
+                    ? <ActivityIndicator size="small" color="#FFFFFF" />
+                    : <Text style={styles.linkFetchText}>불러오기</Text>}
+                </TouchableOpacity>
+              </View>
+              {editUrl.trim() && editOgData && (
+                <>
+                  <TouchableOpacity style={styles.linkClearBtn} onPress={() => { setEditUrl(''); setEditOgData(undefined); }}>
+                    <CloseIcon color="#FF3B30" size={12} />
+                    <Text style={styles.linkClearText}>링크 삭제</Text>
+                  </TouchableOpacity>
+                  <OgPreviewCard url={editUrl} ogData={editOgData} />
+                </>
+              )}
+
+              <View style={styles.sectionDivider} />
+              <Text style={styles.sectionLabel}>사진</Text>
+              <ImageEditRow
+                uris={editImageUris}
+                onAdd={uris => setEditImageUris(prev => [...prev, ...uris])}
+                onRemove={uri => setEditImageUris(prev => prev.filter(u => u !== uri))}
+              />
+            </>
+          )}
+
+          {/* ── 서브아이템 섹션 ── */}
+          {editSubItems.length > 0 && <View style={styles.sectionDivider} />}
+          <Text style={styles.sectionLabel}>하위 항목</Text>
+
+          {editSubItems.map((sub, idx) => {
+            const isActive = editingSubId === sub.id;
+            return (
+              <View
+                key={sub.id}
+                style={[styles.subItemCard, isActive && styles.subItemCardActive]}>
+
+                {/* 카드 헤더 — 탭으로 열기/닫기 */}
+                <TouchableOpacity
+                  style={styles.subItemCardHeader}
+                  onPress={() => setEditingSubId(isActive ? null : sub.id)}
+                  activeOpacity={0.7}>
+                  <Text style={[styles.subItemIndex, isActive && styles.subItemIndexActive]}>
+                    {idx + 1}
+                  </Text>
+                  <Text
+                    style={[styles.subItemHeaderTitle, isActive && styles.subItemHeaderTitleActive]}
+                    numberOfLines={1}>
+                    {sub.title || `항목 ${idx + 1}`}
+                  </Text>
+                  <View style={styles.subItemHeaderRight}>
+                    {isActive && (
+                      <TouchableOpacity
+                        onPress={() => deleteSubItem(sub.id)}
+                        style={styles.subItemDeleteBtn}
+                        hitSlop={8}>
+                        <CloseIcon color="#FF3B30" size={14} />
+                      </TouchableOpacity>
+                    )}
+                    {isActive
+                      ? <ChevronUpIcon color="#588DFF" size={16} />
+                      : <ChevronDownIcon color="#9DAFC8" size={16} />}
+                  </View>
+                </TouchableOpacity>
+
+                {/* 펼쳐진 편집 영역 */}
+                {isActive && (
+                  <>
+                    <View style={styles.subItemDivider} />
+
+                    <TextInput
+                      style={styles.subItemTitleInput}
+                      value={sub.title}
+                      onChangeText={v => updateSubItem(sub.id, { title: v })}
+                      placeholder="항목 제목"
+                      placeholderTextColor="#AABBCC"
+                    />
+
+                    <TextInput
+                      style={styles.subItemContentInput}
+                      value={sub.content}
+                      onChangeText={v => updateSubItem(sub.id, { content: v })}
+                      placeholder="항목 내용"
+                      placeholderTextColor="#AABBCC"
+                      multiline
+                      textAlignVertical="top"
+                    />
+
+                    <Text style={styles.subItemSectionLabel}>사진</Text>
+                    <ImageEditRow
+                      uris={sub.imageUris ?? []}
+                      onAdd={uris => updateSubItem(sub.id, { imageUris: [...(sub.imageUris ?? []), ...uris] })}
+                      onRemove={uri => updateSubItem(sub.id, { imageUris: (sub.imageUris ?? []).filter(u => u !== uri) })}
+                    />
+
+                    <Text style={styles.subItemSectionLabel}>링크</Text>
+                    <SubItemLinkEditor
+                      url={sub.url ?? ''}
+                      ogData={sub.ogData}
+                      ogLoading={subOgLoading[sub.id] ?? false}
+                      onChangeUrl={v => updateSubItem(sub.id, { url: v, ogData: undefined })}
+                      onFetch={() => fetchSubOg(sub.id, sub.url ?? '')}
+                      onClear={() => updateSubItem(sub.id, { url: undefined, ogData: undefined })}
+                    />
+                  </>
+                )}
+              </View>
+            );
+          })}
+
+          <TouchableOpacity style={styles.addSubItemBtn} onPress={addSubItem}>
+            <PlusCircleIcon color="#588DFF" size={18} />
+            <Text style={styles.addSubItemText}>하위 항목 추가</Text>
+          </TouchableOpacity>
+
+          <View style={{ height: 48 }} />
+        </ScrollView>
+      </View>
+    );
+  }
+
+  // ──────────────────────────────────────────
+  // 뷰 모드
+  // ──────────────────────────────────────────
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
+          <ArrowLeftIcon color="#1A1A1A" size={22} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle} numberOfLines={1}>{post.title}</Text>
+        <TouchableOpacity onPress={enterEdit} hitSlop={8}>
+          <EditIcon color="#588DFF" size={20} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
+        <Text style={styles.timeText}>{formatFullTime(post.createdAt)}</Text>
+
+        {/* 빈 게시물: 내용/서브아이템/링크/사진 모두 없을 때 */}
+        {isEmpty ? (
+          <TouchableOpacity style={styles.emptyState} onPress={enterEdit} activeOpacity={0.7}>
+            <Text style={styles.emptyStateIcon}>✏️</Text>
+            <Text style={styles.emptyStateTitle}>아직 내용이 없어요</Text>
+            <Text style={styles.emptyStateDesc}>탭해서 내용, 사진, 링크를 추가해보세요</Text>
+          </TouchableOpacity>
+        ) : (
+          <>
+            {/* 내용 (서브아이템 없을 때) */}
+            {!post.subItems?.length && !!post.content && (
+              <>
+                <Text style={styles.contentLabel}>내용</Text>
+                <Text style={styles.contentText}>{post.content}</Text>
+              </>
+            )}
+
+            {/* 서브아이템 아코디언 */}
+            {!!post.subItems?.length && (
+              <View style={styles.subItemsView}>
+                {post.subItems.map((sub, idx) => {
+                  const isOpen = expandedSubId === sub.id;
+                  const hasContent = !!sub.content || !!sub.imageUris?.length || !!sub.url;
+                  return (
+                    <View key={sub.id} style={[styles.subAccordion, idx === post.subItems!.length - 1 && styles.subAccordionLast]}>
+                      <TouchableOpacity
+                        style={styles.subAccordionHeader}
+                        onPress={() => setExpandedSubId(isOpen ? null : sub.id)}
+                        activeOpacity={0.7}>
+                        <Text style={styles.subAccordionTitle}>{sub.title || `항목 ${idx + 1}`}</Text>
+                        {isOpen
+                          ? <ChevronUpIcon color="#588DFF" size={18} />
+                          : <ChevronDownIcon color="#9DAFC8" size={18} />}
+                      </TouchableOpacity>
+
+                      {isOpen && (
+                        <View style={styles.subAccordionBody}>
+                          {sub.content ? (
+                            <Text style={styles.subAccordionContent}>{sub.content}</Text>
+                          ) : null}
+
+                          {!!sub.imageUris?.length && (
+                            <View style={[styles.imageRow, { marginTop: sub.content ? 12 : 0 }]}>
+                              {sub.imageUris.map(uri => (
+                                <Image key={uri} source={{ uri }} style={styles.imageThumb} />
+                              ))}
+                            </View>
+                          )}
+
+                          {sub.url && (
+                            <View style={{ marginTop: (sub.content || sub.imageUris?.length) ? 12 : 0 }}>
+                              <OgPreviewCard url={sub.url} ogData={sub.ogData} />
+                            </View>
+                          )}
+
+                          {!hasContent && (
+                            <Text style={styles.emptyContent}>내용 없음</Text>
+                          )}
+                        </View>
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            )}
+
+            {/* 게시물 이미지 */}
+            {!!post.imageUris?.length && (
+              <>
+                <Text style={styles.contentLabel}>사진</Text>
+                <View style={styles.imageRow}>
+                  {post.imageUris.map(uri => (
+                    <Image key={uri} source={{ uri }} style={styles.imageThumb} />
+                  ))}
+                </View>
+              </>
+            )}
+
+            {/* 게시물 링크 */}
+            {!!post.url && (
+              <>
+                <Text style={styles.contentLabel}>링크</Text>
+                <OgPreviewCard url={post.url} ogData={post.ogData} />
+              </>
+            )}
+          </>
+        )}
+      </ScrollView>
+    </View>
+  );
+};
+
+// ──────────────────────────────────────────
+// 스타일
+// ──────────────────────────────────────────
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F8FF',
-  },
+  container: { flex: 1, backgroundColor: '#F5F8FF' },
+
+  // 헤더
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -81,32 +569,189 @@ const styles = StyleSheet.create({
     borderBottomColor: '#E8EEF8',
     gap: 12,
   },
-  'header-title': {
+  headerSideBtn: { minWidth: 52 },
+  headerSideBtnRight: { alignItems: 'flex-end' },
+  headerTitle: {
     flex: 1,
     fontSize: 17,
     fontWeight: '600',
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
   },
-  body: {
+  headerCenterTitle: {
     flex: 1,
-  },
-  'body-content': {
-    padding: 20,
-  },
-  'content-label': {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#8899AA',
-    fontFamily: 'PretendardVariable',
-    marginBottom: 8,
-  },
-  'content-text': {
-    fontSize: 15,
+    fontSize: 16,
+    fontWeight: '700',
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
-    lineHeight: 24,
+    textAlign: 'center',
   },
+  cancelText: { fontSize: 15, color: '#9DAFC8', fontFamily: 'PretendardVariable' },
+  saveText: { fontSize: 15, fontWeight: '600', color: '#588DFF', fontFamily: 'PretendardVariable' },
+  saveTextDisabled: { color: '#C0CDD8' },
+
+  // Body
+  body: { flex: 1 },
+  bodyContent: { padding: 20, paddingBottom: 48 },
+  editBodyContent: { paddingHorizontal: 20, paddingBottom: 48 },
+
+  // 뷰 모드
+  timeText: { fontSize: 12, color: '#9DAFC8', fontFamily: 'PretendardVariable', marginBottom: 20 },
+  contentLabel: {
+    fontSize: 12, fontWeight: '600', color: '#9DAFC8',
+    fontFamily: 'PretendardVariable', letterSpacing: 0.5, marginBottom: 8, marginTop: 20,
+  },
+  contentText: { fontSize: 15, color: '#1A1A1A', fontFamily: 'PretendardVariable', lineHeight: 24 },
+  emptyContent: { fontSize: 14, color: '#C0CDD8', fontFamily: 'PretendardVariable', fontStyle: 'italic' },
+
+  // 빈 상태
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 48,
+    paddingHorizontal: 24,
+    marginTop: 12,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1.5,
+    borderColor: '#E4ECFF',
+    borderStyle: 'dashed',
+    gap: 8,
+  },
+  emptyStateIcon: { fontSize: 32, marginBottom: 4 },
+  emptyStateTitle: {
+    fontSize: 16, fontWeight: '600', color: '#6B7E9A',
+    fontFamily: 'PretendardVariable',
+  },
+  emptyStateDesc: {
+    fontSize: 13, color: '#9DAFC8', fontFamily: 'PretendardVariable', textAlign: 'center',
+  },
+
+  // 서브아이템 뷰
+  subItemsView: {
+    borderRadius: 14, overflow: 'hidden',
+    backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E4ECFF',
+    marginTop: 4,
+  },
+  subAccordion: { borderBottomWidth: 1, borderBottomColor: '#EEF3FF' },
+  subAccordionLast: { borderBottomWidth: 0 },
+  subAccordionHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 16, paddingVertical: 14,
+  },
+  subAccordionTitle: {
+    flex: 1, fontSize: 15, fontWeight: '600', color: '#1A1A1A', fontFamily: 'PretendardVariable',
+  },
+  subAccordionBody: { paddingHorizontal: 16, paddingBottom: 16, backgroundColor: '#F8FAFF' },
+  subAccordionContent: {
+    fontSize: 14, color: '#3A3A3A', fontFamily: 'PretendardVariable', lineHeight: 22,
+  },
+
+  // 이미지
+  imageRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 8 },
+  imageThumbWrap: { position: 'relative' },
+  imageThumb: { width: 80, height: 80, borderRadius: 10, backgroundColor: '#E8EEF8' },
+  imageDeleteOverlay: {
+    position: 'absolute', top: 4, right: 4,
+    backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 10, padding: 3,
+  },
+  imageAddBtn: {
+    width: 80, height: 80, borderRadius: 10, backgroundColor: '#EEF3FF',
+    borderWidth: 1.5, borderColor: '#C8D8FF', borderStyle: 'dashed',
+    alignItems: 'center', justifyContent: 'center',
+  },
+
+  // OG 카드
+  ogCard: { borderRadius: 12, overflow: 'hidden', borderWidth: 1, borderColor: '#E4ECFF', marginTop: 4 },
+  ogImage: { width: '100%', height: 160, backgroundColor: '#E8EEF8' },
+  ogBody: { padding: 12, backgroundColor: '#F8FAFF' },
+  ogSitename: { fontSize: 11, color: '#9DAFC8', fontFamily: 'PretendardVariable', marginBottom: 2 },
+  ogTitle: { fontSize: 14, fontWeight: '600', color: '#1A1A1A', fontFamily: 'PretendardVariable', marginBottom: 2 },
+  ogDesc: { fontSize: 12, color: '#6B7E9A', fontFamily: 'PretendardVariable', lineHeight: 18, marginBottom: 4 },
+  ogUrl: { fontSize: 11, color: '#9DAFC8', fontFamily: 'PretendardVariable' },
+
+  // 편집 공통
+  divider: { height: 1, backgroundColor: '#EEF3FF', marginBottom: 12 },
+  sectionDivider: { height: 8, backgroundColor: '#F4F7FF', marginHorizontal: -20, marginVertical: 4 },
+  sectionLabel: {
+    fontSize: 12, fontWeight: '600', color: '#9DAFC8',
+    fontFamily: 'PretendardVariable', letterSpacing: 0.5, marginTop: 16, marginBottom: 8,
+  },
+  editTitleInput: {
+    fontSize: 18, fontWeight: '700', color: '#1A1A1A',
+    fontFamily: 'PretendardVariable', paddingTop: 20, paddingBottom: 12,
+  },
+  editContentInput: {
+    fontSize: 15, color: '#3A3A3A', fontFamily: 'PretendardVariable',
+    lineHeight: 24, minHeight: 100, paddingBottom: 8,
+  },
+
+  // 서브아이템 편집
+  subItemCard: {
+    backgroundColor: '#F8FAFF', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12,
+    marginBottom: 10, borderWidth: 1, borderColor: '#E4ECFF',
+  },
+  subItemCardActive: {
+    borderColor: '#588DFF', borderWidth: 2,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#588DFF', shadowOpacity: 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  subItemCardHeader: { flexDirection: 'row', alignItems: 'center' },
+  subItemIndex: {
+    fontSize: 11, fontWeight: '700', color: '#588DFF', fontFamily: 'PretendardVariable',
+    backgroundColor: '#EEF3FF', paddingHorizontal: 7, paddingVertical: 2,
+    borderRadius: 6, overflow: 'hidden', marginRight: 8, flexShrink: 0,
+  },
+  subItemIndexActive: {
+    backgroundColor: '#588DFF', color: '#FFFFFF',
+  },
+  subItemHeaderTitle: {
+    flex: 1, fontSize: 14, fontWeight: '500', color: '#6B7E9A', fontFamily: 'PretendardVariable',
+  },
+  subItemHeaderTitleActive: {
+    color: '#1A1A1A', fontWeight: '600',
+  },
+  subItemHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 8 },
+  subItemDeleteBtn: { padding: 2 },
+  subItemDivider: { height: 1, backgroundColor: '#EEF3FF', marginVertical: 12 },
+  subItemTitleInput: {
+    fontSize: 14, fontWeight: '600', color: '#1A1A1A', fontFamily: 'PretendardVariable',
+    paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#E4ECFF', marginBottom: 10,
+  },
+  subItemContentInput: {
+    fontSize: 14, color: '#3A3A3A', fontFamily: 'PretendardVariable',
+    lineHeight: 22, minHeight: 60, marginBottom: 12,
+  },
+  subItemSectionLabel: {
+    fontSize: 11, fontWeight: '600', color: '#B0C4D8',
+    fontFamily: 'PretendardVariable', letterSpacing: 0.4, marginBottom: 6, marginTop: 4,
+  },
+  subLinkSection: { marginBottom: 4 },
+
+  addSubItemBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingVertical: 14, paddingHorizontal: 4,
+  },
+  addSubItemText: {
+    fontSize: 14, color: '#588DFF', fontFamily: 'PretendardVariable', fontWeight: '600',
+  },
+
+  // 링크 편집
+  linkInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  linkInput: {
+    flex: 1, fontSize: 14, color: '#1A1A1A', fontFamily: 'PretendardVariable',
+    backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E4ECFF',
+    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10,
+  },
+  linkFetchBtn: {
+    paddingHorizontal: 14, paddingVertical: 10,
+    backgroundColor: '#588DFF', borderRadius: 10, minWidth: 72, alignItems: 'center',
+  },
+  linkFetchBtnDisabled: { backgroundColor: '#C0CDD8' },
+  linkFetchText: { fontSize: 13, fontWeight: '600', color: '#FFFFFF', fontFamily: 'PretendardVariable' },
+  linkClearBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 4, marginBottom: 6 },
+  linkClearText: { fontSize: 12, color: '#FF3B30', fontFamily: 'PretendardVariable' },
 });
 
 export default BoardPostDetailScreen;

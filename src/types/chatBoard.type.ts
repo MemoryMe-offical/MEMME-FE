@@ -18,6 +18,8 @@ export interface SubPostItem {
   title: string;
   content: string;
   imageUris?: string[];
+  url?: string;
+  ogData?: OgData;
 }
 
 export interface OgData {
