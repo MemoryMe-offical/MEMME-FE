@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, Image, Animated } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -71,7 +72,7 @@ const SplashScreen = ({ navigation }: Props) => {
   }, [navigation, fadeAnim, characterAnim]);
 
   return (
-    <View style={styles['splash-container']}>
+    <SafeAreaView style={styles['splash-container']} edges={['top', 'bottom']}>
       {/* 상단 로고 영역 (왼쪽 정렬) */}
       <Animated.View
         style={[
@@ -111,7 +112,7 @@ const SplashScreen = ({ navigation }: Props) => {
           ]}
         />
       </Animated.View>
-    </View>
+    </SafeAreaView>
   );
 };
 

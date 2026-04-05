@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { BoardPost, OgData, SubPostItem } from '../types/chatBoard.type';
 import {
   ArrowLeftIcon,
@@ -110,24 +111,29 @@ const OgPreviewCard = ({ url, ogData, onPress }: { url: string; ogData?: OgData;
   </TouchableOpacity>
 );
 
-// ── 링크 바로가기 버튼 (뷰 모드) ──
-const LinkButton = ({ url, ogData }: { url: string; ogData?: OgData }) => (
-  <TouchableOpacity
-    style={styles.linkButton}
-    onPress={() => openLinkWithConfirm(url)}
-    activeOpacity={0.8}>
-    <View style={styles.linkButtonContent}>
-      <View style={styles.linkButtonTextWrap}>
-        <Text style={styles.linkButtonTitle} numberOfLines={1}>
-          {ogData?.title || ogData?.siteName || url}
-        </Text>
-        <Text style={styles.linkButtonUrl} numberOfLines={1}>{url}</Text>
+// ── OG 카드 + 바로가기 버튼 (뷰 모드) ──
+const LinkCard = ({ url, ogData }: { url: string; ogData?: OgData }) => (
+  <View style={styles.linkCard}>
+    {ogData?.imageUrl && (
+      <Image source={{ uri: ogData.imageUrl }} style={styles.linkCardImage} resizeMode="cover" />
+    )}
+    <View style={styles.linkCardBody}>
+      <View style={styles.linkCardText}>
+        {ogData?.siteName ? <Text style={styles.linkCardSitename}>{ogData.siteName}</Text> : null}
+        <Text style={styles.linkCardTitle} numberOfLines={2}>{ogData?.title || url}</Text>
+        {ogData?.description ? (
+          <Text style={styles.linkCardDesc} numberOfLines={2}>{ogData.description}</Text>
+        ) : null}
+        <Text style={styles.linkCardUrl} numberOfLines={1}>{url}</Text>
       </View>
-      <View style={styles.linkButtonArrow}>
-        <Text style={styles.linkButtonArrowText}>바로가기</Text>
-      </View>
+      <TouchableOpacity
+        style={styles.linkCardGoto}
+        onPress={() => openLinkWithConfirm(url)}
+        activeOpacity={0.8}>
+        <Text style={styles.linkCardGotoText}>바로가기</Text>
+      </TouchableOpacity>
     </View>
-  </TouchableOpacity>
+  </View>
 );
 
 // ── 서브아이템 링크 편집 (인라인) ──
@@ -305,6 +311,7 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
       url: editUrl.trim() || undefined,
       ogData: editUrl.trim() ? editOgData : undefined,
       imageUris: editImageUris.length > 0 ? editImageUris : undefined,
+      updatedAt: new Date().toISOString(),
     };
     setPost(updated);
     setIsEditing(false);
@@ -406,7 +413,7 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
   // ──────────────────────────────────────────
   if (isEditing) {
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <View style={styles.header}>
           <TouchableOpacity onPress={cancelEdit} style={styles.headerSideBtn}>
             <Text style={styles.cancelText}>취소</Text>
@@ -587,7 +594,7 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
 
           <View style={{ height: 48 }} />
         </ScrollView>
-      </View>
+      </SafeAreaView>
     );
   }
 
@@ -595,7 +602,7 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
   // 뷰 모드
   // ──────────────────────────────────────────
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
           <ArrowLeftIcon color="#1A1A1A" size={22} />
@@ -606,9 +613,24 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
-        <Text style={styles.timeText}>{formatFullTime(post.createdAt)}</Text>
+      {/* 날짜 정보 바 */}
+      <View style={styles.dateBadgeRow}>
+        <View style={styles.dateBadge}>
+          <Text style={styles.dateBadgeLabel}>작성</Text>
+          <Text style={styles.dateBadgeValue}>{formatFullTime(post.createdAt)}</Text>
+        </View>
+        {post.updatedAt && (
+          <>
+            <View style={styles.dateBadgeDot} />
+            <View style={styles.dateBadge}>
+              <Text style={styles.dateBadgeLabel}>수정</Text>
+              <Text style={styles.dateBadgeValue}>{formatFullTime(post.updatedAt)}</Text>
+            </View>
+          </>
+        )}
+      </View>
 
+      <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
         {/* 빈 게시물: 내용/서브아이템/링크/사진 모두 없을 때 */}
         {isEmpty ? (
           <TouchableOpacity style={styles.emptyState} onPress={enterEdit} activeOpacity={0.7}>
@@ -651,7 +673,7 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
                           ) : null}
 
                           {!!sub.imageUris?.length && (
-                            <View style={[styles.imageRow, { marginTop: sub.content ? 12 : 0 }]}>
+                            <View style={[styles.imageRow, { marginTop: sub.content ? 10 : 10 }]}>
                               {sub.imageUris.map(uri => (
                                 <Image key={uri} source={{ uri }} style={styles.imageThumb} />
                               ))}
@@ -659,13 +681,13 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
                           )}
 
                           {sub.url && (
-                            <View style={{ marginTop: (sub.content || sub.imageUris?.length) ? 12 : 0 }}>
-                              <LinkButton url={sub.url} ogData={sub.ogData} />
+                            <View style={{ marginTop: 10 }}>
+                              <LinkCard url={sub.url} ogData={sub.ogData} />
                             </View>
                           )}
 
                           {!hasContent && (
-                            <Text style={styles.emptyContent}>내용 없음</Text>
+                            <Text style={[styles.emptyContent, { paddingTop: 10 }]}>내용 없음</Text>
                           )}
                         </View>
                       )}
@@ -691,13 +713,13 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
             {!!post.url && (
               <>
                 <Text style={styles.contentLabel}>링크</Text>
-                <LinkButton url={post.url} ogData={post.ogData} />
+                <LinkCard url={post.url} ogData={post.ogData} />
               </>
             )}
           </>
         )}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -712,8 +734,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 56,
-    paddingBottom: 16,
+    paddingTop: 14,
+    paddingBottom: 14,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E8EEF8',
@@ -739,6 +761,25 @@ const styles = StyleSheet.create({
   cancelText: { fontSize: 15, color: '#9DAFC8', fontFamily: 'PretendardVariable' },
   saveText: { fontSize: 15, fontWeight: '600', color: '#588DFF', fontFamily: 'PretendardVariable' },
   saveTextDisabled: { color: '#C0CDD8' },
+
+  // 날짜 바
+  dateBadgeRow: {
+    flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6,
+    paddingHorizontal: 16, paddingVertical: 10,
+    backgroundColor: '#F0F5FF',
+    borderBottomWidth: 1, borderBottomColor: '#E4ECFF',
+  },
+  dateBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  dateBadgeLabel: {
+    fontSize: 11, fontWeight: '600', color: '#8FA8D0',
+    fontFamily: 'PretendardVariable',
+  },
+  dateBadgeValue: {
+    fontSize: 11, color: '#6B7E9A', fontFamily: 'PretendardVariable',
+  },
+  dateBadgeDot: {
+    width: 3, height: 3, borderRadius: 2, backgroundColor: '#C0CDD8',
+  },
 
   // Body
   body: { flex: 1 },
@@ -778,23 +819,26 @@ const styles = StyleSheet.create({
   },
 
   // 서브아이템 뷰
-  subItemsView: {
+  subItemsView: { gap: 10, marginTop: 4 },
+  subAccordion: {
     borderRadius: 14, overflow: 'hidden',
     backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E4ECFF',
-    marginTop: 4,
   },
-  subAccordion: { borderBottomWidth: 1, borderBottomColor: '#EEF3FF' },
-  subAccordionLast: { borderBottomWidth: 0 },
+  subAccordionLast: {},
   subAccordionHeader: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 14,
+    backgroundColor: '#FFFFFF',
   },
   subAccordionTitle: {
     flex: 1, fontSize: 15, fontWeight: '600', color: '#1A1A1A', fontFamily: 'PretendardVariable',
   },
-  subAccordionBody: { paddingHorizontal: 16, paddingBottom: 16, backgroundColor: '#F8FAFF' },
+  subAccordionBody: {
+    paddingHorizontal: 14, paddingBottom: 14, paddingTop: 2, backgroundColor: '#F8FAFF',
+    borderTopWidth: 1, borderTopColor: '#EEF3FF',
+  },
   subAccordionContent: {
-    fontSize: 14, color: '#3A3A3A', fontFamily: 'PretendardVariable', lineHeight: 22,
+    fontSize: 14, color: '#3A3A3A', fontFamily: 'PretendardVariable', lineHeight: 22, paddingTop: 10,
   },
 
   // 이미지
@@ -811,24 +855,27 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
 
-  // 링크 바로가기 버튼 (뷰 모드)
-  linkButton: {
-    borderRadius: 12, borderWidth: 1, borderColor: '#C8D8FF',
-    backgroundColor: '#EEF3FF', paddingHorizontal: 16, paddingVertical: 14,
-    flexDirection: 'row', alignItems: 'center', marginTop: 4,
+  // OG 카드 + 바로가기 버튼 (뷰 모드)
+  linkCard: {
+    borderRadius: 12, borderWidth: 1, borderColor: '#D8E4FF',
+    backgroundColor: '#FAFCFF', overflow: 'hidden',
   },
-  linkButtonContent: { flex: 1, marginRight: 12 },
-  linkButtonTextWrap: {},
-  linkButtonTitle: {
-    fontSize: 14, fontWeight: '600', color: '#1A1A1A',
-    fontFamily: 'PretendardVariable', marginBottom: 3,
+  linkCardImage: { width: '100%', height: 140, backgroundColor: '#E8EEF8' },
+  linkCardBody: {
+    padding: 10, flexDirection: 'row', alignItems: 'center', gap: 10,
   },
-  linkButtonUrl: { fontSize: 12, color: '#9DAFC8', fontFamily: 'PretendardVariable' },
-  linkButtonArrow: {
+  linkCardText: { flex: 1, gap: 2 },
+  linkCardSitename: { fontSize: 11, color: '#9DAFC8', fontFamily: 'PretendardVariable' },
+  linkCardTitle: {
+    fontSize: 13, fontWeight: '600', color: '#1A1A1A', fontFamily: 'PretendardVariable',
+  },
+  linkCardDesc: { fontSize: 12, color: '#6B7E9A', fontFamily: 'PretendardVariable', lineHeight: 17 },
+  linkCardUrl: { fontSize: 11, color: '#AABBCC', fontFamily: 'PretendardVariable', marginTop: 2 },
+  linkCardGoto: {
     backgroundColor: '#588DFF', borderRadius: 8,
-    paddingHorizontal: 12, paddingVertical: 6,
+    paddingHorizontal: 10, paddingVertical: 6, flexShrink: 0,
   },
-  linkButtonArrowText: {
+  linkCardGotoText: {
     fontSize: 12, fontWeight: '600', color: '#FFFFFF', fontFamily: 'PretendardVariable',
   },
 

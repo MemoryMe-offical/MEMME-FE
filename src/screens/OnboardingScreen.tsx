@@ -13,6 +13,7 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { onboardingStyles as styles } from '../styles/OnboardingScreen.styles';
 import LinearGradient from 'react-native-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -47,6 +48,7 @@ const onboardingData: OnboardingItem[] = [
 ];
 
 const OnboardingScreen = ({ navigation }: Props) => {
+  const insets = useSafeAreaInsets();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -232,7 +234,7 @@ const OnboardingScreen = ({ navigation }: Props) => {
       end={{ x: 0, y: 1 }}
       style={styles['onboarding-container']}
     >
-      <TouchableOpacity style={styles['onboarding-skipButton']} onPress={handleSkip}>
+      <TouchableOpacity style={[styles['onboarding-skipButton'], { top: insets.top + 16 }]} onPress={handleSkip}>
         <Text style={styles['onboarding-skipButton-text']}>건너뛰기</Text>
       </TouchableOpacity>
 
@@ -250,7 +252,7 @@ const OnboardingScreen = ({ navigation }: Props) => {
         scrollEventThrottle={16}
       />
 
-      <View style={styles['onboarding-bottomContainer']}>
+      <View style={[styles['onboarding-bottomContainer'], { paddingBottom: insets.bottom + 24 }]}>
         {renderDots()}
         <TouchableOpacity 
           style={styles['onboarding-bottomContainer-nextButton']} 

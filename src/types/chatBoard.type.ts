@@ -37,6 +37,7 @@ export interface BoardPost extends BaseItem {
   url?: string;
   ogData?: OgData;
   imageUris?: string[];
+  updatedAt?: string;
 }
 
 export type ChatBoardItem = ChatMessage | BoardPost;

@@ -1,5 +1,5 @@
-import React, { useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, Animated, Image, Linking, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, Image, Linking, Alert } from 'react-native';
 import { BoardPost, SubPostItem } from '../../types/chatBoard.type';
 import { boardPostCardStyles as styles } from '../../styles/BoardPostCard.styles';
 import {
@@ -92,40 +92,8 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardPos
   const initialExpandedId = isGroup && item.subItems!.length > 0 ? item.subItems![0].id : null;
   const [expandedSubId, setExpandedSubId] = useState<string | null>(initialExpandedId);
 
-  const animatedValues = useRef<Record<string, Animated.Value>>(
-    isGroup
-      ? Object.fromEntries(
-          item.subItems!.map(sub => [
-            sub.id,
-            new Animated.Value(sub.id === initialExpandedId ? 1 : 0),
-          ]),
-        )
-      : {},
-  );
-
   const toggleSubItem = (subId: string) => {
-    const isClosing = expandedSubId === subId;
-    const prevId = expandedSubId;
-    setExpandedSubId(isClosing ? null : subId);
-
-    const animations: Animated.CompositeAnimation[] = [];
-    if (prevId && prevId !== subId) {
-      animations.push(
-        Animated.timing(animatedValues.current[prevId], {
-          toValue: 0,
-          duration: 220,
-          useNativeDriver: false,
-        }),
-      );
-    }
-    animations.push(
-      Animated.timing(animatedValues.current[subId], {
-        toValue: isClosing ? 0 : 1,
-        duration: 280,
-        useNativeDriver: false,
-      }),
-    );
-    Animated.parallel(animations).start();
+    setExpandedSubId(prev => prev === subId ? null : subId);
   };
 
   return (
@@ -185,40 +153,31 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardPos
                           : <ChevronDownIcon color="#555555" size={16} />}
                       </TouchableOpacity>
 
-                      <Animated.View
-                        style={{
-                          maxHeight: animatedValues.current[sub.id].interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [0, 500],
-                          }),
-                          opacity: animatedValues.current[sub.id].interpolate({
-                            inputRange: [0, 0.4, 1],
-                            outputRange: [0, 0, 1],
-                          }),
-                          overflow: 'hidden',
-                        }}>
-                        {!!sub.content && (
-                          <>
-                            <View style={styles['card-section-divider']} />
-                            <View style={styles['card-section-row']}>
-                              <Text style={styles['card-section-label']}>내용</Text>
-                              <Text style={styles['card-content-text']} numberOfLines={3}>
-                                {sub.content}
-                              </Text>
-                            </View>
-                          </>
-                        )}
-                        {!!sub.imageUris?.length && (
-                          <>
-                            <View style={styles['card-section-divider']} />
-                            <View style={styles['card-section-row']}>
-                              <Text style={styles['card-section-label']}>사진</Text>
-                            </View>
-                          </>
-                        )}
-                        {!!(sub.url || item.url) && <View style={styles['card-section-divider']} />}
-                        <LinkSection url={sub.url ?? item.url} ogData={sub.ogData ?? item.ogData} />
-                      </Animated.View>
+                      {isSubExpanded && (
+                        <View>
+                          {!!sub.content && (
+                            <>
+                              <View style={styles['card-section-divider']} />
+                              <View style={styles['card-section-row']}>
+                                <Text style={styles['card-section-label']}>내용</Text>
+                                <Text style={styles['card-content-text']} numberOfLines={3}>
+                                  {sub.content}
+                                </Text>
+                              </View>
+                            </>
+                          )}
+                          {!!sub.imageUris?.length && (
+                            <>
+                              <View style={styles['card-section-divider']} />
+                              <View style={styles['card-section-row']}>
+                                <Text style={styles['card-section-label']}>사진</Text>
+                              </View>
+                            </>
+                          )}
+                          {!!(sub.url || item.url) && <View style={styles['card-section-divider']} />}
+                          <LinkSection url={sub.url ?? item.url} ogData={sub.ogData ?? item.ogData} />
+                        </View>
+                      )}
 
                       {!isLast && <View style={styles['sub-accordion-divider']} />}
                     </View>
