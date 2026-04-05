@@ -108,6 +108,7 @@ PLATFORMS
 
 DEPENDENCIES
   cocoapods (= 1.16.2)
+  xcodeproj (>= 1.27.0)
 
 BUNDLED WITH
    2.7.1
