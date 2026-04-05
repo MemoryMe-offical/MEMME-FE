@@ -12,8 +12,10 @@ import {
   AppState,
   NativeModules,
   Linking,
+  StatusBar,
+  Keyboard,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ReceiveSharingIntent from 'react-native-receive-sharing-intent';
@@ -131,7 +133,6 @@ const initItems: ChatBoardItem[] = [
   },
 ];
 
-// OG 메타데이터 fetch
 const fetchOgData = async (url: string): Promise<OgData> => {
   try {
     const res = await fetch(url);
@@ -165,19 +166,18 @@ const MainScreen = () => {
   const [inputText, setInputText] = useState('');
   const [contextMenuItem, setContextMenuItem] = useState<ChatBoardItem | null>(null);
   const [sideMenuVisible, setSideMenuVisible] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
   const flatListRef = useRef<FlatList<ChatBoardItem>>(null);
   const shouldScrollToEnd = useRef(false);
-  const { SharedDefaultsModule } = NativeModules;
+
   const nativeShareModule =
-  Platform.OS === 'ios'
-    ? NativeModules.SharedDefaultsModule
-    : NativeModules.SharedIntentModule;
+    Platform.OS === 'ios'
+      ? NativeModules.SharedDefaultsModule
+      : NativeModules.SharedIntentModule;
 
   const handleSharedUrl = async (url: string) => {
-    console.log('handleSharedUrl 호출됨:', url);
-  
     const ogData = await fetchOgData(url);
-  
+
     const newItem: BoardPost = {
       id: Date.now().toString(),
       userId: '24',
@@ -189,12 +189,11 @@ const MainScreen = () => {
       ogData,
       createdAt: new Date().toISOString(),
     };
-  
+
     shouldScrollToEnd.current = true;
     setItems(prev => [...prev, newItem]);
   };
-  
-  // ── 초기 로드 ──
+
   useEffect(() => {
     loadItems().then(stored => {
       setItems(stored ?? initItems);
@@ -202,7 +201,6 @@ const MainScreen = () => {
     });
   }, []);
 
-  // ── 변경 시 저장 (로드 완료 후부터) ──
   useEffect(() => {
     if (loaded) saveItems(items);
   }, [items, loaded]);
@@ -210,28 +208,37 @@ const MainScreen = () => {
   useEffect(() => {
     const getShared = async () => {
       const url = await nativeShareModule?.getSharedURL();
-  
-      console.log('🔥 RN에서 받은 값:', url);
-  
+
       if (typeof url === 'string' && url.startsWith('http')) {
         await handleSharedUrl(url);
         await nativeShareModule?.clearSharedURL();
       }
     };
-  
+
     getShared();
-  
-    const sub = AppState.addEventListener('change', (state) => {
-      console.log('AppState changed:', state);
+
+    const sub = AppState.addEventListener('change', state => {
       if (state === 'active') {
         getShared();
       }
     });
-  
+
     return () => sub.remove();
   }, []);
 
-  // ── 컨텍스트 메뉴 ──
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
   const handleContextMenu = (item: ChatBoardItem) => setContextMenuItem(item);
   const handleCloseContextMenu = () => setContextMenuItem(null);
 
@@ -318,7 +325,6 @@ const MainScreen = () => {
     );
   };
 
-  // ── 상세 스크린 ──
   const handleDetailPress = (post: BoardPost, subItemId?: string) => {
     navigation.navigate('BoardPostDetail', {
       post,
@@ -329,7 +335,6 @@ const MainScreen = () => {
     });
   };
 
-  // ── 사이드 메뉴 북마크 탭 ──
   const handleBookmarkPress = (item: ChatBoardItem) => {
     if (item.type === 'post') {
       navigation.navigate('BoardPostDetail', {
@@ -346,7 +351,6 @@ const MainScreen = () => {
     }
   };
 
-  // ── 새 채팅 전송 ──
   const handleSend = () => {
     if (!inputText.trim()) return;
     const newItem: ChatBoardItem = {
@@ -362,14 +366,12 @@ const MainScreen = () => {
     setInputText('');
   };
 
-  // 링크 형식
   const getDomainFromUrl = (url?: string) => {
     if (!url) return '';
-  
     const match = url.match(/^https?:\/\/(?:www\.)?([^/]+)/i);
     return match?.[1] ?? url;
   };
-  
+
   const LinkPreviewItem = ({
     item,
     onLongPress,
@@ -379,10 +381,9 @@ const MainScreen = () => {
   }) => {
     const domain = getDomainFromUrl(item.url);
     const hasPreview = !!item.ogData?.imageUrl;
-  
+
     if (!item.url) return null;
-  
-    // 썸네일 없으면 링크만
+
     if (!hasPreview) {
       return (
         <TouchableOpacity
@@ -411,8 +412,7 @@ const MainScreen = () => {
         </TouchableOpacity>
       );
     }
-  
-    // 썸네일 있으면 카톡 스타일
+
     return (
       <TouchableOpacity
         activeOpacity={0.9}
@@ -436,7 +436,7 @@ const MainScreen = () => {
           }}
           resizeMode="cover"
         />
-  
+
         <View style={{ paddingHorizontal: 14, paddingVertical: 12 }}>
           {!!item.title && item.title !== item.url && (
             <Text
@@ -451,7 +451,7 @@ const MainScreen = () => {
               {item.title}
             </Text>
           )}
-  
+
           {!!item.content && (
             <Text
               numberOfLines={2}
@@ -464,7 +464,7 @@ const MainScreen = () => {
               {item.content}
             </Text>
           )}
-  
+
           <Text
             numberOfLines={1}
             style={{
@@ -480,25 +480,28 @@ const MainScreen = () => {
     );
   };
 
-
   return (
-    <View style={styles['main-safeArea']}>
-      {/* 헤더 */}
-      <View style={[styles['main-header'], { paddingTop: 12 + insets.top }]}>
+    <SafeAreaView style={styles['main-safeArea']} edges={['top', 'left', 'right']}>
+      <StatusBar barStyle="dark-content" backgroundColor="#EEF3FF" />
+
+      <View style={styles['main-header']}>
         <TouchableOpacity style={styles['main-header-profileButton']}>
           <Image
             source={require('../assets/imgs/mainart.png')}
             style={styles['main-header-profileButton-image']}
           />
         </TouchableOpacity>
+
         <Text style={styles['main-header-title']}>나와의 채팅</Text>
+
         <View style={styles['main-header-rightButtons']}>
           <TouchableOpacity style={styles['main-header-iconButton']}>
             <SearchIcon color="#1A1A1A" size={20} />
           </TouchableOpacity>
           <TouchableOpacity
             style={styles['main-header-iconButton']}
-            onPress={() => setSideMenuVisible(true)}>
+            onPress={() => setSideMenuVisible(true)}
+          >
             <HamburgerIcon color="#1A1A1A" size={20} />
           </TouchableOpacity>
         </View>
@@ -506,7 +509,9 @@ const MainScreen = () => {
 
       <KeyboardAvoidingView
         style={styles['main-body']}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={0}
+      >
         <View style={styles['main-content']}>
           <View style={styles['main-watermark']} pointerEvents="none">
             <Image
@@ -537,7 +542,7 @@ const MainScreen = () => {
                   />
                 );
               }
-            
+
               if (item.url) {
                 return (
                   <LinkPreviewItem
@@ -546,7 +551,7 @@ const MainScreen = () => {
                   />
                 );
               }
-            
+
               return (
                 <BoardPostCard
                   item={item}
@@ -559,10 +564,22 @@ const MainScreen = () => {
           />
         </View>
 
-        <View style={[styles['main-inputBar'], { paddingBottom: 10 + insets.bottom }]}>
+        <View
+          style={[
+            styles['main-inputBar'],
+            {
+              paddingBottom: keyboardVisible
+                ? 8
+                : Platform.OS === 'ios'
+                  ? Math.max(insets.bottom, 8)
+                  : 8,
+            },
+          ]}
+        >
           <TouchableOpacity style={styles['main-inputBar-plusButton']}>
             <PlusIcon color="#000000" size={22} />
           </TouchableOpacity>
+
           <TextInput
             style={styles['main-inputBar-input']}
             value={inputText}
@@ -571,9 +588,11 @@ const MainScreen = () => {
             placeholderTextColor="#AABBCC"
             multiline
           />
+
           <TouchableOpacity
             style={styles['main-inputBar-sendButton']}
-            onPress={handleSend}>
+            onPress={handleSend}
+          >
             <SendIcon color="#FFFFFF" size={17} />
           </TouchableOpacity>
         </View>
@@ -597,7 +616,7 @@ const MainScreen = () => {
         onDelete={handleContextDelete}
         onClose={handleCloseContextMenu}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 

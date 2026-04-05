@@ -1,4 +1,4 @@
-import { StyleSheet, Dimensions } from 'react-native';
+import { StyleSheet, Dimensions, Platform } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -6,7 +6,7 @@ export const mainStyles = StyleSheet.create({
   // 메인 - 최상위 SafeArea
   'main-safeArea': {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#EEF3FF',
   },
 
   // 메인 - 헤더
@@ -15,7 +15,9 @@ export const mainStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 0,
+    paddingBottom: 4,
+    minHeight: 48,
     backgroundColor: '#EEF3FF',
   },
 
@@ -57,18 +59,18 @@ export const mainStyles = StyleSheet.create({
     padding: 4,
   },
 
-  // 메인 - 바디 (KeyboardAvoidingView)
+  // 메인 - 바디
   'main-body': {
     flex: 1,
     backgroundColor: '#EEF3FF',
   },
 
-  // 메인 - 컨텐츠 영역 (FlatList + 워터마크 wrapper)
+  // 메인 - 컨텐츠 영역
   'main-content': {
     flex: 1,
   },
 
-  // 메인 - 워터마크 컨테이너 (배경)
+  // 메인 - 워터마크 컨테이너
   'main-watermark': {
     position: 'absolute',
     top: 0,
@@ -79,7 +81,7 @@ export const mainStyles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // 메인 - 워터마크 - 이미지
+  // 메인 - 워터마크 이미지
   'main-watermark-image': {
     width: SCREEN_WIDTH * 0.55,
     height: SCREEN_WIDTH * 0.55,
@@ -90,7 +92,7 @@ export const mainStyles = StyleSheet.create({
   // 메인 - FlatList 콘텐츠
   'main-listContent': {
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 0,
     paddingBottom: 8,
   },
 
@@ -99,7 +101,7 @@ export const mainStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingTop: 8,
     backgroundColor: '#FFFFFF',
     gap: 8,
     borderTopLeftRadius: 25,
@@ -115,17 +117,21 @@ export const mainStyles = StyleSheet.create({
   },
 
   // 메인 - 입력 바 - 입력창
-  'main-inputBar-input': {
-    flex: 1,
-    backgroundColor: '#F0F4FF',
-    borderRadius: 22,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    fontSize: 15,
-    color: '#1A1A1A',
-    fontFamily: 'PretendardVariable',
-    maxHeight: 100,
-  },
+'main-inputBar-input': {
+  flex: 1,
+  backgroundColor: '#F0F4FF',
+  borderRadius: 22,
+  paddingHorizontal: 16,
+  paddingTop: 12,
+  paddingBottom: 12,
+  fontSize: 15,
+  lineHeight: 18,
+  color: '#1A1A1A',
+  fontFamily: 'PretendardVariable',
+  maxHeight: 100,
+  minHeight: 44,
+  textAlignVertical: 'top',
+},
 
   // 메인 - 입력 바 - 전송 버튼
   'main-inputBar-sendButton': {
@@ -136,6 +142,4 @@ export const mainStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-
 });
-

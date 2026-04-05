@@ -3,8 +3,7 @@ import { Dimensions, StyleSheet } from 'react-native';
 export const SIDE_MENU_WIDTH = Dimensions.get('window').width * 0.82;
 
 export const sideMenuStyles = StyleSheet.create({
-  // ── 최상위 오버레이 (backdrop + panel row 배치) ──
-
+  // 최상위 오버레이
   'sideMenu-overlay': {
     flex: 1,
     flexDirection: 'row',
@@ -19,6 +18,8 @@ export const sideMenuStyles = StyleSheet.create({
     width: SIDE_MENU_WIDTH,
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 30,
+    borderBottomLeftRadius: 30,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: -4, height: 0 },
     shadowOpacity: 0.14,
@@ -26,11 +27,15 @@ export const sideMenuStyles = StyleSheet.create({
     elevation: 14,
   },
 
-  // ── 파란 헤더 영역 (버튼 행 + 프로필) ──
+  'sideMenu-safeArea': {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
 
+  // 파란 헤더 영역
   'sideMenu-headerBg': {
     backgroundColor: '#588DFF',
-    borderTopLeftRadius: 22,
+    borderTopLeftRadius: 30,
     paddingHorizontal: 16,
     paddingBottom: 50,
   },
@@ -39,7 +44,6 @@ export const sideMenuStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 14,
     paddingBottom: 10,
   },
 
@@ -50,8 +54,7 @@ export const sideMenuStyles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // ── 흰 프로필 섹션 (아바타가 파란/흰 경계에 걸침) ──
-
+  // 프로필 섹션
   'sideMenu-profileSection': {
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
@@ -91,8 +94,7 @@ export const sideMenuStyles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
   },
 
-  // ── 스토리지 바 (파란 배경 위) ──
-
+  // 스토리지
   'sideMenu-storage': {
     gap: 8,
   },
@@ -163,23 +165,24 @@ export const sideMenuStyles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // ── 스크롤 바디 ──
-
+  // 스크롤 바디
   'sideMenu-scroll': {
     flex: 1,
     backgroundColor: '#FFFFFF',
   },
 
-  // ── 구분선 ──
+  'sideMenu-scrollContent': {
+    paddingBottom: 16,
+  },
 
+  // 구분선
   'sideMenu-divider': {
     height: 1,
     backgroundColor: '#E2EAFF',
     marginHorizontal: 16,
   },
 
-  // ── 공통 섹션 ──
-
+  // 공통 섹션
   'sideMenu-section': {
     paddingHorizontal: 16,
     paddingTop: 18,
@@ -227,8 +230,7 @@ export const sideMenuStyles = StyleSheet.create({
     paddingVertical: 16,
   },
 
-  // ── 북마크 아이템 ──
-
+  // 북마크 아이템
   'sideMenu-bookmark-card': {
     flexDirection: 'row',
     alignItems: 'center',
@@ -271,8 +273,7 @@ export const sideMenuStyles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
   },
 
-  // ── 준비 중 박스 (사진/동영상/파일) ──
-
+  // 준비 중 박스
   'sideMenu-placeholder-box': {
     alignItems: 'center',
     justifyContent: 'center',

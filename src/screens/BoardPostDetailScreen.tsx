@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BoardPost, OgData, SubPostItem } from '../types/chatBoard.type';
 import {
   ArrowLeftIcon,
@@ -229,6 +229,7 @@ const ImageEditRow = ({
 // ──────────────────────────────────────────
 const BoardPostDetailScreen = ({ route, navigation }: Props) => {
   const { post: initialPost, subItemId, onSave, startEditing } = route.params;
+  const insets = useSafeAreaInsets();
 
   const [post, setPost] = useState<BoardPost>(initialPost);
   const [isEditing, setIsEditing] = useState(startEditing ?? false);
@@ -413,7 +414,9 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
   // ──────────────────────────────────────────
   if (isEditing) {
     return (
-      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <SafeAreaView style={styles.container} edges={['bottom']}>
+        <View style={[styles.headerSafeTop, { height: insets.top }]} />
+
         <View style={styles.header}>
           <TouchableOpacity onPress={cancelEdit} style={styles.headerSideBtn}>
             <Text style={styles.cancelText}>취소</Text>
@@ -602,7 +605,9 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
   // 뷰 모드
   // ──────────────────────────────────────────
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <View style={[styles.headerSafeTop, { height: insets.top }]} />
+
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={8}>
           <ArrowLeftIcon color="#1A1A1A" size={22} />
@@ -729,12 +734,17 @@ const BoardPostDetailScreen = ({ route, navigation }: Props) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F8FF' },
 
+  // 헤더 safe 영역
+  headerSafeTop: {
+    backgroundColor: '#FFFFFF',
+  },
+
   // 헤더
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 14,
+    paddingTop: 10,
     paddingBottom: 14,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
@@ -764,21 +774,33 @@ const styles = StyleSheet.create({
 
   // 날짜 바
   dateBadgeRow: {
-    flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6,
-    paddingHorizontal: 16, paddingVertical: 10,
-    backgroundColor: '#F0F5FF',
-    borderBottomWidth: 1, borderBottomColor: '#E4ECFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#F7FAFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E4ECFF',
   },
   dateBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   dateBadgeLabel: {
-    fontSize: 11, fontWeight: '600', color: '#8FA8D0',
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#8FA8D0',
     fontFamily: 'PretendardVariable',
   },
   dateBadgeValue: {
-    fontSize: 11, color: '#6B7E9A', fontFamily: 'PretendardVariable',
+    fontSize: 11,
+    color: '#6B7E9A',
+    fontFamily: 'PretendardVariable',
   },
   dateBadgeDot: {
-    width: 3, height: 3, borderRadius: 2, backgroundColor: '#C0CDD8',
+    width: 3,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: '#C0CDD8',
   },
 
   // Body
@@ -789,8 +811,13 @@ const styles = StyleSheet.create({
   // 뷰 모드
   timeText: { fontSize: 12, color: '#9DAFC8', fontFamily: 'PretendardVariable', marginBottom: 20 },
   contentLabel: {
-    fontSize: 12, fontWeight: '600', color: '#9DAFC8',
-    fontFamily: 'PretendardVariable', letterSpacing: 0.5, marginBottom: 8, marginTop: 20,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#9DAFC8',
+    fontFamily: 'PretendardVariable',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+    marginTop: 20,
   },
   contentText: { fontSize: 15, color: '#1A1A1A', fontFamily: 'PretendardVariable', lineHeight: 24 },
   emptyContent: { fontSize: 14, color: '#C0CDD8', fontFamily: 'PretendardVariable', fontStyle: 'italic' },
@@ -811,34 +838,57 @@ const styles = StyleSheet.create({
   },
   emptyStateIcon: { fontSize: 32, marginBottom: 4 },
   emptyStateTitle: {
-    fontSize: 16, fontWeight: '600', color: '#6B7E9A',
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6B7E9A',
     fontFamily: 'PretendardVariable',
   },
   emptyStateDesc: {
-    fontSize: 13, color: '#9DAFC8', fontFamily: 'PretendardVariable', textAlign: 'center',
+    fontSize: 13,
+    color: '#9DAFC8',
+    fontFamily: 'PretendardVariable',
+    textAlign: 'center',
   },
 
   // 서브아이템 뷰
   subItemsView: { gap: 10, marginTop: 4 },
   subAccordion: {
-    borderRadius: 14, overflow: 'hidden',
-    backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E4ECFF',
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E4ECFF',
   },
   subAccordionLast: {},
   subAccordionHeader: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     backgroundColor: '#FFFFFF',
   },
   subAccordionTitle: {
-    flex: 1, fontSize: 15, fontWeight: '600', color: '#1A1A1A', fontFamily: 'PretendardVariable',
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: 'PretendardVariable',
   },
   subAccordionBody: {
-    paddingHorizontal: 14, paddingBottom: 14, paddingTop: 2, backgroundColor: '#F8FAFF',
-    borderTopWidth: 1, borderTopColor: '#EEF3FF',
+    paddingHorizontal: 14,
+    paddingBottom: 14,
+    paddingTop: 2,
+    backgroundColor: '#F8FAFF',
+    borderTopWidth: 1,
+    borderTopColor: '#EEF3FF',
   },
   subAccordionContent: {
-    fontSize: 14, color: '#3A3A3A', fontFamily: 'PretendardVariable', lineHeight: 22, paddingTop: 10,
+    fontSize: 14,
+    color: '#3A3A3A',
+    fontFamily: 'PretendardVariable',
+    lineHeight: 22,
+    paddingTop: 10,
   },
 
   // 이미지
@@ -846,37 +896,62 @@ const styles = StyleSheet.create({
   imageThumbWrap: { position: 'relative' },
   imageThumb: { width: 80, height: 80, borderRadius: 10, backgroundColor: '#E8EEF8' },
   imageDeleteOverlay: {
-    position: 'absolute', top: 4, right: 4,
-    backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: 10, padding: 3,
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: 10,
+    padding: 3,
   },
   imageAddBtn: {
-    width: 80, height: 80, borderRadius: 10, backgroundColor: '#EEF3FF',
-    borderWidth: 1.5, borderColor: '#C8D8FF', borderStyle: 'dashed',
-    alignItems: 'center', justifyContent: 'center',
+    width: 80,
+    height: 80,
+    borderRadius: 10,
+    backgroundColor: '#EEF3FF',
+    borderWidth: 1.5,
+    borderColor: '#C8D8FF',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // OG 카드 + 바로가기 버튼 (뷰 모드)
   linkCard: {
-    borderRadius: 12, borderWidth: 1, borderColor: '#D8E4FF',
-    backgroundColor: '#FAFCFF', overflow: 'hidden',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#D8E4FF',
+    backgroundColor: '#FAFCFF',
+    overflow: 'hidden',
   },
   linkCardImage: { width: '100%', height: 140, backgroundColor: '#E8EEF8' },
   linkCardBody: {
-    padding: 10, flexDirection: 'row', alignItems: 'center', gap: 10,
+    padding: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   linkCardText: { flex: 1, gap: 2 },
   linkCardSitename: { fontSize: 11, color: '#9DAFC8', fontFamily: 'PretendardVariable' },
   linkCardTitle: {
-    fontSize: 13, fontWeight: '600', color: '#1A1A1A', fontFamily: 'PretendardVariable',
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: 'PretendardVariable',
   },
   linkCardDesc: { fontSize: 12, color: '#6B7E9A', fontFamily: 'PretendardVariable', lineHeight: 17 },
   linkCardUrl: { fontSize: 11, color: '#AABBCC', fontFamily: 'PretendardVariable', marginTop: 2 },
   linkCardGoto: {
-    backgroundColor: '#588DFF', borderRadius: 8,
-    paddingHorizontal: 10, paddingVertical: 6, flexShrink: 0,
+    backgroundColor: '#588DFF',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    flexShrink: 0,
   },
   linkCardGotoText: {
-    fontSize: 12, fontWeight: '600', color: '#FFFFFF', fontFamily: 'PretendardVariable',
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'PretendardVariable',
   },
 
   // OG 카드 (편집 미리보기용)
@@ -892,80 +967,148 @@ const styles = StyleSheet.create({
   divider: { height: 1, backgroundColor: '#EEF3FF', marginBottom: 12 },
   sectionDivider: { height: 8, backgroundColor: '#F4F7FF', marginHorizontal: -20, marginVertical: 4 },
   sectionLabel: {
-    fontSize: 12, fontWeight: '600', color: '#9DAFC8',
-    fontFamily: 'PretendardVariable', letterSpacing: 0.5, marginTop: 16, marginBottom: 8,
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#9DAFC8',
+    fontFamily: 'PretendardVariable',
+    letterSpacing: 0.5,
+    marginTop: 16,
+    marginBottom: 8,
   },
   editTitleInput: {
-    fontSize: 18, fontWeight: '700', color: '#1A1A1A',
-    fontFamily: 'PretendardVariable', paddingTop: 20, paddingBottom: 12,
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    fontFamily: 'PretendardVariable',
+    paddingTop: 20,
+    paddingBottom: 12,
   },
   editContentInput: {
-    fontSize: 15, color: '#3A3A3A', fontFamily: 'PretendardVariable',
-    lineHeight: 24, minHeight: 100, paddingBottom: 8,
+    fontSize: 15,
+    color: '#3A3A3A',
+    fontFamily: 'PretendardVariable',
+    lineHeight: 24,
+    minHeight: 100,
+    paddingBottom: 8,
   },
 
   // 서브아이템 편집
   subItemCard: {
-    backgroundColor: '#F8FAFF', borderRadius: 14, paddingHorizontal: 16, paddingVertical: 12,
-    marginBottom: 10, borderWidth: 1, borderColor: '#E4ECFF',
+    backgroundColor: '#F8FAFF',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#E4ECFF',
   },
   subItemCardActive: {
-    borderColor: '#588DFF', borderWidth: 2,
+    borderColor: '#588DFF',
+    borderWidth: 2,
     backgroundColor: '#FFFFFF',
-    shadowColor: '#588DFF', shadowOpacity: 0.12, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
+    shadowColor: '#588DFF',
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
     elevation: 3,
   },
   subItemCardHeader: { flexDirection: 'row', alignItems: 'center' },
   subItemIndex: {
-    fontSize: 11, fontWeight: '700', color: '#588DFF', fontFamily: 'PretendardVariable',
-    backgroundColor: '#EEF3FF', paddingHorizontal: 7, paddingVertical: 2,
-    borderRadius: 6, overflow: 'hidden', marginRight: 8, flexShrink: 0,
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#588DFF',
+    fontFamily: 'PretendardVariable',
+    backgroundColor: '#EEF3FF',
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+    borderRadius: 6,
+    overflow: 'hidden',
+    marginRight: 8,
+    flexShrink: 0,
   },
   subItemIndexActive: {
-    backgroundColor: '#588DFF', color: '#FFFFFF',
+    backgroundColor: '#588DFF',
+    color: '#FFFFFF',
   },
   subItemHeaderTitle: {
-    flex: 1, fontSize: 14, fontWeight: '500', color: '#6B7E9A', fontFamily: 'PretendardVariable',
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6B7E9A',
+    fontFamily: 'PretendardVariable',
   },
   subItemHeaderTitleActive: {
-    color: '#1A1A1A', fontWeight: '600',
+    color: '#1A1A1A',
+    fontWeight: '600',
   },
   subItemHeaderRight: { flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 8 },
   subItemDeleteBtn: { padding: 2 },
   subItemDivider: { height: 1, backgroundColor: '#EEF3FF', marginVertical: 12 },
   subItemTitleInput: {
-    fontSize: 14, fontWeight: '600', color: '#1A1A1A', fontFamily: 'PretendardVariable',
-    paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#E4ECFF', marginBottom: 10,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: 'PretendardVariable',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E4ECFF',
+    marginBottom: 10,
   },
   subItemContentInput: {
-    fontSize: 14, color: '#3A3A3A', fontFamily: 'PretendardVariable',
-    lineHeight: 22, minHeight: 60, marginBottom: 12,
+    fontSize: 14,
+    color: '#3A3A3A',
+    fontFamily: 'PretendardVariable',
+    lineHeight: 22,
+    minHeight: 60,
+    marginBottom: 12,
   },
   subItemSectionLabel: {
-    fontSize: 11, fontWeight: '600', color: '#B0C4D8',
-    fontFamily: 'PretendardVariable', letterSpacing: 0.4, marginBottom: 6, marginTop: 4,
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#B0C4D8',
+    fontFamily: 'PretendardVariable',
+    letterSpacing: 0.4,
+    marginBottom: 6,
+    marginTop: 4,
   },
   subLinkSection: { marginBottom: 4 },
   savedLinkRow: { marginBottom: 8 },
 
   addSubItemBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-    paddingVertical: 14, paddingHorizontal: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 4,
   },
   addSubItemText: {
-    fontSize: 14, color: '#588DFF', fontFamily: 'PretendardVariable', fontWeight: '600',
+    fontSize: 14,
+    color: '#588DFF',
+    fontFamily: 'PretendardVariable',
+    fontWeight: '600',
   },
 
   // 링크 편집
   linkInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
   linkInput: {
-    flex: 1, fontSize: 14, color: '#1A1A1A', fontFamily: 'PretendardVariable',
-    backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E4ECFF',
-    borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10,
+    flex: 1,
+    fontSize: 14,
+    color: '#1A1A1A',
+    fontFamily: 'PretendardVariable',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E4ECFF',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
   },
   linkFetchBtn: {
-    paddingHorizontal: 14, paddingVertical: 10,
-    backgroundColor: '#588DFF', borderRadius: 10, minWidth: 72, alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: '#588DFF',
+    borderRadius: 10,
+    minWidth: 72,
+    alignItems: 'center',
   },
   linkFetchBtnDisabled: { backgroundColor: '#C0CDD8' },
   linkFetchText: { fontSize: 13, fontWeight: '600', color: '#FFFFFF', fontFamily: 'PretendardVariable' },
