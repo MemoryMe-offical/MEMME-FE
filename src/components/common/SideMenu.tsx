@@ -77,7 +77,7 @@ const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress }: Prop
             styles['sideMenu-panel'],
             {
               marginTop: insets.top,
-              height: SCREEN_HEIGHT - insets.top,
+              height: SCREEN_HEIGHT - insets.top - insets.bottom,
               transform: [{ translateX: slideAnim }],
             },
           ]}

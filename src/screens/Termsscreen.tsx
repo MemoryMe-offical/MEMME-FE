@@ -95,7 +95,7 @@ const TermsScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles['terms-container']} edges={['top']}>
+    <SafeAreaView style={styles['terms-container']} edges={['top', 'bottom']}>
       {/* 헤더 */}
       <View style={styles['terms-header']}>
         <TouchableOpacity

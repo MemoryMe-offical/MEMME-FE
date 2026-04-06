@@ -167,6 +167,7 @@ const MainScreen = () => {
   const [contextMenuItem, setContextMenuItem] = useState<ChatBoardItem | null>(null);
   const [sideMenuVisible, setSideMenuVisible] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [androidKeyboardHeight, setAndroidKeyboardHeight] = useState(0);
   const flatListRef = useRef<FlatList<ChatBoardItem>>(null);
   const shouldScrollToEnd = useRef(false);
 
@@ -230,8 +231,14 @@ const MainScreen = () => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
-    const showSub = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
-    const hideSub = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+    const showSub = Keyboard.addListener(showEvent, (e) => {
+      setKeyboardVisible(true);
+      if (Platform.OS === 'android') setAndroidKeyboardHeight(e.endCoordinates.height);
+    });
+    const hideSub = Keyboard.addListener(hideEvent, () => {
+      setKeyboardVisible(false);
+      if (Platform.OS === 'android') setAndroidKeyboardHeight(0);
+    });
 
     return () => {
       showSub.remove();
@@ -508,7 +515,7 @@ const MainScreen = () => {
       </View>
 
       <KeyboardAvoidingView
-        style={styles['main-body']}
+        style={[styles['main-body'], Platform.OS === 'android' && { marginBottom: androidKeyboardHeight > 0 ? androidKeyboardHeight + insets.bottom : 0 }]}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={0}
       >
@@ -568,11 +575,7 @@ const MainScreen = () => {
           style={[
             styles['main-inputBar'],
             {
-              paddingBottom: keyboardVisible
-                ? 8
-                : Platform.OS === 'ios'
-                  ? Math.max(insets.bottom, 8)
-                  : 8,
+              paddingBottom: keyboardVisible ? 8 : Math.max(insets.bottom, 8),
             },
           ]}
         >

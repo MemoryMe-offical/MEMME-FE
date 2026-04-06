@@ -212,7 +212,7 @@ const SignupScreen = () => {
   const isFormValid = name && email && isVerified && password && passwordConfirm && password === passwordConfirm;
 
   return (
-    <SafeAreaView style={styles['signup-container']} edges={['top']}>
+    <SafeAreaView style={styles['signup-container']} edges={['top', 'bottom']}>
       {/* 헤더 */}
       <View style={styles['signup-header']}>
         <TouchableOpacity
