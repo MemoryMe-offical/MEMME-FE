@@ -113,7 +113,7 @@ const ForgotPasswordScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles['forgot-container']} edges={['top']}>
+    <SafeAreaView style={styles['forgot-container']} edges={['top', 'bottom']}>
       {/* 헤더 */}
       <View style={styles['forgot-header']}>
         <TouchableOpacity
