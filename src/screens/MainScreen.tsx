@@ -23,6 +23,7 @@ import BoardCard from '../components/board/BoardCard';
 import ContextMenu from '../components/common/ContextMenu';
 import SideMenu from '../components/common/SideMenu';
 import { HamburgerIcon, PlusIcon, SearchIcon, SendIcon } from '../components/common/Icons';
+import Badge from '../components/common/Badge';
 import { mainStyles as styles } from '../styles/MainScreen.styles';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { loadItems, saveItems } from '../utils/storage';
@@ -386,16 +387,12 @@ const MainScreen = () => {
             <SearchIcon color="#1A1A1A" size={20} />
           </TouchableOpacity>
 
-          {/* 인박스 아이콘 — TODO(P2): Badge 컴포넌트로 교체 */}
+          {/* 인박스 아이콘 */}
           <TouchableOpacity
             style={styles['main-header-iconButton']}
             onPress={() => setPendingSheetVisible(true)}>
             <PlusIcon color="#1A1A1A" size={20} />
-            {pendingLinks.length > 0 && (
-              <Text style={{ position: 'absolute', top: -4, right: -4, fontSize: 10, color: '#FF3B30', fontWeight: '700' }}>
-                {pendingLinks.length > 99 ? '99+' : pendingLinks.length}
-              </Text>
-            )}
+            <Badge count={pendingLinks.length} />
           </TouchableOpacity>
 
           <TouchableOpacity

@@ -17,6 +17,7 @@ import {
   EditIcon,
   PlusCircleIcon,
 } from '../components/common/Icons';
+import TagInput from '../components/common/TagInput';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BoardDetail'>;
 
@@ -37,20 +38,19 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
   // 편집 임시 상태
   const [editTitle, setEditTitle] = useState(initialBoard.title);
   const [editDescription, setEditDescription] = useState(initialBoard.description ?? '');
-  // TODO(P2): TagInput 컴포넌트로 교체
-  const [editTagsText, setEditTagsText] = useState((initialBoard.tags ?? []).join(', '));
+  const [editTags, setEditTags] = useState<string[]>(initialBoard.tags ?? []);
 
   const enterEdit = () => {
     setEditTitle(board.title);
     setEditDescription(board.description ?? '');
-    setEditTagsText((board.tags ?? []).join(', '));
+    setEditTags(board.tags ?? []);
     setIsEditing(true);
   };
 
   const isDirty = () =>
     editTitle.trim() !== board.title ||
     editDescription.trim() !== (board.description ?? '') ||
-    editTagsText.trim() !== (board.tags ?? []).join(', ');
+    JSON.stringify(editTags) !== JSON.stringify(board.tags ?? []);
 
   const cancelEdit = () => {
     if (isDirty()) {
@@ -63,16 +63,13 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
     }
   };
 
-  const parseTags = (text: string): string[] =>
-    text.split(',').map(t => t.trim()).filter(Boolean);
-
   const handleSave = () => {
     if (!editTitle.trim()) return;
     const updated: Board = {
       ...board,
       title: editTitle.trim(),
       description: editDescription.trim() || undefined,
-      tags: parseTags(editTagsText),
+      tags: editTags.length > 0 ? editTags : undefined,
       updatedAt: new Date().toISOString(),
       // notes는 변경하지 않음 (NoteDetailScreen에서 개별 관리)
     };
@@ -173,16 +170,13 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
           />
           <View style={styles.sectionDivider} />
 
-          {/* 태그 — TODO(P2): TagInput 컴포넌트로 교체 */}
+          {/* 태그 */}
           <Text style={styles.sectionLabel}>태그</Text>
-          <TextInput
-            style={styles.editTagInput}
-            value={editTagsText}
-            onChangeText={setEditTagsText}
-            placeholder="태그를 쉼표로 구분해서 입력 (예: 공부, 일정)"
-            placeholderTextColor="#AABBCC"
+          <TagInput
+            tags={editTags}
+            onChange={setEditTags}
+            placeholder="태그 추가 (최대 10개)"
           />
-          <Text style={styles.tagHint}>쉼표(,)로 구분하여 입력</Text>
 
           <View style={{ height: 48 }} />
         </ScrollView>
