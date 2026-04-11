@@ -1,33 +1,61 @@
 # MEMME 프론트엔드 작업 명세서
 
-> 작성 기준: 서비스 도메인 재설계 (메모·보드·노트) 반영 + 설계 이슈 해소  
-> 최종 업데이트: 2026-04-12  
-> **P0 완료 / P1 완료 / P2 진행 중**
+> 최종 업데이트: 2026-04-12 | P0 ✅ P1 ✅ P2 🔄 P3 ⏳
 
 ---
 
-## 작업 우선순위
+## ⚡ 세션 인계 — 다음 작업자가 여기서부터 읽으세요
 
-| 단계 | 성격 | 내용 | 상태 |
-|------|------|------|------|
-| **P0** | 기반 | 타입 재정의. 이후 모든 작업의 전제 조건 | ✅ 완료 |
-| **P1** | 리팩터 | 기존 코드를 새 타입에 맞게 수정 | ✅ 완료 |
-| **P2** | 신규 기능 | 새로 만들어야 하는 화면·컴포넌트 | 🔄 진행 중 |
-| **P3** | API 연동 | 백엔드 연동 (로컬 → 서버). P0~P2 완료 후 진행 | ⏳ 대기 |
+### 현재 상태 (2026-04-12 기준)
+
+**완료된 작업**
+
+| 작업 | 파일 | 비고 |
+|------|------|------|
+| 도메인 타입 재정의 | `src/types/index.ts` | Memo, Board, Note, PendingLink, TimelineItem |
+| storage 마이그레이션 | `src/utils/storage.ts` | ITEMS_KEY='timeline_items', migrateFromV1() |
+| 서비스 레이어 | `src/services/ogService.ts`, `pendingLinkService.ts` | AsyncStorage 구현, TODO(P3) 주석 삽입 |
+| P1 전체 리팩터 | MainScreen, BoardDetailScreen(신규), RootNavigator, BoardCard(신규), 각 컴포넌트 | BoardPostDetailScreen 삭제, NoteDetailScreen stub |
+| Badge 컴포넌트 | `src/components/common/Badge.tsx` | count=0→null, 99+, 절대좌표 오버레이 |
+| TagInput 컴포넌트 | `src/components/common/TagInput.tsx` | 칩+×, 쉼표/엔터 추가, suggestions 드롭다운, maxTags=10 |
+
+**연결 현황**
+- `MainScreen.tsx` — `<Badge count={pendingLinks.length} />` 연결 완료
+- `BoardDetailScreen.tsx` 편집모드 — `<TagInput tags={editTags} onChange={setEditTags} />` 연결 완료
+- `BoardDetailScreen.tsx` 뷰모드 노트목록 — **`// TODO(P2): NoteCard 컴포넌트로 교체`** (인라인 TouchableOpacity, line ~249)
+- `NoteDetailScreen.tsx` — stub ("노트 화면 준비 중입니다."), **전체 구현 필요**
 
 ---
 
-## 완료된 작업 요약 (P0 + P1)
+### 다음 작업: P2 #10 — NoteDetailScreen 전체 구현 (+ OgPreviewCard + NoteCard)
 
-- `src/types/index.ts` 신규 생성 (TimelineItem, Memo, Board, Note, PendingLink 등)
-- `src/utils/storage.ts` — 타입 교체 + `migrateFromV1()` 추가
-- `src/services/ogService.ts` 신규 작성 (fetchOgData 단일화)
-- `src/services/pendingLinkService.ts` 신규 작성
-- `src/screens/MainScreen.tsx` 전면 리팩터 (새 타입, BoardCard, pendingLinks 상태 등)
-- `src/screens/BoardDetailScreen.tsx` 신규 (BoardPostDetailScreen 대체)
-- `src/screens/NoteDetailScreen.tsx` stub 생성 (P2 #10에서 전체 구현)
-- `src/navigation/RootNavigator.tsx` — BoardDetail/NoteDetail 라우트 추가
-- `src/components/board/BoardCard.tsx` 신규 (BoardPostCard 대체, 태그 칩, 노트 미리보기)
+**이 작업에서 만들어야 할 파일 3개:**
+
+1. `src/components/note/OgPreviewCard.tsx` — OG 미리보기 카드 (공용)
+2. `src/components/note/NoteCard.tsx` — BoardDetailScreen 노트 목록 카드
+3. `src/screens/NoteDetailScreen.tsx` — 노트 편집/뷰 전체 화면 (현재 stub 교체)
+
+**완료 후 이어서 할 작업 (P2 나머지):**
+
+| 번호 | 파일 | 설명 |
+|------|------|------|
+| #11 | `src/components/memo/MemoConvertSheet.tsx` | 메모→보드 2단계 변환 바텀시트 |
+| #12 | `src/components/common/BoardPickerBottomSheet.tsx` | 보드 선택 범용 피커 |
+| #13 | `src/components/pendingLinks/PendingLinksBottomSheet.tsx` | 인박스 링크 목록 |
+
+**커밋 규칙:** 동일 단위 작업은 하나의 커밋으로 묶음. 푸시 금지 (사용자가 명시적으로 요청 시만).
+
+---
+
+### 코드 컨벤션 (필독)
+
+- 스타일: `StyleSheet.create()`, 키는 **kebab-case** (`styles['some-key']`)
+- 별도 스타일 파일 있을 때: `src/styles/[ComponentName].styles.ts`에 분리, 없으면 인라인 `StyleSheet.create`
+- 색상: primary `#588DFF`, accent `#FF9500`, 비활성 `#AABBCC`, 배경 `#F5F8FF`
+- P2 stub 패턴: JSX 내 미사용 상태 → `{state && null}`, 외부 → `void expr`
+- P3 교체 지점 반드시 `// TODO(P3):` 주석으로 표시
+
+---
 - `src/components/common/ContextMenu.tsx` — `memo`/`board` 타입 교체
 - `src/components/common/SideMenu.tsx` — TimelineItem/Board/Memo 타입 교체
 - `src/components/chat/ChatMessageItem.tsx` — Memo 타입 적용
