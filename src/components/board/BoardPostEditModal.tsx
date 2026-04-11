@@ -10,14 +10,14 @@ import {
   ScrollView,
   KeyboardAvoidingView,
 } from 'react-native';
-import { BoardPost } from '../../types/chatBoard.type';
+import { Board } from '../../types';
 import { boardPostEditModalStyles as styles } from '../../styles/BoardPostEditModal.styles';
 import { CameraIcon, CalendarIcon, ClockIcon } from '../common/Icons';
 
 interface Props {
-  post: BoardPost | null;
+  post: Board | null;
   onClose: () => void;
-  onSave: (updated: BoardPost) => void;
+  onSave: (updated: Board) => void;
 }
 
 const BoardPostEditModal = ({ post, onClose, onSave }: Props) => {
@@ -27,7 +27,7 @@ const BoardPostEditModal = ({ post, onClose, onSave }: Props) => {
   useEffect(() => {
     if (post) {
       setTitle(post.title);
-      setContent(post.content);
+      setContent(post.description ?? '');
     }
   }, [post]);
 
@@ -35,7 +35,7 @@ const BoardPostEditModal = ({ post, onClose, onSave }: Props) => {
     if (!post || !title.trim()) {
       return;
     }
-    onSave({ ...post, title: title.trim(), content: content.trim() });
+    onSave({ ...post, title: title.trim(), description: content.trim() || undefined });
   };
 
   const isSaveEnabled = title.trim().length > 0;

@@ -5,6 +5,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { splashStyles as styles } from '../styles/SplashScreen.styles';
+import { migrateFromV1 } from '../utils/storage';
 
 // 개발 플러그: true면 온보딩 강제로 보여줌, false면 실제 로직대로 동작
 const FORCE_SHOW_ONBOARDING = true;
@@ -21,6 +22,9 @@ const SplashScreen = ({ navigation }: Props) => {
   useEffect(() => {
     const checkFirstLaunch = async () => {
       try {
+        // V1 데이터 마이그레이션 (최초 1회, loadItems 이전에 실행)
+        await migrateFromV1();
+
         // 스플래시 고정 모드면 화면 전환 안 함
         if (FREEZE_SPLASH) {
           console.log('스플래시 화면 고정 모드');

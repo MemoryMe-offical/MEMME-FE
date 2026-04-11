@@ -56,9 +56,9 @@ export const migrateFromV1 = async (): Promise<void> => {
 
     // Board에 직접 붙어있던 미디어를 별도 노트로 이관
     if (item.url) {
-      const noteTitle = item.ogData?.title || (() => {
-        try { return new URL(item.url).hostname; } catch { return item.url; }
-      })();
+      const noteTitle = item.ogData?.title ||
+        item.url.match(/^https?:\/\/(?:www\.)?([^/?#]+)/)?.[1] ||
+        item.url;
       existingNotes.push({
         id: `migrated_url_${item.id}`,
         title: noteTitle,

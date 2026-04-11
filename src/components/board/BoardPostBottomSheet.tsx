@@ -10,7 +10,7 @@ import {
   Dimensions,
   ScrollView,
 } from 'react-native';
-import { BoardPost } from '../../types/chatBoard.type';
+import { Board } from '../../types';
 import { boardPostBottomSheetStyles as styles } from '../../styles/BoardPostBottomSheet.styles';
 import { CloseIcon, EditIcon } from '../common/Icons';
 
@@ -29,7 +29,7 @@ const formatFullTime = (isoString: string): string => {
 };
 
 interface Props {
-  post: BoardPost | null;
+  post: Board | null;
   onClose: () => void;
   onEdit: () => void;
 }
@@ -93,8 +93,8 @@ const BoardPostBottomSheet = ({ post, onClose, onEdit }: Props) => {
           <Text style={styles['sheet-body-time']}>
             {post ? formatFullTime(post.createdAt) : ''}
           </Text>
-          {post?.content ? (
-            <Text style={styles['sheet-body-content']}>{post.content}</Text>
+          {post?.description ? (
+            <Text style={styles['sheet-body-content']}>{post.description}</Text>
           ) : null}
         </ScrollView>
 
