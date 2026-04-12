@@ -61,7 +61,7 @@ const RootNavigator = () => {
             {/* 보드 상세 화면 */}
             <Stack.Screen name="BoardDetail" component={BoardDetailScreen} />
 
-            {/* 노트 상세 화면 — TODO(P2): #15 작업에서 전체 구현 */}
+            {/* 노트 상세 화면 */}
             <Stack.Screen name="NoteDetail" component={NoteDetailScreen} />
 
             <Stack.Screen name="DevicePairing" component={DevicePairingScreen} options={{ title: '기기 페어링' }} />
