@@ -24,6 +24,7 @@ import ContextMenu from '../components/common/ContextMenu';
 import SideMenu from '../components/common/SideMenu';
 import { HamburgerIcon, PlusIcon, SearchIcon, SendIcon } from '../components/common/Icons';
 import Badge from '../components/common/Badge';
+import MemoConvertSheet from '../components/memo/MemoConvertSheet';
 import { mainStyles as styles } from '../styles/MainScreen.styles';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { loadItems, saveItems } from '../utils/storage';
@@ -259,10 +260,9 @@ const MainScreen = () => {
     if (!contextMenuItem) return;
 
     if (contextMenuItem.type === 'memo') {
-      // TODO(P2): MemoConvertSheet 구현 후 아래 Alert 제거
       setConvertTargetMemo(contextMenuItem as Memo);
+      handleCloseContextMenu();
       setConvertSheetVisible(true);
-      Alert.alert('준비 중', '보드 변환 기능은 곧 제공될 예정입니다.');
       return;
     }
 
@@ -295,11 +295,17 @@ const MainScreen = () => {
   };
 
   // 메모→보드 변환 성공 (MemoConvertSheet onSuccess)
-  const handleMemoConvertSuccess = (memoId: string, newBoard: Board) => {
-    setItems(prev => [
-      ...prev.filter(i => i.id !== memoId),
-      newBoard,
-    ]);
+  // targetBoard가 기존 보드면 제자리 업데이트, 신규 보드면 타임라인 끝에 추가
+  const handleMemoConvertSuccess = (memoId: string, targetBoard: Board) => {
+    setItems(prev => {
+      const boardExistsInTimeline = prev.some(i => i.id === targetBoard.id);
+      if (boardExistsInTimeline) {
+        return prev
+          .filter(i => i.id !== memoId)
+          .map(i => i.id === targetBoard.id ? targetBoard : i);
+      }
+      return [...prev.filter(i => i.id !== memoId), targetBoard];
+    });
     setConvertSheetVisible(false);
     setConvertTargetMemo(null);
   };
@@ -363,10 +369,8 @@ const MainScreen = () => {
     setInputText('');
   };
 
-  // P2 연결 지점 보존 — MemoConvertSheet / PendingLinksBottomSheet 구현 시 props로 전달 예정
+  // PendingLinksBottomSheet 구현 시 연결 예정
   void recentBoards;
-  void handleMemoConvertSuccess;
-  void handleMemoConvertCancel;
 
   return (
     <SafeAreaView style={styles['main-safeArea']} edges={['top', 'left', 'right']}>
@@ -501,8 +505,15 @@ const MainScreen = () => {
       {/* TODO(P2): PendingLinksBottomSheet — pendingSheetVisible, pendingLinks, recentBoards 연결 */}
       {pendingSheetVisible && null}
 
-      {/* TODO(P2): MemoConvertSheet — convertSheetVisible, convertTargetMemo, recentBoards 연결 */}
-      {convertSheetVisible && convertTargetMemo && null}
+      {convertTargetMemo && (
+        <MemoConvertSheet
+          visible={convertSheetVisible}
+          memo={convertTargetMemo}
+          recentBoards={recentBoards}
+          onSuccess={handleMemoConvertSuccess}
+          onClose={handleMemoConvertCancel}
+        />
+      )}
     </SafeAreaView>
   );
 };

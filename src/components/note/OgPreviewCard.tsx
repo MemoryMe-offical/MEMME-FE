@@ -11,7 +11,8 @@ interface OgPreviewCardProps {
 
 const OgPreviewCard = ({ url, ogData, onRemove }: OgPreviewCardProps) => {
   const displayDomain = (() => {
-    try { return new URL(url).hostname; } catch { return url; }
+    const match = url.match(/^(?:https?:\/\/)?([^/?#]+)/);
+    return match ? match[1] : url;
   })();
 
   return (
