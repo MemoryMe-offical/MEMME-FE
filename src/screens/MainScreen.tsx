@@ -25,6 +25,7 @@ import SideMenu from '../components/common/SideMenu';
 import { HamburgerIcon, PlusIcon, SearchIcon, SendIcon } from '../components/common/Icons';
 import Badge from '../components/common/Badge';
 import MemoConvertSheet from '../components/memo/MemoConvertSheet';
+import PendingLinksBottomSheet from '../components/pendingLinks/PendingLinksBottomSheet';
 import { mainStyles as styles } from '../styles/MainScreen.styles';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { loadItems, saveItems } from '../utils/storage';
@@ -369,8 +370,27 @@ const MainScreen = () => {
     setInputText('');
   };
 
-  // PendingLinksBottomSheet 구현 시 연결 예정
-  void recentBoards;
+  const handlePendingLinkAddToBoard = (link: PendingLink, board: Board) => {
+    const newNote = {
+      id: `note_${Date.now()}`,
+      title: link.ogData?.title || link.url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || link.url,
+      url: link.url,
+      ogData: link.ogData,
+    };
+    const updatedBoard: Board = {
+      ...board,
+      notes: [...(board.notes ?? []), newNote],
+      updatedAt: new Date().toISOString(),
+    };
+    setItems(prev => prev.map(i => i.id === board.id ? updatedBoard : i));
+    pendingLinkService.removePendingLink(link.id);
+    setPendingLinks(prev => prev.filter(l => l.id !== link.id));
+  };
+
+  const handlePendingLinkDismiss = (linkId: string) => {
+    pendingLinkService.removePendingLink(linkId);
+    setPendingLinks(prev => prev.filter(l => l.id !== linkId));
+  };
 
   return (
     <SafeAreaView style={styles['main-safeArea']} edges={['top', 'left', 'right']}>
@@ -502,8 +522,14 @@ const MainScreen = () => {
         onClose={handleCloseContextMenu}
       />
 
-      {/* TODO(P2): PendingLinksBottomSheet — pendingSheetVisible, pendingLinks, recentBoards 연결 */}
-      {pendingSheetVisible && null}
+      <PendingLinksBottomSheet
+        visible={pendingSheetVisible}
+        pendingLinks={pendingLinks}
+        boards={recentBoards}
+        onAddToBoard={handlePendingLinkAddToBoard}
+        onDismiss={handlePendingLinkDismiss}
+        onClose={() => setPendingSheetVisible(false)}
+      />
 
       {convertTargetMemo && (
         <MemoConvertSheet
