@@ -18,6 +18,7 @@ import {
   PlusCircleIcon,
 } from '../components/common/Icons';
 import TagInput from '../components/common/TagInput';
+import NoteCard from '../components/note/NoteCard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BoardDetail'>;
 
@@ -108,6 +109,7 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
     navigation.navigate('NoteDetail', {
       note: null,
       boardId: board.id,
+      boardTitle: board.title,
       isNew: true,
       onSave: handleNoteSave,
     });
@@ -117,6 +119,7 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
     navigation.navigate('NoteDetail', {
       note,
       boardId: board.id,
+      boardTitle: board.title,
       onSave: handleNoteSave,
       onDelete: handleNoteDelete,
     });
@@ -246,17 +249,11 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
 
           {hasNotes
             ? (board.notes!.map(note => (
-                // TODO(P2): NoteCard 컴포넌트로 교체
-                <TouchableOpacity
+                <NoteCard
                   key={note.id}
-                  style={styles.noteRow}
+                  note={note}
                   onPress={() => handleNotePress(note)}
-                  activeOpacity={0.7}>
-                  <Text style={styles.noteTitle} numberOfLines={1}>{note.title}</Text>
-                  {!!note.content && (
-                    <Text style={styles.notePreview} numberOfLines={2}>{note.content}</Text>
-                  )}
-                </TouchableOpacity>
+                />
               )))
             : (
               <TouchableOpacity style={styles.emptyState} onPress={handleAddNote} activeOpacity={0.7}>
@@ -346,16 +343,6 @@ const styles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
     letterSpacing: 0.5,
   },
-  noteRow: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E4ECFF',
-    gap: 4,
-  },
-  noteTitle: { fontSize: 15, fontWeight: '600', color: '#1A1A1A', fontFamily: 'PretendardVariable' },
-  notePreview: { fontSize: 13, color: '#6B7E9A', fontFamily: 'PretendardVariable', lineHeight: 20 },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',

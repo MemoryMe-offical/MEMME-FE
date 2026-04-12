@@ -30,6 +30,7 @@ export type RootStackParamList = {
     NoteDetail: {
         note: Note | null;
         boardId: string;
+        boardTitle?: string;
         isNew?: boolean;
         onSave?: (note: Note) => void;
         onDelete?: (noteId: string) => void;
