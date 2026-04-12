@@ -1,6 +1,6 @@
 # MEMME 프론트엔드 작업 명세서
 
-> 최종 업데이트: 2026-04-12 | P0 ✅ P1 ✅ P2 🔄 P3 ⏳
+> 최종 업데이트: 2026-04-12 | P0 ✅ P1 ✅ P2 ✅ P3 ⏳
 
 ---
 
@@ -44,18 +44,14 @@ void recentBoards;
 
 ---
 
-### 다음 작업: P2 #13 — PendingLinksBottomSheet 구현 및 MainScreen 연결
+### ✅ 완료된 작업: P2 #13 — PendingLinksBottomSheet 구현 및 MainScreen 연결
 
-**만들어야 할 파일 1개:**
+- `src/components/pendingLinks/PendingLinksBottomSheet.tsx` 신규 생성
+- `MainScreen.tsx` 연결 완료 (handlePendingLinkAddToBoard, handlePendingLinkDismiss 핸들러 추가)
 
-1. `src/components/pendingLinks/PendingLinksBottomSheet.tsx`
+### 다음 작업: P3 — 백엔드 API 연동
 
-**완료 후 `MainScreen.tsx` 수정 필요:**
-- `import PendingLinksBottomSheet from '../components/pendingLinks/PendingLinksBottomSheet';` 추가
-- `void recentBoards;` 제거 (recentBoards가 실제로 사용됨)
-- `{pendingSheetVisible && null}` → `<PendingLinksBottomSheet ... />` 교체
-- `handleAddToBoard` (PendingLink → Board) 핸들러 추가: `pendingLinkService.removePendingLink(id)` 호출 후 `setItems`에 업데이트된 보드 반영
-- `handleDismissLink` 핸들러 추가: `pendingLinkService.removePendingLink(id)` 호출 후 `setPendingLinks` 업데이트
+P2 완료. P3는 백엔드 준비 후 `src/services/` 내 `TODO(P3)` 주석 위치를 API 호출로 교체합니다.
 
 **커밋 규칙:** 동일 단위 작업은 하나의 커밋으로 묶음. 푸시 금지 (사용자가 명시적으로 요청 시만).
 
@@ -203,7 +199,7 @@ interface BoardPickerBottomSheetProps {
 
 ---
 
-### 작업 13. `PendingLinksBottomSheet` 신규 개발 ⏳ 다음 작업
+### 작업 13. `PendingLinksBottomSheet` 신규 개발 ✅ 완료
 
 **파일:** `src/components/pendingLinks/PendingLinksBottomSheet.tsx`
 
