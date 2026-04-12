@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -47,6 +47,9 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
   const [linkInput, setLinkInput] = useState('');
   const [isFetchingOg, setIsFetchingOg] = useState(false);
 
+  // 저장 버튼으로 인한 goBack()과 일반 뒤로가기를 구분하는 플래그
+  const isSavingRef = useRef(false);
+
   const isDirty = useCallback(() => {
     if (isNew) {
       return (
@@ -69,7 +72,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
   // 뒤로가기 인터셉트 (Android 하드웨어 백 버튼 + iOS 스와이프 공통 처리)
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
-      if (!isDirty()) return;
+      if (!isDirty() || isSavingRef.current) return;
       e.preventDefault();
       Alert.alert(
         '나가기',
@@ -102,6 +105,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       files: editFiles.length > 0 ? editFiles : undefined,
     };
     onSave?.(noteToSave);
+    isSavingRef.current = true;
     navigation.goBack();
   };
 
