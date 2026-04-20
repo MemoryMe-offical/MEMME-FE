@@ -13,7 +13,7 @@ import { BookmarkFilledIcon, BookmarkIcon, CopyIcon, ConvertIcon, TrashIcon } fr
 
 interface ContextMenuProps {
   visible: boolean;
-  itemType: 'chat' | 'post';
+  itemType: 'memo' | 'board';
   isBookmarked: boolean;
   onCopy: () => void;
   onBookmark: () => void;
@@ -64,8 +64,8 @@ const ContextMenu = ({
     }).start(() => onClose());
   };
 
-  const copyLabel = itemType === 'chat' ? '내용 복사' : '제목 복사';
-  const convertLabel = itemType === 'chat' ? '게시물로 변환' : '채팅으로 변환';
+  const copyLabel = itemType === 'memo' ? '내용 복사' : '제목 복사';
+  const convertLabel = itemType === 'memo' ? '보드로 변환' : '메모로 변환';
 
   return (
     <Modal

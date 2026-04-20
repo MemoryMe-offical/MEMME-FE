@@ -59,18 +59,18 @@ export const login = async (
       } catch (error) {
         console.log('🔑 [Auth] RSA 키 쌍 생성 중...');
         
-        const keyPair = generateRSAKeyPair();
-        
+        const keyPair = await generateRSAKeyPair();
+
         await savePrivateKey(userId, keyPair.privateKey);
-        
+
         await registerPublicKey(userId, keyPair.publicKey, deviceId);
-        
+
         if (password) {
           const backup = encryptPrivateKeyForBackup(
             keyPair.privateKey,
             password
           );
-          await uploadPrivateKeyBackup(userId, backup);
+          await uploadPrivateKeyBackup(userId, backup, deviceId);
           console.log('✅ [Auth] 개인키 백업 완료 (KDF 포함)');
         }
         

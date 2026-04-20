@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { BoardPost } from '../../types/chatBoard.type';
+import { Board } from '../../types';
 import { boardPostItemStyles as styles } from '../../styles/BoardPostItem.styles';
 
 const formatTime = (isoString: string): string => {
@@ -15,9 +15,9 @@ const formatTime = (isoString: string): string => {
 };
 
 interface BoardPostItemProps {
-  item: BoardPost;
-  onPress: (post: BoardPost) => void;
-  onLongPress: (post: BoardPost) => void;
+  item: Board;
+  onPress: (board: Board) => void;
+  onLongPress: (board: Board) => void;
 }
 
 const BoardPostItem = ({ item, onPress, onLongPress }: BoardPostItemProps) => (
@@ -32,9 +32,9 @@ const BoardPostItem = ({ item, onPress, onLongPress }: BoardPostItemProps) => (
       delayLongPress={400}
       activeOpacity={0.75}>
       <Text style={styles['boardPostItem-bubble-title']}>{item.title}</Text>
-      {item.content ? (
+      {item.description ? (
         <Text style={styles['boardPostItem-bubble-content']} numberOfLines={4}>
-          {item.content}
+          {item.description}
         </Text>
       ) : null}
     </TouchableOpacity>

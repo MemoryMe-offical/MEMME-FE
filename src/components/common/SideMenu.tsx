@@ -13,7 +13,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BoardPost, ChatBoardItem, ChatMessage } from '../../types/chatBoard.type';
+import { Board, TimelineItem, Memo } from '../../types';
 import { CloseIcon, EditIcon, SettingsIcon } from './Icons';
 import { SIDE_MENU_WIDTH, sideMenuStyles as styles } from '../../styles/SideMenu.styles';
 
@@ -21,10 +21,10 @@ const SCREEN_HEIGHT = Dimensions.get('window').height;
 
 interface Props {
   visible: boolean;
-  items: ChatBoardItem[];
+  items: TimelineItem[];
   onClose: () => void;
   onSettings: () => void;
-  onBookmarkPress: (item: ChatBoardItem) => void;
+  onBookmarkPress: (item: TimelineItem) => void;
 }
 
 const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress }: Props) => {
@@ -169,14 +169,14 @@ const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress }: Prop
                   </Text>
                 ) : (
                   bookmarkedItems.map(item => {
-                    const isPost = item.type === 'post';
-                    const label = isPost
-                      ? (item as BoardPost).title
-                      : (item as ChatMessage).text;
-                    const accentColor = isPost ? '#FF9500' : '#588DFF';
-                    const badgeBg = isPost ? '#FFF0D9' : '#E8EEFF';
-                    const badgeColor = isPost ? '#FF9500' : '#588DFF';
-                    const badgeLabel = isPost ? '게시물' : '채팅';
+                    const isBoard = item.type === 'board';
+                    const label = isBoard
+                      ? (item as Board).title
+                      : (item as Memo).text;
+                    const accentColor = isBoard ? '#FF9500' : '#588DFF';
+                    const badgeBg = isBoard ? '#FFF0D9' : '#E8EEFF';
+                    const badgeColor = isBoard ? '#FF9500' : '#588DFF';
+                    const badgeLabel = isBoard ? '보드' : '메모';
 
                     return (
                       <TouchableOpacity

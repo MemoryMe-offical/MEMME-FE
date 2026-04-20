@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { ChatMessage } from '../../types/chatBoard.type';
+import { Memo } from '../../types';
 import { chatMessageItemStyles as styles } from '../../styles/ChatMessageItem.styles';
 
 const formatTime = (isoString: string): string => {
@@ -15,8 +15,8 @@ const formatTime = (isoString: string): string => {
 };
 
 interface ChatMessageItemProps {
-  item: ChatMessage;
-  onLongPress: (item: ChatMessage) => void;
+  item: Memo;
+  onLongPress: (item: Memo) => void;
 }
 
 const ChatMessageItem = ({ item, onLongPress }: ChatMessageItemProps) => (

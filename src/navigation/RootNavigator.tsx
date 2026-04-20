@@ -7,10 +7,11 @@ import MainScreen from '../screens/MainScreen';
 import LoginScreen from '../screens/LoginScreen';
 import SignupScreen from '../screens/SignupScreen';
 import TermsScreen from '../screens/Termsscreen';
-import BoardPostDetailScreen from '../screens/BoardPostDetailScreen';
-import { BoardPost } from '../types/chatBoard.type';
+import BoardDetailScreen from '../screens/BoardDetailScreen';
+import NoteDetailScreen from '../screens/NoteDetailScreen';
 import DevicePairingScreen from '../screens/DevicePairingScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import { Board, Note } from '../types';
 
 // 네비게이션에서 사용할 화면 목록과 파라미터 타입 정의
 export type RootStackParamList = {
@@ -20,11 +21,19 @@ export type RootStackParamList = {
     Login: undefined;
     Signup: undefined;
     Terms: undefined;
-    BoardPostDetail: {
-        post: BoardPost;
-        subItemId?: string;
-        onSave?: (updated: BoardPost) => void;
+    BoardDetail: {
+        board: Board;
+        noteId?: string;
+        onSave?: (updated: Board) => void;
         startEditing?: boolean;
+    };
+    NoteDetail: {
+        note: Note | null;
+        boardId: string;
+        boardTitle?: string;
+        isNew?: boolean;
+        onSave?: (note: Note) => void;
+        onDelete?: (noteId: string) => void;
     };
     EncryptionTest: undefined;
     DevicePairing: undefined;
@@ -39,64 +48,26 @@ const RootNavigator = () => {
         <Stack.Navigator
             initialRouteName="Splash"
             screenOptions={{
-                headerShown: false, // 모든 화면의 헤더 숨김
+                headerShown: false,
             }}
         >
-            {/* 스플래시 화면 */}
-            <Stack.Screen
-                name="Splash"
-                component={SplashScreen}
-            />
+            <Stack.Screen name="Splash" component={SplashScreen} />
+            <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="Signup" component={SignupScreen} />
+            <Stack.Screen name="Terms" component={TermsScreen} />
+            <Stack.Screen name="Main" component={MainScreen} />
 
-            {/* 온보딩 화면 */}
-            <Stack.Screen
-                name="Onboarding"
-                component={OnboardingScreen}
-            />
+            {/* 보드 상세 화면 */}
+            <Stack.Screen name="BoardDetail" component={BoardDetailScreen} />
 
-            {/* 로그인 화면 */}
-            <Stack.Screen
-                name="Login"
-                component={LoginScreen}
-            />
+            {/* 노트 상세 화면 */}
+            <Stack.Screen name="NoteDetail" component={NoteDetailScreen} />
 
-            {/* 회원가입 화면 */}
-            <Stack.Screen
-                name="Signup"
-                component={SignupScreen}
-            />
-
-            {/* 이용약관 화면 */}
-            <Stack.Screen
-                name="Terms"
-                component={TermsScreen}
-            />
-
-            {/* 메인 화면 */}
-            <Stack.Screen
-                name="Main"
-                component={MainScreen}
-            />
-
-            {/* 게시물 상세 화면 */}
-            <Stack.Screen
-                name="BoardPostDetail"
-                component={BoardPostDetailScreen}
-            />
-
-            <Stack.Screen
-                name="DevicePairing"
-                component={DevicePairingScreen}
-                options={{ title: '기기 페어링' }}
-            />
-
-            <Stack.Screen
-                name="ForgotPassword"
-                component={ForgotPasswordScreen}
-                options={{ title: '비밀번호 찾기' }}
-            />
+            <Stack.Screen name="DevicePairing" component={DevicePairingScreen} options={{ title: '기기 페어링' }} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: '비밀번호 찾기' }} />
         </Stack.Navigator>
-    )
-}
+    );
+};
 
 export default RootNavigator;
