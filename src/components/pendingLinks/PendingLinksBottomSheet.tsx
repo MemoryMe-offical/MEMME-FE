@@ -51,7 +51,8 @@ const PendingLinksBottomSheet = ({
 
   const handleAddPress = (link: PendingLink) => {
     setActivePendingLink(link);
-    setPickerVisible(true);
+    onClose(); // 현재 모달 먼저 닫기
+    setTimeout(() => setPickerVisible(true), 350); // 닫힘 애니메이션 끝나고 열기
   };
 
   const handleBoardSelect = (board: Board) => {
