@@ -7,6 +7,7 @@ import {
   ScrollView,
   Alert,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -19,6 +20,8 @@ import {
 } from '../components/common/Icons';
 import TagInput from '../components/common/TagInput';
 import NoteCard from '../components/note/NoteCard';
+import * as boardService from '../services/boardService';
+import * as noteService from '../services/noteService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BoardDetail'>;
 
@@ -35,6 +38,7 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
 
   const [board, setBoard] = useState<Board>(initialBoard);
   const [isEditing, setIsEditing] = useState(startEditing ?? false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // 편집 임시 상태
   const [editTitle, setEditTitle] = useState(initialBoard.title);
@@ -64,45 +68,84 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editTitle.trim()) return;
-    const updated: Board = {
-      ...board,
-      title: editTitle.trim(),
-      description: editDescription.trim() || undefined,
-      tags: editTags.length > 0 ? editTags : undefined,
-      updatedAt: new Date().toISOString(),
-      // notes는 변경하지 않음 (NoteDetailScreen에서 개별 관리)
-    };
-    setBoard(updated);
-    setIsEditing(false);
-    onSave?.(updated);
+
+    setIsSaving(true);
+    try {
+      const updated = await boardService.updateBoard(board.id, {
+        title: editTitle.trim(),
+        description: editDescription.trim() || undefined,
+        tags: editTags.length > 0 ? editTags : undefined,
+      });
+      setBoard(updated);
+      setIsEditing(false);
+      onSave?.(updated);
+    } catch (error) {
+      console.error('Failed to save board:', error);
+      Alert.alert('오류', '보드 저장에 실패했습니다.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // 노트 저장 콜백 (NoteDetailScreen에서 돌아올 때)
-  const handleNoteSave = (note: Note) => {
-    const existingNotes = board.notes ?? [];
-    const idx = existingNotes.findIndex(n => n.id === note.id);
-    const updated: Board = {
-      ...board,
-      notes: idx >= 0
-        ? existingNotes.map(n => n.id === note.id ? note : n)
-        : [...existingNotes, note],
-      updatedAt: new Date().toISOString(),
-    };
-    setBoard(updated);
-    onSave?.(updated);
+  const handleNoteSave = async (note: Note) => {
+    try {
+      const existingNotes = board.notes ?? [];
+      const isNewNote = !existingNotes.some(n => n.id === note.id);
+
+      if (isNewNote) {
+        await noteService.createNote(board.id, {
+          title: note.title,
+          content: note.content,
+          imageUris: note.imageUris,
+          videoUris: note.videoUris,
+          url: note.url,
+        });
+      } else {
+        const existingNote = existingNotes.find(n => n.id === note.id);
+        if (existingNote) {
+          await noteService.updateNote(board.id, note.id, {
+            title: note.title,
+            content: note.content,
+            imageUris: note.imageUris,
+            videoUris: note.videoUris,
+            url: note.url,
+          });
+        }
+      }
+
+      const updated: Board = {
+        ...board,
+        notes: isNewNote
+          ? [...existingNotes, note]
+          : existingNotes.map(n => n.id === note.id ? note : n),
+        updatedAt: new Date().toISOString(),
+      };
+      setBoard(updated);
+      onSave?.(updated);
+    } catch (error) {
+      console.error('Failed to save note:', error);
+      Alert.alert('오류', '노트 저장에 실패했습니다.');
+    }
   };
 
   // 노트 삭제 콜백
-  const handleNoteDelete = (noteId: string) => {
-    const updated: Board = {
-      ...board,
-      notes: (board.notes ?? []).filter(n => n.id !== noteId),
-      updatedAt: new Date().toISOString(),
-    };
-    setBoard(updated);
-    onSave?.(updated);
+  const handleNoteDelete = async (noteId: string) => {
+    try {
+      await noteService.deleteNote(board.id, noteId);
+      const updated: Board = {
+        ...board,
+        notes: (board.notes ?? []).filter(n => n.id !== noteId),
+        updatedAt: new Date().toISOString(),
+      };
+      setBoard(updated);
+      onSave?.(updated);
+    } catch (error) {
+      console.error('Failed to delete note:', error);
+      Alert.alert('오류', '노트 삭제에 실패했습니다.');
+    }
   };
 
   const handleAddNote = () => {
@@ -139,9 +182,13 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
           <TouchableOpacity
             onPress={handleSave}
             style={[styles.headerSideBtn, styles.headerSideBtnRight]}
-            disabled={!editTitle.trim()}
+            disabled={!editTitle.trim() || isSaving}
             activeOpacity={0.6}>
-            <Text style={[styles.saveText, !editTitle.trim() && styles.saveTextDisabled]}>저장</Text>
+            {isSaving ? (
+              <ActivityIndicator size="small" color="#588DFF" />
+            ) : (
+              <Text style={[styles.saveText, !editTitle.trim() && styles.saveTextDisabled]}>저장</Text>
+            )}
           </TouchableOpacity>
         </View>
 
