@@ -28,113 +28,14 @@ import MemoConvertSheet from '../components/memo/MemoConvertSheet';
 import PendingLinksBottomSheet from '../components/pendingLinks/PendingLinksBottomSheet';
 import { mainStyles as styles } from '../styles/MainScreen.styles';
 import type { RootStackParamList } from '../navigation/RootNavigator';
-import { loadItems, saveItems } from '../utils/storage';
 import { fetchOgData } from '../services/ogService';
 import * as pendingLinkService from '../services/pendingLinkService';
+import * as timelineService from '../services/timelineService';
+import * as memoService from '../services/memoService';
+import * as boardService from '../services/boardService';
 
+// TEMP_USER_ID는 로그인된 사용자의 userId로 교체 예정
 const TEMP_USER_ID = '24';
-
-const initItems: TimelineItem[] = [
-  {
-    id: '1',
-    userId: TEMP_USER_ID,
-    type: 'memo',
-    bookMark: false,
-    text: '코딩 공부하기',
-    createdAt: new Date(2026, 1, 25, 9, 15, 0).toISOString(),
-  },
-  {
-    id: '2',
-    userId: TEMP_USER_ID,
-    type: 'board',
-    bookMark: true,
-    title: '수학교육 과동아리',
-    notes: [
-      { id: '2-1', title: '여름 MT', content: '🏕 MT 추가요금 공지\nMT 정산 과정에서 비용 변동으로 1인당 추가요금 4,115원이 발생했습니다.\n번거롭겠지만 아래 계좌로 추가 입금 부탁드립니다...' },
-      { id: '2-2', title: '수학 모임', content: '이번 주 수학 모임은 화요일 오후 6시 도서관 2층에서 진행됩니다.' },
-      { id: '2-3', title: '잼얘즈', content: '잼있는 얘기들 공유하는 채널입니다. 자유롭게 올려주세요!' },
-    ],
-    createdAt: new Date(2026, 1, 25, 10, 0, 0).toISOString(),
-  },
-  {
-    id: '3',
-    userId: TEMP_USER_ID,
-    type: 'memo',
-    bookMark: false,
-    text: '리액트 네이티브 강의 수강하기!',
-    createdAt: new Date(2026, 1, 25, 11, 30, 0).toISOString(),
-  },
-  {
-    id: '4',
-    userId: TEMP_USER_ID,
-    type: 'memo',
-    bookMark: false,
-    text: '결혼식 2월 31일 오후 12시',
-    createdAt: new Date(2026, 1, 25, 12, 47, 0).toISOString(),
-  },
-  {
-    id: '5',
-    userId: TEMP_USER_ID,
-    type: 'board',
-    bookMark: false,
-    title: '운동 루틴 메모',
-    description: '월·수·금: 헬스장 하체 위주\n화·목: 홈트 30분 + 스트레칭\n주말: 한강 자전거 or 등산',
-    createdAt: new Date(2026, 1, 25, 14, 20, 0).toISOString(),
-  },
-  {
-    id: '6',
-    userId: TEMP_USER_ID,
-    type: 'memo',
-    bookMark: false,
-    text: '엄마 생신 선물 사기',
-    createdAt: new Date(2026, 1, 25, 16, 5, 0).toISOString(),
-  },
-  {
-    id: '7',
-    userId: TEMP_USER_ID,
-    type: 'memo',
-    bookMark: true,
-    text: '치과 예약: 3월 2일 오후 2시',
-    createdAt: new Date(2026, 1, 25, 17, 30, 0).toISOString(),
-  },
-  {
-    id: '8',
-    userId: TEMP_USER_ID,
-    type: 'board',
-    bookMark: false,
-    title: '독서 목록',
-    tags: ['독서', '자기계발'],
-    notes: [
-      { id: '8-1', title: '원씽', content: '한 가지에 집중하는 삶에 대한 이야기' },
-      { id: '8-2', title: '아주 작은 습관의 힘', content: '1% 향상의 복리 효과' },
-      { id: '8-3', title: '도둑맞은 집중력', content: '현대 사회에서 집중력을 되찾는 방법' },
-    ],
-    createdAt: new Date(2026, 1, 25, 18, 45, 0).toISOString(),
-  },
-  {
-    id: '9',
-    userId: TEMP_USER_ID,
-    type: 'memo',
-    bookMark: false,
-    text: '주말에 친구랑 영화 보기 약속!',
-    createdAt: new Date(2026, 1, 26, 9, 0, 0).toISOString(),
-  },
-  {
-    id: '10',
-    userId: TEMP_USER_ID,
-    type: 'board',
-    bookMark: false,
-    title: '스터디 그룹',
-    tags: ['스터디'],
-    notes: [
-      { id: '10-1', title: '스터디 일정', content: '매주 수요일 오후 7시 카페에서 진행합니다.' },
-      { id: '10-2', title: '회비 납부 안내', content: '3월 회비 납부 기한은 이번 주 금요일까지입니다. 계좌번호는 채팅으로 별도 안내드립니다.' },
-      { id: '10-3', title: '신입 부원 모집', content: '4월 신입 부원 모집을 시작합니다. 관심 있는 친구들에게 홍보 부탁드려요!' },
-      { id: '10-4', title: '종강 파티 투표', content: '종강 파티 날짜 투표 링크를 공유합니다. 24일까지 참여해 주세요.' },
-    ],
-    createdAt: new Date(2026, 1, 26, 15, 0, 0).toISOString(),
-  },
-];
 
 const MainScreen = () => {
   const insets = useSafeAreaInsets();
@@ -186,16 +87,21 @@ const MainScreen = () => {
   };
 
   useEffect(() => {
-    loadItems().then(stored => {
-      setItems(stored ?? initItems);
-      setLoaded(true);
-    });
+    const loadTimeline = async () => {
+      try {
+        const timelineItems = await timelineService.fetchTimeline();
+        setItems(timelineItems);
+      } catch (error) {
+        console.error('Failed to load timeline:', error);
+        setItems([]);
+      } finally {
+        setLoaded(true);
+      }
+    };
+
+    loadTimeline();
     pendingLinkService.loadPendingLinks().then(setPendingLinks);
   }, []);
-
-  useEffect(() => {
-    if (loaded) saveItems(items);
-  }, [items, loaded]);
 
   useEffect(() => {
     const getShared = async () => {
@@ -246,15 +152,30 @@ const MainScreen = () => {
     Alert.alert('복사됨', text);
   };
 
-  const handleContextBookmark = () => {
+  const handleContextBookmark = async () => {
     if (!contextMenuItem) return;
-    setItems(prev =>
-      prev.map(item =>
-        item.id === contextMenuItem.id
-          ? { ...item, bookMark: !item.bookMark }
-          : item,
-      ),
-    );
+    const item = contextMenuItem;
+
+    try {
+      if (item.type === 'memo') {
+        const updated = await memoService.toggleMemoBookmark(item.id);
+        setItems(prev =>
+          prev.map(i =>
+            i.id === item.id ? updated : i,
+          ),
+        );
+      } else {
+        const updated = await boardService.toggleBoardBookmark(item.id);
+        setItems(prev =>
+          prev.map(i =>
+            i.id === item.id ? updated : i,
+          ),
+        );
+      }
+    } catch (error) {
+      console.error('Failed to toggle bookmark:', error);
+      Alert.alert('오류', '북마크 설정에 실패했습니다.');
+    }
   };
 
   const handleContextConvert = () => {
@@ -319,12 +240,30 @@ const MainScreen = () => {
   const handleContextDelete = () => {
     if (!contextMenuItem) return;
     const id = contextMenuItem.id;
+    const item = contextMenuItem;
+
     Alert.alert('삭제', '정말 삭제하시겠습니까?', [
       { text: '취소', style: 'cancel' },
       {
         text: '삭제',
         style: 'destructive',
-        onPress: () => setItems(prev => prev.filter(item => item.id !== id)),
+        onPress: async () => {
+          try {
+            if (item.type === 'memo') {
+              await memoService.deleteMemo(id);
+            } else {
+              // board 삭제는 boardService 필요
+              // await boardService.deleteBoard(id);
+              console.warn('Board deletion not yet implemented');
+              return;
+            }
+            setItems(prev => prev.filter(i => i.id !== id));
+            handleCloseContextMenu();
+          } catch (error) {
+            console.error('Failed to delete item:', error);
+            Alert.alert('오류', '삭제에 실패했습니다.');
+          }
+        },
       },
     ]);
   };
@@ -355,19 +294,20 @@ const MainScreen = () => {
     }
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputText.trim()) return;
-    const newItem: Memo = {
-      id: Date.now().toString(),
-      userId: TEMP_USER_ID,
-      type: 'memo',
-      bookMark: false,
-      text: inputText.trim(),
-      createdAt: new Date().toISOString(),
-    };
-    shouldScrollToEnd.current = true;
-    setItems(prev => [...prev, newItem]);
+    const text = inputText.trim();
     setInputText('');
+
+    try {
+      const newMemo = await memoService.createMemo(text);
+      shouldScrollToEnd.current = true;
+      setItems(prev => [...prev, newMemo]);
+    } catch (error) {
+      console.error('Failed to create memo:', error);
+      Alert.alert('오류', '메모 저장에 실패했습니다.');
+      setInputText(text);
+    }
   };
 
   const handlePendingLinkAddToBoard = (link: PendingLink, board: Board) => {
