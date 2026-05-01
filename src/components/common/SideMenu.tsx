@@ -25,9 +25,11 @@ interface Props {
   onClose: () => void;
   onSettings: () => void;
   onBookmarkPress: (item: TimelineItem) => void;
+  isBookmarkFilterActive?: boolean;
+  onBookmarkFilterToggle?: (active: boolean) => void;
 }
 
-const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress }: Props) => {
+const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress, isBookmarkFilterActive, onBookmarkFilterToggle }: Props) => {
   const slideAnim = useRef(new Animated.Value(SIDE_MENU_WIDTH)).current;
   const insets = useSafeAreaInsets();
 
@@ -154,14 +156,18 @@ const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress }: Prop
             >
               {/* 북마크 */}
               <View style={styles['sideMenu-section']}>
-                <View style={styles['sideMenu-section-header']}>
-                  <Text style={styles['sideMenu-section-title']}>북마크</Text>
+                <TouchableOpacity
+                  style={[styles['sideMenu-section-header'], { paddingVertical: 12 }]}
+                  onPress={() => onBookmarkFilterToggle?.(!isBookmarkFilterActive)}>
+                  <Text style={[styles['sideMenu-section-title'], isBookmarkFilterActive && { color: '#588DFF', fontWeight: '700' }]}>
+                    북마크{isBookmarkFilterActive ? ' (필터 활성화)' : ''}
+                  </Text>
                   {bookmarkedItems.length > 0 && (
-                    <Text style={styles['sideMenu-section-count']}>
+                    <Text style={[styles['sideMenu-section-count'], isBookmarkFilterActive && { color: '#588DFF', backgroundColor: '#E8EEFF' }]}>
                       {bookmarkedItems.length}
                     </Text>
                   )}
-                </View>
+                </TouchableOpacity>
 
                 {bookmarkedItems.length === 0 ? (
                   <Text style={styles['sideMenu-empty-text']}>

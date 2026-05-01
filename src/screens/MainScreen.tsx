@@ -58,6 +58,12 @@ const MainScreen = () => {
   const [convertSheetVisible, setConvertSheetVisible] = useState(false); // TODO(P2): MemoConvertSheet 연결
   const [convertTargetMemo, setConvertTargetMemo] = useState<Memo | null>(null);
 
+  // 검색 & 필터
+  const [isSearchMode, setIsSearchMode] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'memo' | 'board'>('all');
+  const [filterBookmarkOnly, setFilterBookmarkOnly] = useState(false);
+
   // TODO(P3): GET /api/timeline?type=board&sort=updatedAt 로 교체
   const recentBoards = useMemo(
     () =>
@@ -68,6 +74,36 @@ const MainScreen = () => {
       }),
     [items],
   );
+
+  const filteredItems = useMemo(() => {
+    let result = items;
+
+    // 타입 필터
+    if (filterType === 'memo') {
+      result = result.filter(i => i.type === 'memo');
+    } else if (filterType === 'board') {
+      result = result.filter(i => i.type === 'board');
+    }
+
+    // 북마크 필터
+    if (filterBookmarkOnly) {
+      result = result.filter(i => i.bookMark);
+    }
+
+    // 검색 텍스트 필터
+    if (searchText.trim()) {
+      const query = searchText.toLowerCase();
+      result = result.filter(i => {
+        if (i.type === 'memo') {
+          return (i as Memo).text.toLowerCase().includes(query);
+        } else {
+          return (i as Board).title.toLowerCase().includes(query);
+        }
+      });
+    }
+
+    return result;
+  }, [items, filterType, filterBookmarkOnly, searchText]);
 
   const nativeShareModule =
     Platform.OS === 'ios'
@@ -337,34 +373,54 @@ const MainScreen = () => {
       <StatusBar barStyle="dark-content" backgroundColor="#EEF3FF" />
 
       <View style={styles['main-header']}>
-        <TouchableOpacity style={styles['main-header-profileButton']}>
-          <Image
-            source={require('../assets/imgs/mainart.png')}
-            style={styles['main-header-profileButton-image']}
-          />
-        </TouchableOpacity>
+        {isSearchMode ? (
+          <>
+            <TouchableOpacity onPress={() => { setIsSearchMode(false); setSearchText(''); }} style={styles['main-header-profileButton']}>
+              <Text style={{ fontSize: 20, color: '#588DFF' }}>←</Text>
+            </TouchableOpacity>
+            <TextInput
+              style={[styles['main-inputBar-input'], { marginHorizontal: 8, flex: 1 }]}
+              value={searchText}
+              onChangeText={setSearchText}
+              placeholder="메모, 보드 검색..."
+              placeholderTextColor="#AABBCC"
+              autoFocus
+            />
+          </>
+        ) : (
+          <>
+            <TouchableOpacity style={styles['main-header-profileButton']}>
+              <Image
+                source={require('../assets/imgs/mainart.png')}
+                style={styles['main-header-profileButton-image']}
+              />
+            </TouchableOpacity>
 
-        <Text style={styles['main-header-title']}>나와의 채팅</Text>
+            <Text style={styles['main-header-title']}>나와의 채팅</Text>
 
-        <View style={styles['main-header-rightButtons']}>
-          <TouchableOpacity style={styles['main-header-iconButton']}>
-            <SearchIcon color="#1A1A1A" size={20} />
-          </TouchableOpacity>
+            <View style={styles['main-header-rightButtons']}>
+              <TouchableOpacity
+                style={styles['main-header-iconButton']}
+                onPress={() => setIsSearchMode(true)}>
+                <SearchIcon color="#1A1A1A" size={20} />
+              </TouchableOpacity>
 
-          {/* 인박스 아이콘 */}
-          <TouchableOpacity
-            style={styles['main-header-iconButton']}
-            onPress={() => setPendingSheetVisible(true)}>
-            <PlusIcon color="#1A1A1A" size={20} />
-            <Badge count={pendingLinks.length} />
-          </TouchableOpacity>
+              {/* 인박스 아이콘 */}
+              <TouchableOpacity
+                style={styles['main-header-iconButton']}
+                onPress={() => setPendingSheetVisible(true)}>
+                <PlusIcon color="#1A1A1A" size={20} />
+                <Badge count={pendingLinks.length} />
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles['main-header-iconButton']}
-            onPress={() => setSideMenuVisible(true)}>
-            <HamburgerIcon color="#1A1A1A" size={20} />
-          </TouchableOpacity>
-        </View>
+              <TouchableOpacity
+                style={styles['main-header-iconButton']}
+                onPress={() => setSideMenuVisible(true)}>
+                <HamburgerIcon color="#1A1A1A" size={20} />
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
       </View>
 
       <KeyboardAvoidingView
@@ -382,7 +438,7 @@ const MainScreen = () => {
 
           <FlatList<TimelineItem>
             ref={flatListRef}
-            data={items}
+            data={filteredItems}
             keyExtractor={item => item.id}
             contentContainerStyle={styles['main-listContent']}
             keyboardDismissMode="interactive"
@@ -449,6 +505,11 @@ const MainScreen = () => {
         onClose={() => setSideMenuVisible(false)}
         onSettings={() => {}}
         onBookmarkPress={handleBookmarkPress}
+        isBookmarkFilterActive={filterBookmarkOnly}
+        onBookmarkFilterToggle={(active) => {
+          setFilterBookmarkOnly(active);
+          setIsSearchMode(false);
+        }}
       />
 
       <ContextMenu
