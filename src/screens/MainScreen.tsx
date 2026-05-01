@@ -288,10 +288,7 @@ const MainScreen = () => {
             if (item.type === 'memo') {
               await memoService.deleteMemo(id);
             } else {
-              // board 삭제는 boardService 필요
-              // await boardService.deleteBoard(id);
-              console.warn('Board deletion not yet implemented');
-              return;
+              await boardService.deleteBoard(id);
             }
             setItems(prev => prev.filter(i => i.id !== id));
             handleCloseContextMenu();
