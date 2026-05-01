@@ -13,6 +13,8 @@ import {
   NativeModules,
   StatusBar,
   Keyboard,
+  Modal,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -63,6 +65,8 @@ const MainScreen = () => {
   const [searchText, setSearchText] = useState('');
   const [filterType, setFilterType] = useState<'all' | 'memo' | 'board'>('all');
   const [filterBookmarkOnly, setFilterBookmarkOnly] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [isTagFilterVisible, setIsTagFilterVisible] = useState(false);
 
   // TODO(P3): GET /api/timeline?type=board&sort=updatedAt 로 교체
   const recentBoards = useMemo(
@@ -90,6 +94,17 @@ const MainScreen = () => {
       result = result.filter(i => i.bookMark);
     }
 
+    // 태그 필터 (보드만)
+    if (selectedTags.length > 0) {
+      result = result.filter(i => {
+        if (i.type === 'board') {
+          const board = i as Board;
+          return selectedTags.some(tag => board.tags?.includes(tag));
+        }
+        return true;
+      });
+    }
+
     // 검색 텍스트 필터
     if (searchText.trim()) {
       const query = searchText.toLowerCase();
@@ -103,7 +118,7 @@ const MainScreen = () => {
     }
 
     return result;
-  }, [items, filterType, filterBookmarkOnly, searchText]);
+  }, [items, filterType, filterBookmarkOnly, searchText, selectedTags]);
 
   const nativeShareModule =
     Platform.OS === 'ios'
@@ -402,6 +417,14 @@ const MainScreen = () => {
                 <SearchIcon color="#1A1A1A" size={20} />
               </TouchableOpacity>
 
+              <TouchableOpacity
+                style={[styles['main-header-iconButton'], selectedTags.length > 0 && { backgroundColor: '#E8EEFF' }]}
+                onPress={() => setIsTagFilterVisible(true)}>
+                <Text style={[{ fontSize: 12, fontWeight: '600', color: selectedTags.length > 0 ? '#588DFF' : '#1A1A1A' }]}>
+                  필터
+                </Text>
+              </TouchableOpacity>
+
               {/* 인박스 아이콘 */}
               <TouchableOpacity
                 style={styles['main-header-iconButton']}
@@ -495,6 +518,103 @@ const MainScreen = () => {
           </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
+
+      {/* 태그 필터 모달 */}
+      <Modal
+        visible={isTagFilterVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsTagFilterVisible(false)}>
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
+          activeOpacity={1}
+          onPress={() => setIsTagFilterVisible(false)}>
+          <View
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              paddingTop: 16,
+              paddingHorizontal: 20,
+              paddingBottom: Math.max(insets.bottom, 20),
+              marginTop: 'auto',
+              maxHeight: '70%',
+            }}
+            onStartShouldSetResponder={() => true}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A', fontFamily: 'PretendardVariable' }}>
+                태그 필터
+              </Text>
+              <TouchableOpacity onPress={() => setIsTagFilterVisible(false)}>
+                <Text style={{ fontSize: 24, color: '#9DAFC8' }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={{ marginBottom: 16 }}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {/* 모든 태그 */}
+                {Array.from(new Set(
+                  items
+                    .filter(i => i.type === 'board')
+                    .flatMap(i => (i as Board).tags ?? [])
+                )).map(tag => (
+                  <TouchableOpacity
+                    key={tag}
+                    onPress={() => {
+                      setSelectedTags(prev =>
+                        prev.includes(tag)
+                          ? prev.filter(t => t !== tag)
+                          : [...prev, tag]
+                      );
+                    }}
+                    style={{
+                      paddingHorizontal: 14,
+                      paddingVertical: 8,
+                      borderRadius: 20,
+                      backgroundColor: selectedTags.includes(tag) ? '#588DFF' : '#F0F4FF',
+                      borderWidth: selectedTags.includes(tag) ? 0 : 1,
+                      borderColor: '#C0CDD8',
+                    }}>
+                    <Text style={{
+                      fontSize: 13,
+                      fontWeight: '500',
+                      color: selectedTags.includes(tag) ? '#FFFFFF' : '#588DFF',
+                      fontFamily: 'PretendardVariable',
+                    }}>
+                      #{tag}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {Array.from(new Set(
+                items
+                  .filter(i => i.type === 'board')
+                  .flatMap(i => (i as Board).tags ?? [])
+              )).length === 0 && (
+                <Text style={{ fontSize: 14, color: '#AABBCC', fontFamily: 'PretendardVariable', textAlign: 'center', paddingVertical: 20 }}>
+                  사용 가능한 태그가 없습니다
+                </Text>
+              )}
+            </ScrollView>
+
+            {selectedTags.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setSelectedTags([])}
+                style={{
+                  paddingVertical: 10,
+                  alignItems: 'center',
+                  borderTopWidth: 1,
+                  borderTopColor: '#E8EEF8',
+                }}>
+                <Text style={{ fontSize: 14, color: '#9DAFC8', fontWeight: '600', fontFamily: 'PretendardVariable' }}>
+                  필터 초기화
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       <SideMenu
         visible={sideMenuVisible}
