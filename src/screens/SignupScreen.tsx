@@ -111,7 +111,7 @@ const SignupScreen = () => {
 
   // 이메일 인증 요청
   const requestEmailCode = async () => {
-    const response = await fetch(`${API_BASE_URL}/v1/auth/email/request`, {
+    const response = await fetch(`${API_BASE_URL}/v1/email/request`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -128,7 +128,7 @@ const SignupScreen = () => {
 
   // 이메일 인증 확인
   const verifyEmailCode = async () => {
-    const response = await fetch(`${API_BASE_URL}/v1/auth/email/verify`, {
+    const response = await fetch(`${API_BASE_URL}/v1/email/verify`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
