@@ -33,7 +33,7 @@ const SignupScreen = () => {
   const [verificationCode, setVerificationCode] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
-  const [name, setName] = useState('');
+  const [userName, setName] = useState('');
 
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
@@ -156,6 +156,7 @@ const SignupScreen = () => {
       body: JSON.stringify({
         email,
         password,
+        userName
       }),
     });
 
@@ -266,7 +267,7 @@ const SignupScreen = () => {
   };
 
   const handleSignup = async () => {
-    if (!email || !password || !passwordConfirm || !name) {
+    if (!email || !password || !passwordConfirm || !userName) {
       Alert.alert('알림', '모든 항목을 입력해주세요.');
       return;
     }
@@ -321,7 +322,7 @@ const SignupScreen = () => {
   };
 
   const isFormValid =
-    !!name &&
+    !!userName &&
     !!email &&
     isVerified &&
     !!password &&
@@ -373,7 +374,7 @@ const SignupScreen = () => {
                   style={styles['signup-inputContainer-inputWrapper-input']}
                   placeholder="이름을 입력하세요"
                   placeholderTextColor="#999"
-                  value={name}
+                  value={userName}
                   onChangeText={setName}
                   autoComplete="name"
                   textContentType="name"
