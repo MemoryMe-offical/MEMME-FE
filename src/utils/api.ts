@@ -1,9 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
 
-const BASE_URL = Platform.OS === 'ios' 
-  ? 'http://localhost:8080/api'
-  : 'http://10.0.2.2:8080/api';
+const BASE_URL = 'https://memme.o-r.kr/v1';
 
 export interface FilePayloadForServer {
   encryptedData: string;

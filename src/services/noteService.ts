@@ -1,0 +1,135 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Note } from '../types';
+
+const BASE_URL = 'https://memme.o-r.kr/v1';
+
+/**
+ * 보드 내 노트 생성
+ */
+export const createNote = async (
+  boardUid: string,
+  noteData: {
+    title: string;
+    content?: string;
+    imageUris?: string[];
+    videoUris?: string[];
+    url?: string;
+  }
+): Promise<Note> => {
+  try {
+    const token = await AsyncStorage.getItem('accessToken');
+
+    const response = await fetch(`${BASE_URL}/boards/${boardUid}/notes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+      body: JSON.stringify(noteData),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Failed to create note:', error);
+    throw error;
+  }
+};
+
+/**
+ * 노트 수정
+ */
+export const updateNote = async (
+  boardUid: string,
+  noteUid: string,
+  updates: {
+    title?: string;
+    content?: string;
+    imageUris?: string[];
+    videoUris?: string[];
+    url?: string;
+  }
+): Promise<Note> => {
+  try {
+    const token = await AsyncStorage.getItem('accessToken');
+
+    const response = await fetch(`${BASE_URL}/boards/${boardUid}/notes/${noteUid}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+      body: JSON.stringify(updates),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Failed to update note:', error);
+    throw error;
+  }
+};
+
+/**
+ * 노트 삭제
+ */
+export const deleteNote = async (boardUid: string, noteUid: string): Promise<void> => {
+  try {
+    const token = await AsyncStorage.getItem('accessToken');
+
+    const response = await fetch(`${BASE_URL}/boards/${boardUid}/notes/${noteUid}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+  } catch (error) {
+    console.error('Failed to delete note:', error);
+    throw error;
+  }
+};
+
+/**
+ * 노트를 다른 보드로 이동
+ */
+export const moveNote = async (
+  sourceBoard: string,
+  noteUid: string,
+  targetBoard: string
+): Promise<Note> => {
+  try {
+    const token = await AsyncStorage.getItem('accessToken');
+
+    const response = await fetch(`${BASE_URL}/boards/${sourceBoard}/notes/${noteUid}/move`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+      body: JSON.stringify({ targetBoardUid: targetBoard }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Failed to move note:', error);
+    throw error;
+  }
+};

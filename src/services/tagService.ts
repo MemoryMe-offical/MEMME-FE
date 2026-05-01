@@ -1,16 +1,20 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { OgData } from '../types';
 
 const BASE_URL = 'https://memme.o-r.kr/v1';
 
+export interface TagData {
+  name: string;
+  count: number;
+}
+
 /**
- * URL의 Open Graph 메타데이터 조회
+ * 사용 가능한 모든 태그 조회 (사용 횟수 포함)
  */
-export const fetchOgData = async (url: string): Promise<OgData> => {
+export const fetchTags = async (): Promise<TagData[]> => {
   try {
     const token = await AsyncStorage.getItem('accessToken');
 
-    const response = await fetch(`${BASE_URL}/og?url=${encodeURIComponent(url)}`, {
+    const response = await fetch(`${BASE_URL}/tags`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -23,9 +27,9 @@ export const fetchOgData = async (url: string): Promise<OgData> => {
     }
 
     const data = await response.json();
-    return data.ogData || { title: url };
+    return data.tags || [];
   } catch (error) {
-    console.error('Failed to fetch OG data:', error);
-    return { title: url };
+    console.error('Failed to fetch tags:', error);
+    throw error;
   }
 };
