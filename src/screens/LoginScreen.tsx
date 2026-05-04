@@ -13,7 +13,10 @@ import {
   Keyboard,
   ActivityIndicator,
   TextInput as RNTextInput,
+  Modal,
+  StyleSheet,
 } from 'react-native';
+import { WebView, WebViewNavigation } from 'react-native-webview';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -21,7 +24,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Keychain from 'react-native-keychain';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { loginStyles as styles } from '../styles/LoginScreen.styles';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { KAKAO_REST_API_KEY, KAKAO_REDIRECT_URI } from '@env';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -32,6 +36,12 @@ const STORAGE_KEYS = {
   AUTO_LOGIN: 'AUTO_LOGIN',
 };
 
+const KAKAO_AUTH_URL =
+  `https://kauth.kakao.com/oauth/authorize` +
+  `?response_type=code` +
+  `&client_id=${KAKAO_REST_API_KEY}` +
+  `&redirect_uri=${encodeURIComponent(KAKAO_REDIRECT_URI)}`;
+
 const LoginScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const passwordInputRef = useRef<RNTextInput>(null);
@@ -41,6 +51,8 @@ const LoginScreen = () => {
   const [autoLogin, setAutoLogin] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [kakaoWebViewVisible, setKakaoWebViewVisible] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const validateEmail = (value: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -81,10 +93,7 @@ const LoginScreen = () => {
           'Content-Type': 'application/json',
           Accept: 'application/json',
         },
-        body: JSON.stringify({
-          email,
-          password,
-        }),
+        body: JSON.stringify({ email, password }),
       });
 
       if (!response.ok) {
@@ -120,23 +129,54 @@ const LoginScreen = () => {
     }
   };
 
-  //TODO
-  const handleKakaoLogin = () => {
-    try {
-      console.log('카카오 로그인');
-    } catch (error) {
-      Alert.alert('로그인 실패', '카카오 로그인에 실패했습니다.');
+  const handleKakaoRedirect = (url: string): boolean => {
+    if (!url.startsWith(KAKAO_REDIRECT_URI)) {
+      return false;
     }
+
+    setKakaoWebViewVisible(false);
+
+    const codeMatch = url.match(/[?&]code=([^&]*)/);
+    const code = codeMatch ? decodeURIComponent(codeMatch[1]) : null;
+
+    const errorMatch = url.match(/[?&]error=([^&]*)/);
+    const error = errorMatch ? decodeURIComponent(errorMatch[1]) : null;
+
+    if (error) {
+      Alert.alert('카카오 로그인 실패', `인증 오류: ${error}`);
+      return true;
+    }
+
+    if (!code) {
+      Alert.alert('카카오 로그인 실패', '인가코드를 받지 못했습니다.');
+      return true;
+    }
+
+    console.log('카카오 인가코드:', code);
+    Alert.alert('인가코드 수신 성공', code);
+    return true;
   };
 
-  //TODO
-  const handleAppleLogin = () => {
-    try {
-      console.log('애플 로그인');
-    } catch (error) {
-      Alert.alert('로그인 실패', '애플 로그인에 실패했습니다.');
-    }
+  // iOS: onNavigationStateChange로 리다이렉트 감지
+  const handleKakaoNavigationChange = (navState: WebViewNavigation) => {
+    handleKakaoRedirect(navState.url);
   };
+
+  // Android: onShouldStartLoadWithRequest로 리다이렉트 사전 차단
+  const handleKakaoShouldStartLoad = ({ url }: { url: string }): boolean => {
+    if (url.startsWith(KAKAO_REDIRECT_URI)) {
+      handleKakaoRedirect(url);
+      return false;
+    }
+    return true;
+  };
+
+  const handleKakaoLogin = () => {
+    setKakaoWebViewVisible(true);
+  };
+
+  // TODO: 유료 Apple Developer 계정 전환 후 구현
+  const handleAppleLogin = () => {};
 
   const handleSignup = () => {
     navigation.navigate('Terms');
@@ -156,7 +196,6 @@ const LoginScreen = () => {
             contentContainerStyle={styles['login-scrollContent']}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}>
-            {/* 로고 영역 */}
             <View style={styles['login-logoContainer']}>
               <Text style={styles['login-logoContainer-title']}>Memme</Text>
               <Text style={styles['login-logoContainer-subtitle']}>
@@ -164,9 +203,7 @@ const LoginScreen = () => {
               </Text>
             </View>
 
-            {/* 입력 영역 */}
             <View style={styles['login-inputContainer']}>
-              {/* 이메일 입력 */}
               <TextInput
                 style={styles['login-inputContainer-input']}
                 placeholder="이메일"
@@ -182,7 +219,6 @@ const LoginScreen = () => {
                 editable={!loading}
               />
 
-              {/* 이메일 형식 에러 */}
               {email && !validateEmail(email) && (
                 <View style={styles['login-inputContainer-errorMessage']}>
                   <Text style={styles['login-inputContainer-errorMessage-text']}>
@@ -191,7 +227,6 @@ const LoginScreen = () => {
                 </View>
               )}
 
-              {/* 비밀번호 입력 */}
               <View style={styles['login-inputContainer-passwordWrapper']}>
                 <TextInput
                   ref={passwordInputRef}
@@ -218,11 +253,9 @@ const LoginScreen = () => {
                 </TouchableOpacity>
               </View>
 
-              {/* 비밀번호 찾기 & 자동 로그인 */}
               <View style={styles['login-inputContainer-optionsRow']}>
                 <TouchableOpacity onPress={handleFindPassword}>
-                  <Text
-                    style={styles['login-inputContainer-optionsRow-findPassword']}>
+                  <Text style={styles['login-inputContainer-optionsRow-findPassword']}>
                     비밀번호 찾기
                   </Text>
                 </TouchableOpacity>
@@ -234,29 +267,21 @@ const LoginScreen = () => {
                     style={[
                       styles['login-inputContainer-optionsRow-autoLogin-checkbox'],
                       autoLogin &&
-                        styles[
-                          'login-inputContainer-optionsRow-autoLogin-checkbox-checked'
-                        ],
+                        styles['login-inputContainer-optionsRow-autoLogin-checkbox-checked'],
                     ]}>
                     {autoLogin && (
                       <Text
-                        style={
-                          styles[
-                            'login-inputContainer-optionsRow-autoLogin-checkbox-check'
-                          ]
-                        }>
+                        style={styles['login-inputContainer-optionsRow-autoLogin-checkbox-check']}>
                         ✓
                       </Text>
                     )}
                   </View>
-                  <Text
-                    style={styles['login-inputContainer-optionsRow-autoLogin-text']}>
+                  <Text style={styles['login-inputContainer-optionsRow-autoLogin-text']}>
                     자동 로그인
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              {/* 로그인 버튼 */}
               <TouchableOpacity
                 style={styles['login-inputContainer-loginButton']}
                 onPress={handleLogin}
@@ -271,7 +296,6 @@ const LoginScreen = () => {
               </TouchableOpacity>
             </View>
 
-            {/* 회원가입 링크 */}
             <View style={styles['login-signupContainer']}>
               <Text style={styles['login-signupContainer-text']}>
                 계정이 없으신가요?{' '}
@@ -281,14 +305,12 @@ const LoginScreen = () => {
               </TouchableOpacity>
             </View>
 
-            {/* 구분선 */}
             <View style={styles['login-dividerContainer']}>
               <View style={styles['login-dividerContainer-line']} />
               <Text style={styles['login-dividerContainer-text']}>또는</Text>
               <View style={styles['login-dividerContainer-line']} />
             </View>
 
-            {/* 소셜 로그인 */}
             <View style={styles['login-socialContainer']}>
               <TouchableOpacity
                 style={styles['login-socialContainer-kakaoButton']}
@@ -314,8 +336,71 @@ const LoginScreen = () => {
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={kakaoWebViewVisible}
+        animationType="slide"
+        statusBarTranslucent>
+        <View
+          style={[
+            webViewStyles.container,
+            { paddingTop: insets.top, paddingBottom: insets.bottom },
+          ]}>
+          <View style={webViewStyles.header}>
+            <TouchableOpacity
+              onPress={() => setKakaoWebViewVisible(false)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Icon name="close" size={24} color="#000" />
+            </TouchableOpacity>
+            <Text style={webViewStyles.title}>카카오 로그인</Text>
+            <View style={{ width: 24 }} />
+          </View>
+          <WebView
+            source={{ uri: KAKAO_AUTH_URL }}
+            onNavigationStateChange={handleKakaoNavigationChange}
+            onShouldStartLoadWithRequest={handleKakaoShouldStartLoad}
+            originWhitelist={['*']}
+            startInLoadingState
+            renderLoading={() => (
+              <View style={webViewStyles.loading}>
+                <ActivityIndicator size="large" color="#FEE500" />
+              </View>
+            )}
+          />
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
+
+const webViewStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: Platform.OS === 'android' ? 14 : 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#ddd',
+  },
+  title: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  loading: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+});
 
 export default LoginScreen;
