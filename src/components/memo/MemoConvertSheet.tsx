@@ -128,10 +128,15 @@ const MemoConvertSheet = ({
         title: boardTitle.trim(),
         description: boardDescription.trim() || undefined,
         tags: boardTags.length > 0 ? boardTags : undefined,
+        noteTitle: newNoteTitle.trim() || undefined,
       });
 
-      // 2. 메모 삭제
-      await memoService.deleteMemo(memo.id);
+      // 2. 메모 삭제 (백엔드에서 자동 삭제될 수 있으므로 에러 무시)
+      try {
+        await memoService.deleteMemo(memo.id);
+      } catch (deleteError) {
+        console.log('Memo already deleted by backend');
+      }
 
       onSuccess(memo.id, newBoard);
       handleClose();
@@ -155,11 +160,19 @@ const MemoConvertSheet = ({
       // 1. 메모를 기존 보드로 변환 (노트 추가)
       const updatedBoard = await memoConvertService.convertMemoToExistingBoard(
         memo.id,
-        selectedBoard.id
+        selectedBoard.id,
+        {
+          noteTitle: addNoteTitle.trim(),
+          content: addNoteContent.trim() || undefined,
+        }
       );
 
-      // 2. 메모 삭제
-      await memoService.deleteMemo(memo.id);
+      // 2. 메모 삭제 (백엔드에서 자동 삭제될 수 있으므로 에러 무시)
+      try {
+        await memoService.deleteMemo(memo.id);
+      } catch (deleteError) {
+        console.log('Memo already deleted by backend');
+      }
 
       onSuccess(memo.id, updatedBoard);
       handleClose();

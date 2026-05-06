@@ -100,6 +100,7 @@ const LoginScreen = () => {
       }
 
       await Keychain.setGenericPassword('token', accessToken);
+      await AsyncStorage.setItem('accessToken', accessToken);
       await AsyncStorage.setItem(
         STORAGE_KEYS.AUTO_LOGIN,
         autoLogin ? 'true' : 'false',

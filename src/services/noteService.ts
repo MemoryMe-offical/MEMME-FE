@@ -3,6 +3,17 @@ import { Note } from '../types';
 
 const BASE_URL = 'https://memme.o-r.kr/v1';
 
+const transformNote = (data: any): Note => ({
+  id: data.uid,
+  title: data.title,
+  content: data.content,
+  imageUris: data.imageUris,
+  videoUris: data.videoUris,
+  files: data.files,
+  url: data.url,
+  ogData: data.ogData,
+});
+
 /**
  * 보드 내 노트 생성
  */
@@ -33,7 +44,8 @@ export const createNote = async (
     }
 
     const data = await response.json();
-    return data;
+    const responseNote = data.data;
+    return transformNote(responseNote);
   } catch (error) {
     console.error('Failed to create note:', error);
     throw error;
@@ -71,7 +83,8 @@ export const updateNote = async (
     }
 
     const data = await response.json();
-    return data;
+    const responseNote = data.data;
+    return transformNote(responseNote);
   } catch (error) {
     console.error('Failed to update note:', error);
     throw error;
@@ -127,7 +140,8 @@ export const moveNote = async (
     }
 
     const data = await response.json();
-    return data;
+    const responseNote = data.data;
+    return transformNote(responseNote);
   } catch (error) {
     console.error('Failed to move note:', error);
     throw error;

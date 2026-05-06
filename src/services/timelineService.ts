@@ -44,7 +44,25 @@ export const fetchTimeline = async (query?: TimelineQuery): Promise<TimelineItem
     }
 
     const data = await response.json();
-    return data.items || [];
+    console.log('fetchTimeline response:', JSON.stringify(data, null, 2));
+
+    const items = data.data?.items || [];
+    return items.map((item: any) => ({
+      ...item,
+      id: item.uid,
+      bookMark: item.bookmarked ?? false,
+      userId: item.userId || '',
+      notes: item.notes?.map((note: any) => ({
+        id: note.uid,
+        title: note.title,
+        content: note.content,
+        imageUris: note.imageUris,
+        videoUris: note.videoUris,
+        files: note.files,
+        url: note.url,
+        ogData: note.ogData,
+      })),
+    }));
   } catch (error) {
     console.error('Failed to fetch timeline:', error);
     throw error;

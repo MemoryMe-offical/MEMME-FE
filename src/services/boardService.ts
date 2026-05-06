@@ -3,6 +3,23 @@ import { Board } from '../types';
 
 const BASE_URL = 'https://memme.o-r.kr/v1';
 
+const transformBoard = (data: any): Board => ({
+  ...data,
+  id: data.uid,
+  bookMark: data.bookmarked ?? false,
+  userId: data.userId || '',
+  notes: data.notes?.map((note: any) => ({
+    id: note.uid,
+    title: note.title,
+    content: note.content,
+    imageUris: note.imageUris,
+    videoUris: note.videoUris,
+    files: note.files,
+    url: note.url,
+    ogData: note.ogData,
+  })),
+});
+
 /**
  * 새 보드 생성
  */
@@ -28,7 +45,8 @@ export const createBoard = async (boardData: {
     }
 
     const data = await response.json();
-    return data;
+    const responseBoard = data.data;
+    return transformBoard(responseBoard);
   } catch (error) {
     console.error('Failed to create board:', error);
     throw error;
@@ -55,7 +73,8 @@ export const fetchBoard = async (boardUid: string): Promise<Board> => {
     }
 
     const data = await response.json();
-    return data;
+    const responseBoard = data.data;
+    return transformBoard(responseBoard);
   } catch (error) {
     console.error('Failed to fetch board:', error);
     throw error;
@@ -90,7 +109,8 @@ export const updateBoard = async (
     }
 
     const data = await response.json();
-    return data;
+    const responseBoard = data.data;
+    return transformBoard(responseBoard);
   } catch (error) {
     console.error('Failed to update board:', error);
     throw error;
@@ -141,7 +161,8 @@ export const toggleBoardBookmark = async (boardUid: string): Promise<Board> => {
     }
 
     const data = await response.json();
-    return data;
+    const responseBoard = data.data;
+    return transformBoard(responseBoard);
   } catch (error) {
     console.error('Failed to toggle board bookmark:', error);
     throw error;

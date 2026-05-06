@@ -23,8 +23,17 @@ export const createMemo = async (text: string): Promise<Memo> => {
       throw new Error(`API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    return data;
+    const response_data = await response.json();
+    const memo = response_data.data;
+    const result: Memo = {
+      id: memo.uid,
+      userId: memo.userId || '',
+      type: 'memo',
+      text: memo.text,
+      bookMark: memo.bookmarked ?? false,
+      createdAt: memo.createdAt,
+    };
+    return result;
   } catch (error) {
     console.error('Failed to create memo:', error);
     throw error;
@@ -32,7 +41,7 @@ export const createMemo = async (text: string): Promise<Memo> => {
 };
 
 /**
- * 메모 삭제
+ * 메모 삭제 (404는 이미 삭제됨으로 간주)
  */
 export const deleteMemo = async (memoUid: string): Promise<void> => {
   try {
@@ -46,7 +55,7 @@ export const deleteMemo = async (memoUid: string): Promise<void> => {
       },
     });
 
-    if (!response.ok) {
+    if (!response.ok && response.status !== 404) {
       throw new Error(`API error: ${response.status}`);
     }
   } catch (error) {
