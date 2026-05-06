@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Board, Memo, Note } from '../../types';
+import { Board, Memo } from '../../types';
 import TagInput from '../common/TagInput';
 import { ArrowLeftIcon, CloseIcon, SearchIcon, PlusCircleIcon } from '../common/Icons';
 import * as memoConvertService from '../../services/memoConvertService';
@@ -134,7 +134,7 @@ const MemoConvertSheet = ({
       // 2. 메모 삭제 (백엔드에서 자동 삭제될 수 있으므로 에러 무시)
       try {
         await memoService.deleteMemo(memo.id);
-      } catch (deleteError) {
+      } catch {
         console.log('Memo already deleted by backend');
       }
 
@@ -170,7 +170,7 @@ const MemoConvertSheet = ({
       // 2. 메모 삭제 (백엔드에서 자동 삭제될 수 있으므로 에러 무시)
       try {
         await memoService.deleteMemo(memo.id);
-      } catch (deleteError) {
+      } catch {
         console.log('Memo already deleted by backend');
       }
 

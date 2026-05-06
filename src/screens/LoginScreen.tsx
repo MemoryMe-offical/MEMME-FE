@@ -125,7 +125,7 @@ const LoginScreen = () => {
   const handleKakaoLogin = () => {
     try {
       console.log('카카오 로그인');
-    } catch (error) {
+    } catch {
       Alert.alert('로그인 실패', '카카오 로그인에 실패했습니다.');
     }
   };
@@ -134,7 +134,7 @@ const LoginScreen = () => {
   const handleAppleLogin = () => {
     try {
       console.log('애플 로그인');
-    } catch (error) {
+    } catch {
       Alert.alert('로그인 실패', '애플 로그인에 실패했습니다.');
     }
   };
