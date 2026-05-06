@@ -3,10 +3,7 @@
     "allow": [
       "Bash(npm install react-native-vector-icons)",
       "Bash(npm install --save-dev @types/react-native-vector-icons)",
-      "WebFetch(domain:memme.o-r.kr)",
-      "Bash(npm run *)",
       "Bash(git checkout *)",
-      "Bash(git pull *)",
       "Bash(git stash *)",
       "Bash(git merge *)"
     ]
