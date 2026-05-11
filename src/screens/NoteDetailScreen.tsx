@@ -556,7 +556,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   'subsection-label': {
     fontSize: 14,
@@ -573,7 +573,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
     marginBottom: 10,
   },
-  'images-section': { marginBottom: 16 },
+  'images-section': { marginBottom: 0 },
   'images-row': {
     flexDirection: 'row',
     gap: 8,
@@ -616,8 +616,8 @@ const styles = StyleSheet.create({
   'add-image-btn-disabled': {
     opacity: 0.6,
   },
-  'link-section': { marginBottom: 16 },
-  'files-section': { gap: 10, marginBottom: 16 },
+  'link-section': { marginBottom: 0 },
+  'files-section': { gap: 10, marginBottom: 0 },
   'file-row': {
     flexDirection: 'row',
     alignItems: 'center',
