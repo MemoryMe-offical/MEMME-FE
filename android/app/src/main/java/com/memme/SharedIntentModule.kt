@@ -14,6 +14,7 @@ class SharedIntentModule(reactContext: ReactApplicationContext) :
     fun getSharedURL(promise: Promise) {
         val prefs = reactApplicationContext.getSharedPreferences("memme_share", 0)
         val url = prefs.getString("sharedURL", null)
+        android.util.Log.d("MEMME", "🔥 getSharedURL: $url")
         promise.resolve(url)
     }
 
@@ -21,6 +22,7 @@ class SharedIntentModule(reactContext: ReactApplicationContext) :
     fun clearSharedURL(promise: Promise) {
         val prefs = reactApplicationContext.getSharedPreferences("memme_share", 0)
         prefs.edit().remove("sharedURL").apply()
+        android.util.Log.d("MEMME", "🔥 clearSharedURL called")
         promise.resolve(null)
     }
 }

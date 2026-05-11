@@ -177,22 +177,34 @@ const MainScreen = () => {
   }, []);
 
   useEffect(() => {
+    if (!userId) return;
+
     const getShared = async () => {
-      const url = await nativeShareModule?.getSharedURL();
-      if (typeof url === 'string' && url.startsWith('http')) {
-        await handleSharedUrl(url);
-        await nativeShareModule?.clearSharedURL();
+      try {
+        const url = await nativeShareModule?.getSharedURL?.();
+        console.log('🔥 공유된 링크:', url);
+        if (typeof url === 'string' && url.trim() && url.startsWith('http')) {
+          console.log('🔥 링크 처리 시작:', url);
+          await handleSharedUrl(url);
+          await nativeShareModule?.clearSharedURL?.();
+        }
+      } catch (error) {
+        console.error('🔥 링크 공유 처리 실패:', error);
       }
     };
 
     getShared();
 
     const sub = AppState.addEventListener('change', state => {
-      if (state === 'active') getShared();
+      console.log('🔥 AppState 변경:', state);
+      if (state === 'active') {
+        console.log('🔥 앱이 활성화됨, 공유 링크 확인');
+        getShared();
+      }
     });
 
     return () => sub.remove();
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';

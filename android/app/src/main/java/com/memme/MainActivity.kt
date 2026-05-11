@@ -28,12 +28,30 @@ class MainActivity : ReactActivity() {
   }
 
   private fun handleShareIntent(intent: Intent?) {
-    if (intent?.action == Intent.ACTION_SEND && intent.type == "text/plain") {
-      val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
+    android.util.Log.d("MEMME", "🔥 handleShareIntent called: ${intent?.action}")
 
-      if (!sharedText.isNullOrBlank()) {
-        val prefs = getSharedPreferences("memme_share", MODE_PRIVATE)
-        prefs.edit().putString("sharedURL", sharedText).apply()
+    if (intent?.action == Intent.ACTION_SEND) {
+      // text/plain 형식
+      if (intent.type == "text/plain") {
+        val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
+        android.util.Log.d("MEMME", "🔥 Shared text (text/plain): $sharedText")
+
+        if (!sharedText.isNullOrBlank()) {
+          val prefs = getSharedPreferences("memme_share", MODE_PRIVATE)
+          prefs.edit().putString("sharedURL", sharedText).apply()
+          android.util.Log.d("MEMME", "🔥 Saved to SharedPreferences: $sharedText")
+        }
+      }
+      // text/* 형식 (더 넓은 범위)
+      else if (intent.type?.startsWith("text/") == true) {
+        val sharedText = intent.getStringExtra(Intent.EXTRA_TEXT)
+        android.util.Log.d("MEMME", "🔥 Shared text (text/*): $sharedText")
+
+        if (!sharedText.isNullOrBlank()) {
+          val prefs = getSharedPreferences("memme_share", MODE_PRIVATE)
+          prefs.edit().putString("sharedURL", sharedText).apply()
+          android.util.Log.d("MEMME", "🔥 Saved to SharedPreferences: $sharedText")
+        }
       }
     }
   }
