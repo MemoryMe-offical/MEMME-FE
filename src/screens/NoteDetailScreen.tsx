@@ -558,12 +558,12 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   'input-label': {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '700',
-    color: '#588DFF',
+    color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
-    letterSpacing: 0.3,
-    marginBottom: 8,
+    letterSpacing: 0.2,
+    marginBottom: 10,
   },
   'images-section': { marginBottom: 16 },
   'images-row': {
