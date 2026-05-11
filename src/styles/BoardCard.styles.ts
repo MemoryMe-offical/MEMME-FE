@@ -231,6 +231,10 @@ export const boardCardStyles = StyleSheet.create({
     backgroundColor: '#EEF3FF',
   },
 
+  'card-image-thumbnail-pressed': {
+    opacity: 0.7,
+  },
+
   'card-image-more': {
     width: 56,
     height: 56,
@@ -238,6 +242,10 @@ export const boardCardStyles = StyleSheet.create({
     backgroundColor: '#F0F4FF',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  'card-image-more-pressed': {
+    opacity: 0.7,
   },
 
   'card-image-more-text': {

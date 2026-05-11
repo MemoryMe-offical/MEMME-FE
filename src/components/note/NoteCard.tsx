@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, Linking, StyleSheet, Modal, FlatList, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Linking, StyleSheet, Modal, FlatList, Dimensions, Pressable } from 'react-native';
 import { Note, OgData } from '../../types';
 import { LinkIcon } from '../common/Icons';
 import { fetchOgData } from '../../services/ogService';
@@ -61,25 +61,35 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
             <View style={styles['section-divider']} />
             <View style={styles['section-row']}>
               <Text style={styles['section-label']}>이미지</Text>
-              <TouchableOpacity onPress={() => openImageViewer(note.imageUris!)} activeOpacity={0.7}>
-                <View style={styles['images-preview']}>
-                  {note.imageUris!.slice(0, 2).map((uri, idx) => (
+              <View style={styles['images-preview']}>
+                {note.imageUris!.slice(0, 2).map((uri, idx) => (
+                  <Pressable
+                    key={`${note.id}-img-${idx}`}
+                    onPress={() => openImageViewer(note.imageUris!)}
+                    style={({ pressed }) => [
+                      styles['image-thumbnail'],
+                      pressed && styles['image-thumbnail-pressed'],
+                    ]}>
                     <Image
-                      key={`${note.id}-img-${idx}`}
                       source={{ uri }}
                       style={styles['image-thumbnail']}
                       resizeMode="cover"
                     />
-                  ))}
-                  {(note.imageUris!.length ?? 0) > 2 && (
-                    <View style={styles['image-more']}>
-                      <Text style={styles['image-more-text']}>
-                        +{note.imageUris!.length - 2}
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              </TouchableOpacity>
+                  </Pressable>
+                ))}
+                {(note.imageUris!.length ?? 0) > 2 && (
+                  <Pressable
+                    onPress={() => openImageViewer(note.imageUris!)}
+                    style={({ pressed }) => [
+                      styles['image-more'],
+                      pressed && styles['image-more-pressed'],
+                    ]}>
+                    <Text style={styles['image-more-text']}>
+                      +{note.imageUris!.length - 2}
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
             </View>
           </>
         )}
@@ -268,6 +278,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#EEF3FF',
   },
+  'image-thumbnail-pressed': {
+    opacity: 0.7,
+  },
   'image-more': {
     width: 56,
     height: 56,
@@ -275,6 +288,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#F0F4FF',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  'image-more-pressed': {
+    opacity: 0.7,
   },
   'image-more-text': {
     fontSize: 12,

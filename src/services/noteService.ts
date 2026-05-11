@@ -24,6 +24,7 @@ export const createNote = async (
     content?: string;
     imageUris?: string[];
     videoUris?: string[];
+    files?: any[];
     url?: string;
   }
 ): Promise<Note> => {
@@ -63,6 +64,7 @@ export const updateNote = async (
     content?: string;
     imageUris?: string[];
     videoUris?: string[];
+    files?: any[];
     url?: string;
   }
 ): Promise<Note> => {

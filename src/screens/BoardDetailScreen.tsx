@@ -101,6 +101,7 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
           content: note.content,
           imageUris: note.imageUris,
           videoUris: note.videoUris,
+          files: note.files,
           url: note.url,
         });
       } else {
@@ -111,6 +112,7 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
             content: note.content,
             imageUris: note.imageUris,
             videoUris: note.videoUris,
+            files: note.files,
             url: note.url,
           });
         }

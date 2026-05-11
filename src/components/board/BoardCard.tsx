@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Image, Linking, Modal, FlatList, Dimensions, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Linking, Modal, FlatList, Dimensions, StyleSheet, Pressable } from 'react-native';
 import { Board, OgData } from '../../types';
 import { boardCardStyles as styles } from '../../styles/BoardCard.styles';
 import { ChevronDownIcon, ChevronUpIcon, MoreIcon, LinkIcon } from '../common/Icons';
@@ -164,27 +164,35 @@ const BoardCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardCardPro
                                       <View style={styles['card-section-divider']} />
                                       <View style={styles['card-section-row']}>
                                         <Text style={styles['card-section-label']}>이미지</Text>
-                                        <TouchableOpacity
-                                          onPress={() => openImageViewer(note.imageUris!)}
-                                          activeOpacity={0.7}>
-                                          <View style={styles['card-images-preview']}>
-                                            {note.imageUris!.slice(0, 2).map((uri, idx) => (
+                                        <View style={styles['card-images-preview']}>
+                                          {note.imageUris!.slice(0, 2).map((uri, idx) => (
+                                            <Pressable
+                                              key={`${note.id}-img-${idx}`}
+                                              onPress={() => openImageViewer(note.imageUris!)}
+                                              style={({ pressed }) => [
+                                                styles['card-image-thumbnail'],
+                                                pressed && styles['card-image-thumbnail-pressed'],
+                                              ]}>
                                               <Image
-                                                key={`${note.id}-img-${idx}`}
                                                 source={{ uri }}
                                                 style={styles['card-image-thumbnail']}
                                                 resizeMode="cover"
                                               />
-                                            ))}
-                                            {(note.imageUris!.length ?? 0) > 2 && (
-                                              <View style={styles['card-image-more']}>
-                                                <Text style={styles['card-image-more-text']}>
-                                                  +{note.imageUris!.length - 2}
-                                                </Text>
-                                              </View>
-                                            )}
-                                          </View>
-                                        </TouchableOpacity>
+                                            </Pressable>
+                                          ))}
+                                          {(note.imageUris!.length ?? 0) > 2 && (
+                                            <Pressable
+                                              onPress={() => openImageViewer(note.imageUris!)}
+                                              style={({ pressed }) => [
+                                                styles['card-image-more'],
+                                                pressed && styles['card-image-more-pressed'],
+                                              ]}>
+                                              <Text style={styles['card-image-more-text']}>
+                                                +{note.imageUris!.length - 2}
+                                              </Text>
+                                            </Pressable>
+                                          )}
+                                        </View>
                                       </View>
                                     </>
                                   )}
