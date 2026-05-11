@@ -3,39 +3,27 @@ import { fetchWithAutoLogoutHandler } from '../utils/tokenUtils';
 
 const BASE_URL = 'https://memme.o-r.kr/v1';
 
-const extractKeyFromUrl = (uriOrKey: string): string => {
-  if (!uriOrKey) return uriOrKey;
-
-  // 이미 key인 경우 (쿼리 파라미터 없음)
-  if (!uriOrKey.includes('?') && !uriOrKey.includes('/v1/upload')) {
-    return uriOrKey;
-  }
-
-  // URL에서 key 파라미터 추출
-  try {
-    const match = uriOrKey.match(/[?&]key=([^&]+)/);
-    if (match && match[1]) {
-      return decodeURIComponent(match[1]);
-    }
-  } catch (error) {
-    console.error('Failed to extract key from URI:', uriOrKey, error);
-  }
-
-  return uriOrKey;
-};
-
 const transformBoard = (data: any): Board => {
   return {
-    ...data,
     id: data.uid,
-    bookMark: data.bookmarked ?? false,
     userId: data.userId || '',
+    type: 'board',
+    title: data.title,
+    description: data.description,
+    tags: data.tags,
+    createdAt: data.createdAt,
+    updatedAt: data.updatedAt,
+    bookmarked: data.bookmarked ?? false,
     notes: data.notes?.map((note: any) => ({
       id: note.uid,
       title: note.title,
       content: note.content,
-      imageUris: note.imageUris?.map((uri: string) => extractKeyFromUrl(uri)),
+      imageUris: note.imageUris,
       videoUris: note.videoUris,
+      imageKeys: note.imageKeys,
+      videoKeys: note.videoKeys,
+      images: note.images,
+      videos: note.videos,
       files: note.files,
       url: note.url,
       ogData: note.ogData,

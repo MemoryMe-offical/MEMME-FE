@@ -3,13 +3,11 @@ import {
   View,
   Text,
   TouchableOpacity,
-  ScrollView,
   StyleSheet,
   Image,
   FlatList,
   Dimensions,
   Linking,
-  ActivityIndicator,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,7 +15,6 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { Board, Note, FileAttachment, Memo } from '../types';
 import { ArrowLeftIcon } from '../components/common/Icons';
 import { fetchOgData } from '../services/ogService';
-import { getUploadObject, getUploadObjectUrl } from '../services/uploadService';
 import ImageViewerModal from '../components/common/ImageViewerModal';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
 
@@ -39,42 +36,11 @@ interface MediaItem {
   timelineItem?: any;
 }
 
-const GalleryImageThumbnail = ({ imageKey, width, height }: { imageKey: string; width: number; height: number }) => {
-  const [imageUrl, setImageUrl] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-    const isPresignedUrl = imageKey.startsWith('http');
-
-    if (isPresignedUrl) {
-      setImageUrl(imageKey);
-      setLoading(false);
-    } else {
-      getUploadObjectUrl(imageKey)
-        .then(url => {
-          setImageUrl(url);
-          setLoading(false);
-        })
-        .catch(() => {
-          console.log('Failed to load gallery image URL for key:', imageKey);
-          setLoading(false);
-        });
-    }
-  }, [imageKey]);
-
-  if (loading) {
-    return (
-      <View style={[styles.thumbnail, { width, height, backgroundColor: '#EEF3FF', justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="small" color="#588DFF" />
-      </View>
-    );
-  }
-
+const GalleryImageThumbnail = ({ imageUrl, width, height }: { imageUrl: string; width: number; height: number }) => {
   return (
     <Image
-      source={imageUrl ? { uri: imageUrl } : undefined}
-      style={[styles.thumbnail, { width, height, backgroundColor: imageUrl ? undefined : '#EEF3FF' }]}
+      source={{ uri: imageUrl }}
+      style={[styles.thumbnail, { width, height, backgroundColor: '#EEF3FF' }]}
       onError={() => console.log('Failed to render gallery image')}
     />
   );
@@ -96,7 +62,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
     // 북마크 처리
     if (galleryType === 'bookmarks') {
       allItems
-        .filter((item: any) => item.bookMark)
+        .filter((item: any) => item.bookmarked)
         .forEach((item: any) => {
           items.push({
             id: item.id,
@@ -241,25 +207,24 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
     </TouchableOpacity>
   );
 
-  const renderImageItem = ({ item, index }: { item: MediaItem; index?: number }) => (
-    <TouchableOpacity
-      onPress={async () => {
-        const images = mediaItems.filter(m => m.type === 'image');
-        const currentIdx = images.findIndex(m => m.id === item.id);
-        // 모든 이미지 키에 대해 presigned URL 조회
-        const presignedUrls = await Promise.all(
-          images.map(m => getUploadObjectUrl(m.uri).catch(() => ''))
-        );
-        setImageViewerState({
-          visible: true,
-          uris: presignedUrls.filter(u => !!u),
-          index: currentIdx,
-        });
-      }}
-    >
-      <GalleryImageThumbnail imageKey={item.uri} width={THUMBNAIL_SIZE} height={THUMBNAIL_SIZE} />
-    </TouchableOpacity>
-  );
+  const renderImageItem = ({ item, index }: { item: MediaItem; index?: number }) => {
+    const images = mediaItems.filter(m => m.type === 'image');
+    const currentIdx = images.findIndex(m => m.id === item.id);
+
+    return (
+      <TouchableOpacity
+        onPress={() => {
+          setImageViewerState({
+            visible: true,
+            uris: images.map(m => m.uri),
+            index: currentIdx,
+          });
+        }}
+      >
+        <GalleryImageThumbnail imageUrl={item.uri} width={THUMBNAIL_SIZE} height={THUMBNAIL_SIZE} />
+      </TouchableOpacity>
+    );
+  };
 
   const renderVideoItem = ({ item }: { item: MediaItem }) => (
     <TouchableOpacity

@@ -3,37 +3,13 @@ import { View, Text, TouchableOpacity, Image, Linking, StyleSheet, Modal, FlatLi
 import { Note, OgData } from '../../types';
 import { LinkIcon } from '../common/Icons';
 import { fetchOgData } from '../../services/ogService';
-import { getUploadObjectUrl } from '../../services/uploadService';
 
 interface NoteCardProps {
   note: Note;
   onPress?: () => void;
 }
 
-const ImageThumbnail = ({ imageKey, onPress }: { imageKey: string; onPress: () => void }) => {
-  const [imageUrl, setImageUrl] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-    const isPresignedUrl = imageKey.startsWith('http');
-
-    if (isPresignedUrl) {
-      setImageUrl(imageKey);
-      setLoading(false);
-    } else {
-      getUploadObjectUrl(imageKey)
-        .then(url => {
-          setImageUrl(url);
-          setLoading(false);
-        })
-        .catch(() => {
-          console.log('Failed to load image URL for key:', imageKey);
-          setLoading(false);
-        });
-    }
-  }, [imageKey]);
-
+const ImageThumbnail = ({ imageUrl, onPress }: { imageUrl: string; onPress: () => void }) => {
   return (
     <Pressable
       onPress={onPress}
@@ -41,19 +17,11 @@ const ImageThumbnail = ({ imageKey, onPress }: { imageKey: string; onPress: () =
         styles['image-thumbnail'],
         pressed && styles['image-thumbnail-pressed'],
       ]}>
-      {loading ? (
-        <View style={[styles['image-thumbnail'], { justifyContent: 'center', alignItems: 'center', backgroundColor: '#EEF3FF' }]}>
-          <ActivityIndicator size="small" color="#588DFF" />
-        </View>
-      ) : imageUrl ? (
-        <Image
-          source={{ uri: imageUrl }}
-          style={styles['image-thumbnail']}
-          resizeMode="cover"
-        />
-      ) : (
-        <View style={[styles['image-thumbnail'], { backgroundColor: '#EEF3FF' }]} />
-      )}
+      <Image
+        source={{ uri: imageUrl }}
+        style={styles['image-thumbnail']}
+        resizeMode="cover"
+      />
     </Pressable>
   );
 };
@@ -111,28 +79,21 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
             <View style={styles['section-row']}>
               <Text style={styles['section-label']}>이미지</Text>
               <View style={styles['images-preview']}>
-                {note.imageUris!.slice(0, 2).map((key, idx) => (
-                  <ImageThumbnail
-                    key={`${note.id}-img-${idx}`}
-                    imageKey={key}
-                    onPress={() => {
-                      // 모든 이미지 URL 미리 조회
-                      Promise.all(
-                        note.imageUris!.map(k => getUploadObjectUrl(k).catch(() => ''))
-                      ).then(urls => {
-                        openImageViewer(urls.filter(u => !!u));
-                      });
-                    }}
-                  />
-                ))}
+                <>
+                  {note.imageUris!.slice(0, 2).map((imageUrl) => (
+                    <ImageThumbnail
+                      key={imageUrl}
+                      imageUrl={imageUrl}
+                      onPress={() => {
+                        openImageViewer(note.imageUris!);
+                      }}
+                    />
+                  ))}
+                </>
                 {(note.imageUris!.length ?? 0) > 2 && (
                   <Pressable
                     onPress={() => {
-                      Promise.all(
-                        note.imageUris!.map(k => getUploadObjectUrl(k).catch(() => ''))
-                      ).then(urls => {
-                        openImageViewer(urls.filter(u => !!u));
-                      });
+                      openImageViewer(note.imageUris!);
                     }}
                     style={({ pressed }) => [
                       styles['image-more'],
@@ -154,21 +115,23 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
             <View style={styles['section-row']}>
               <Text style={styles['section-label']}>파일</Text>
               <View style={styles['files-preview']}>
-                {note.files!.slice(0, 2).map((file, idx) => (
-                  <TouchableOpacity
-                    key={`${note.id}-file-${idx}`}
-                    style={styles['file-item']}
-                    onPress={() => {
-                      Linking.openURL(file.url).catch(() => {
-                        console.error('Failed to open file:', file.url);
-                      });
-                    }}
-                    activeOpacity={0.7}>
-                    <Text style={styles['file-name']} numberOfLines={1}>
-                      {file.name || 'file'}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                <>
+                  {note.files!.slice(0, 2).map((file) => (
+                    <TouchableOpacity
+                      key={file.uid}
+                      style={styles['file-item']}
+                      onPress={() => {
+                        Linking.openURL(file.url).catch(() => {
+                          console.error('Failed to open file:', file.url);
+                        });
+                      }}
+                      activeOpacity={0.7}>
+                      <Text style={styles['file-name']} numberOfLines={1}>
+                        {file.name || 'file'}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </>
                 {(note.files!.length ?? 0) > 2 && (
                   <Text style={styles['file-more']}>
                     +{note.files!.length - 2}개

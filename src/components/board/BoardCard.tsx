@@ -1,10 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Image, Linking, Modal, FlatList, Dimensions, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Linking, Modal, FlatList, Dimensions, StyleSheet, Pressable } from 'react-native';
 import { Board, OgData } from '../../types';
 import { boardCardStyles as styles } from '../../styles/BoardCard.styles';
 import { ChevronDownIcon, ChevronUpIcon, MoreIcon, LinkIcon } from '../common/Icons';
 import { fetchOgData } from '../../services/ogService';
-import { getUploadObjectUrl } from '../../services/uploadService';
 
 const formatTime = (isoString: string): string => {
   const date = new Date(isoString);
@@ -15,30 +14,7 @@ const formatTime = (isoString: string): string => {
   return `${isAM ? '오전' : '오후'} ${displayHours}:${minutes.toString().padStart(2, '0')}`;
 };
 
-const CardImageThumbnail = ({ imageKey, onPress }: { imageKey: string; onPress: () => void }) => {
-  const [imageUrl, setImageUrl] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-    const isPresignedUrl = imageKey.startsWith('http');
-
-    if (isPresignedUrl) {
-      setImageUrl(imageKey);
-      setLoading(false);
-    } else {
-      getUploadObjectUrl(imageKey)
-        .then(url => {
-          setImageUrl(url);
-          setLoading(false);
-        })
-        .catch(() => {
-          console.log('Failed to load image URL for key:', imageKey);
-          setLoading(false);
-        });
-    }
-  }, [imageKey]);
-
+const CardImageThumbnail = ({ imageUrl, onPress }: { imageUrl: string; onPress: () => void }) => {
   return (
     <Pressable
       onPress={onPress}
@@ -46,19 +22,11 @@ const CardImageThumbnail = ({ imageKey, onPress }: { imageKey: string; onPress: 
         styles['card-image-thumbnail'],
         pressed && styles['card-image-thumbnail-pressed'],
       ]}>
-      {loading ? (
-        <View style={[styles['card-image-thumbnail'], { justifyContent: 'center', alignItems: 'center', backgroundColor: '#EEF3FF' }]}>
-          <ActivityIndicator size="small" color="#588DFF" />
-        </View>
-      ) : imageUrl ? (
-        <Image
-          source={{ uri: imageUrl }}
-          style={styles['card-image-thumbnail']}
-          resizeMode="cover"
-        />
-      ) : (
-        <View style={[styles['card-image-thumbnail'], { backgroundColor: '#EEF3FF' }]} />
-      )}
+      <Image
+        source={{ uri: imageUrl }}
+        style={styles['card-image-thumbnail']}
+        resizeMode="cover"
+      />
     </Pressable>
   );
 };
@@ -70,7 +38,7 @@ interface BoardCardProps {
   onPress?: (board: Board) => void;
 }
 
-const BoardCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardCardProps) => {
+const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const hasNotes = Array.isArray(item.notes) && item.notes.length > 0;
   const [expandedNoteId, setExpandedNoteId] = useState<string | null>(
@@ -214,27 +182,19 @@ const BoardCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardCardPro
                                       <View style={styles['card-section-row']}>
                                         <Text style={styles['card-section-label']}>이미지</Text>
                                         <View style={styles['card-images-preview']}>
-                                          {note.imageUris!.slice(0, 2).map((imageKey, idx) => (
+                                          {note.imageUris!.slice(0, 2).map((imageUrl, idx) => (
                                             <CardImageThumbnail
                                               key={`${note.id}-img-${idx}`}
-                                              imageKey={imageKey}
+                                              imageUrl={imageUrl}
                                               onPress={() => {
-                                                Promise.all(
-                                                  note.imageUris!.map(k => getUploadObjectUrl(k).catch(() => ''))
-                                                ).then(urls => {
-                                                  openImageViewer(urls.filter(u => !!u));
-                                                });
+                                                openImageViewer(note.imageUris!);
                                               }}
                                             />
                                           ))}
                                           {(note.imageUris!.length ?? 0) > 2 && (
                                             <Pressable
                                               onPress={() => {
-                                                Promise.all(
-                                                  note.imageUris!.map(k => getUploadObjectUrl(k).catch(() => ''))
-                                                ).then(urls => {
-                                                  openImageViewer(urls.filter(u => !!u));
-                                                });
+                                                openImageViewer(note.imageUris!);
                                               }}
                                               style={({ pressed }) => [
                                                 styles['card-image-more'],

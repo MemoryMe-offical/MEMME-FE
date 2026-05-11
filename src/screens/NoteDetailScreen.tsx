@@ -31,51 +31,19 @@ import { fetchOgData } from '../services/ogService';
 import { uploadImages, uploadFile } from '../services/uploadService';
 import OgPreviewCard from '../components/note/OgPreviewCard';
 import * as noteService from '../services/noteService';
-import { getUploadObjectUrl } from '../services/uploadService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NoteDetail'>;
 
-const ImagePreview = ({ imageKey, onRemove }: { imageKey: string; onRemove: () => void }) => {
-  const [imageUrl, setImageUrl] = useState<string>('');
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-    const isPresignedUrl = imageKey.startsWith('http');
-
-    if (isPresignedUrl) {
-      setImageUrl(imageKey);
-      setLoading(false);
-    } else {
-      getUploadObjectUrl(imageKey)
-        .then(url => {
-          setImageUrl(url);
-          setLoading(false);
-        })
-        .catch(() => {
-          console.log('Failed to load image URL for key:', imageKey);
-          setLoading(false);
-        });
-    }
-  }, [imageKey]);
-
+const ImagePreview = ({ imageUrl, onRemove }: { imageUrl: string; onRemove: () => void }) => {
   return (
     <View style={styles['image-wrapper']}>
-      {loading ? (
-        <View style={[styles.thumbnail, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#EEF3FF' }]}>
-          <ActivityIndicator size="small" color="#588DFF" />
-        </View>
-      ) : imageUrl ? (
-        <Image
-          source={{ uri: imageUrl }}
-          style={styles.thumbnail}
-          resizeMode="cover"
-          onError={(e) => console.log(`Image load error for key: ${imageKey}`, e.nativeEvent.error)}
-          onLoad={() => console.log(`Image loaded for key: ${imageKey}`)}
-        />
-      ) : (
-        <View style={[styles.thumbnail, { backgroundColor: '#EEF3FF' }]} />
-      )}
+      <Image
+        source={{ uri: imageUrl }}
+        style={styles.thumbnail}
+        resizeMode="cover"
+        onError={(e) => console.log(`Image load error: ${imageUrl}`, e.nativeEvent.error)}
+        onLoad={() => console.log(`Image loaded: ${imageUrl}`)}
+      />
       <TouchableOpacity
         style={styles['image-remove-btn']}
         onPress={onRemove}
@@ -239,9 +207,8 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         try {
           const response = await uploadImages(localUris);
           console.log('Upload response:', response);
-          console.log('Image keys:', response.keys);
-          // keys를 저장 (imageUris에 keys를 저장)
-          setEditImageUris(prev => [...prev, ...response.keys]);
+          // presigned URLs를 저장 (화면 렌더링용)
+          setEditImageUris(prev => [...prev, ...response.urls]);
         } catch (error) {
           Alert.alert('오류', '이미지 업로드에 실패했습니다.');
           console.error('Image upload error:', error);
@@ -254,8 +221,8 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
     }
   };
 
-  const handleRemoveImage = (idx: number) => {
-    setEditImageUris(prev => prev.filter((_, i) => i !== idx));
+  const handleRemoveImage = (imageKey: string) => {
+    setEditImageUris(prev => prev.filter(key => key !== imageKey));
   };
 
   const handleOpenLinkModal = () => {
@@ -306,11 +273,12 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         const uploadPromises = results.map(async r => {
           const uploadResponse = await uploadFile(r.uri);
           return {
-            id: `file_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-            name: r.name ?? 'unknown',
+            uid: uploadResponse.uid,
+            name: uploadResponse.name,
             url: uploadResponse.url,
-            mimeType: r.type ?? 'application/octet-stream',
-            size: uploadResponse.size ?? r.size ?? 0,
+            key: uploadResponse.key,
+            mimeType: uploadResponse.mimeType,
+            size: uploadResponse.size,
           };
         });
         const newFiles = await Promise.all(uploadPromises);
@@ -330,8 +298,8 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
     }
   };
 
-  const handleRemoveFile = (fileId: string) => {
-    setEditFiles(prev => prev.filter(f => f.id !== fileId));
+  const handleRemoveFile = (fileUid: string) => {
+    setEditFiles(prev => prev.filter(f => f.uid !== fileUid));
   };
 
   const canDelete = !isNew && !!note;
@@ -430,8 +398,8 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles['images-row']}>
                 <>
-                  {editImageUris.map((imageKey, idx) => (
-                    <ImagePreview key={imageKey} imageKey={imageKey} onRemove={() => handleRemoveImage(idx)} />
+                  {editImageUris.map((imageUrl) => (
+                    <ImagePreview key={imageUrl} imageUrl={imageUrl} onRemove={() => handleRemoveImage(imageUrl)} />
                   ))}
                 </>
               </ScrollView>
@@ -454,10 +422,10 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
             {editFiles.length > 0 ? (
               <>
                 {editFiles.map(file => (
-                  <View key={file.id} style={styles['file-row']}>
+                  <View key={file.uid} style={styles['file-row']}>
                     <Text style={styles['file-icon']}>📄</Text>
                     <Text style={styles['file-name']} numberOfLines={1}>{file.name}</Text>
-                    <TouchableOpacity onPress={() => handleRemoveFile(file.id)} hitSlop={8}>
+                    <TouchableOpacity onPress={() => handleRemoveFile(file.uid)} hitSlop={8}>
                       <CloseIcon color="#9DAFC8" size={16} />
                     </TouchableOpacity>
                   </View>

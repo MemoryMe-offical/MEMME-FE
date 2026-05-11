@@ -88,13 +88,12 @@ const MainScreen = () => {
   useEffect(() => {
     const loadRecentBoards = async () => {
       try {
-        const boards = await timelineService.fetchTimeline({
+        const response = await timelineService.fetchTimeline({
           type: 'board',
           sort: 'updatedAt',
-          order: 'desc',
           limit: 5,
         });
-        setRecentBoards(boards as Board[]);
+        setRecentBoards(response.items as Board[]);
       } catch (error) {
         console.error('Failed to load recent boards:', error);
         setRecentBoards((items.filter(i => i.type === 'board') as Board[]).slice(0, 5));
@@ -116,7 +115,7 @@ const MainScreen = () => {
 
     // 북마크 필터
     if (filterBookmarkOnly) {
-      result = result.filter(i => i.bookMark);
+      result = result.filter(i => i.bookmarked);
     }
 
     // 태그 필터 (보드만)
@@ -171,11 +170,11 @@ const MainScreen = () => {
 
   const loadTimeline = useCallback(async () => {
     try {
-      const timelineItems = await timelineService.fetchTimeline({
+      const response = await timelineService.fetchTimeline({
         sort: 'createdAt',
-        order: 'asc',
+        limit: 50,
       });
-      setItems(timelineItems);
+      setItems(response.items);
     } catch (error) {
       console.error('Failed to load timeline:', error);
       setItems([]);
@@ -332,7 +331,7 @@ const MainScreen = () => {
               id: board.id,
               userId: board.userId,
               type: 'memo',
-              bookMark: board.bookMark,
+              bookmarked: board.bookmarked,
               text: board.title,
               createdAt: board.createdAt,
             };
@@ -720,7 +719,7 @@ const MainScreen = () => {
       <ContextMenu
         visible={contextMenuItem !== null}
         itemType={contextMenuItem?.type ?? 'memo'}
-        isBookmarked={contextMenuItem?.bookMark ?? false}
+        isBookmarked={contextMenuItem?.bookmarked ?? false}
         onCopy={handleContextCopy}
         onBookmark={handleContextBookmark}
         onConvert={handleContextConvert}

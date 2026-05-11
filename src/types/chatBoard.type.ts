@@ -5,7 +5,7 @@ export interface BaseItem {
   userId: string;
   type: MessageType;
   createdAt: string;
-  bookMark: boolean;
+  bookmarked: boolean;
 }
 
 export interface ChatMessage extends BaseItem {

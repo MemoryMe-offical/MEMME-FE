@@ -17,15 +17,17 @@ interface ImageUploadResponse {
 interface VideoUploadResponse {
   url: string;
   key: string;
+  thumbnailUrl?: string;
   duration: number;
   size: number;
 }
 
 interface FileUploadResponse {
+  uid: string;
   url: string;
   key: string;
   name: string;
-  type: string;
+  mimeType: string;
   size: number;
 }
 
@@ -63,8 +65,14 @@ export const uploadImages = async (
     console.log('Raw URLs:', apiResponse.data.urls);
     console.log('Keys:', apiResponse.data.keys);
 
-    // keys만 반환 (imageUris에는 keys를 저장)
-    return { keys: apiResponse.data.keys, urls: apiResponse.data.urls };
+    // 상대 경로 URL을 절대 경로로 변환
+    const absoluteUrls = apiResponse.data.urls.map(url => {
+      if (url.startsWith('http')) return url;
+      if (url.startsWith('/')) return `${BASE_URL}${url}`;
+      return url;
+    });
+
+    return { keys: apiResponse.data.keys, urls: absoluteUrls };
   } catch (error) {
     console.error('Failed to upload images:', error);
     throw error;
@@ -99,8 +107,8 @@ export const uploadVideo = async (fileUri: string): Promise<VideoUploadResponse>
     const url = apiResponse.data.url.startsWith('http')
       ? apiResponse.data.url
       : apiResponse.data.url.startsWith('/')
-        ? `https://memme.o-r.kr${apiResponse.data.url}`
-        : `https://memme.o-r.kr/v1/upload/${apiResponse.data.url}`;
+        ? `${BASE_URL}${apiResponse.data.url}`
+        : `${BASE_URL}/${apiResponse.data.url}`;
     return { ...apiResponse.data, url };
   } catch (error) {
     console.error('Failed to upload video:', error);
@@ -136,8 +144,8 @@ export const uploadFile = async (fileUri: string): Promise<FileUploadResponse> =
     const url = apiResponse.data.url.startsWith('http')
       ? apiResponse.data.url
       : apiResponse.data.url.startsWith('/')
-        ? `https://memme.o-r.kr${apiResponse.data.url}`
-        : `https://memme.o-r.kr/v1/upload/${apiResponse.data.url}`;
+        ? `${BASE_URL}${apiResponse.data.url}`
+        : `${BASE_URL}/${apiResponse.data.url}`;
     return { ...apiResponse.data, url };
   } catch (error) {
     console.error('Failed to upload file:', error);

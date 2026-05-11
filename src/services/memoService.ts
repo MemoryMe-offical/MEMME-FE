@@ -31,7 +31,7 @@ export const createMemo = async (text: string): Promise<Memo> => {
       userId: memo.userId || '',
       type: 'memo',
       text: memo.text,
-      bookMark: memo.bookmarked ?? false,
+      bookmarked: memo.bookmarked ?? false,
       createdAt: memo.createdAt,
     };
   } catch (error) {
@@ -79,7 +79,7 @@ export const toggleMemoBookmark = async (memoUid: string, bookmarked?: boolean):
       userId: memo.userId || '',
       type: 'memo',
       text: memo.text,
-      bookMark: memo.bookmarked ?? false,
+      bookmarked: memo.bookmarked ?? false,
       createdAt: memo.createdAt,
     };
   } catch (error) {
