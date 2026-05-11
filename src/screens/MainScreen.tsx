@@ -211,6 +211,15 @@ const MainScreen = () => {
   );
 
   useEffect(() => {
+    if (route.params?.scrollToItemId) {
+      const index = items.findIndex(i => i.id === route.params.scrollToItemId);
+      if (index !== -1) {
+        flatListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
+      }
+    }
+  }, [route.params?.scrollToItemId, items]);
+
+  useEffect(() => {
     const getShared = async () => {
       try {
         if (!nativeShareModule) return;
@@ -386,6 +395,9 @@ const MainScreen = () => {
     navigation.navigate('BoardDetail', {
       board,
       noteId,
+      onSave: (updated: Board) => {
+        setItems(prev => prev.map(item => item.id === updated.id ? updated : item));
+      },
     });
   };
 
@@ -393,6 +405,9 @@ const MainScreen = () => {
     if (item.type === 'board') {
       navigation.navigate('BoardDetail', {
         board: item as Board,
+        onSave: (updated: Board) => {
+          setItems(prev => prev.map(i => i.id === updated.id ? updated : i));
+        },
       });
     } else {
       const index = items.findIndex(i => i.id === item.id);
@@ -699,7 +714,6 @@ const MainScreen = () => {
           navigation.navigate('MediaGallery', {
             items,
             galleryType,
-            onBookmarkPress: handleBookmarkPress,
           });
           setSideMenuVisible(false);
         }}

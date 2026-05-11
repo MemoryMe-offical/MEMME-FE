@@ -25,6 +25,7 @@ export type RootStackParamList = {
     BoardDetail: {
         board: Board;
         noteId?: string;
+        onSave?: (updated: Board) => void;
         startEditing?: boolean;
     };
     NoteDetail: {
@@ -38,7 +39,6 @@ export type RootStackParamList = {
     MediaGallery: {
         items: TimelineItem[];
         galleryType: 'images' | 'videos' | 'files' | 'links' | 'bookmarks';
-        onBookmarkPress?: (item: TimelineItem) => void;
     };
     EncryptionTest: undefined;
     DevicePairing: undefined;

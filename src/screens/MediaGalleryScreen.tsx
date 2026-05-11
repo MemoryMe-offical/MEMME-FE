@@ -186,8 +186,8 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
       onPress={() => {
         if (item.board) {
           navigation.navigate('BoardDetail', { board: item.board });
-        } else if (item.timelineItem && route.params.onBookmarkPress) {
-          route.params.onBookmarkPress(item.timelineItem);
+        } else if (item.timelineItem) {
+          navigation.setParams({ scrollToItemId: item.timelineItem.id });
           navigation.goBack();
         }
       }}
