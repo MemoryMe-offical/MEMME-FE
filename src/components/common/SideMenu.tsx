@@ -18,6 +18,7 @@ import { Board, TimelineItem, Memo, Note, FileAttachment, OgData } from '../../t
 import { CloseIcon, EditIcon, SettingsIcon, ChevronRightIcon } from './Icons';
 import { SIDE_MENU_WIDTH, sideMenuStyles as styles } from '../../styles/SideMenu.styles';
 import { fetchOgData } from '../../services/ogService';
+import { getUploadObject } from '../../services/uploadService';
 import ImageViewerModal from './ImageViewerModal';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
 
@@ -496,7 +497,19 @@ const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress, isBook
                         <TouchableOpacity
                           key={`file-${idx}`}
                           style={styles['sideMenu-fileItem']}
-                          onPress={() => Linking.openURL(file.url)}
+                          onPress={async () => {
+                            try {
+                              if (file.url.startsWith('http')) {
+                                Linking.openURL(file.url);
+                              } else {
+                                const key = file.url.split('key=')[1];
+                                const presignedData = await getUploadObject(key);
+                                Linking.openURL(presignedData.url || presignedData);
+                              }
+                            } catch (error) {
+                              console.error('Failed to open file:', error);
+                            }
+                          }}
                         >
                           <Text style={styles['sideMenu-fileIcon']}>📄</Text>
                           <Text style={styles['sideMenu-fileName']} numberOfLines={2}>{file.name}</Text>

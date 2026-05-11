@@ -16,6 +16,7 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { Board, Note, FileAttachment, Memo } from '../types';
 import { ArrowLeftIcon } from '../components/common/Icons';
 import { fetchOgData } from '../services/ogService';
+import { getUploadObject } from '../services/uploadService';
 import ImageViewerModal from '../components/common/ImageViewerModal';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
 
@@ -60,6 +61,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
             title: item.type === 'board' ? item.title : item.text,
             type: item.type === 'board' ? 'link' : 'image',
             createdAt: item.createdAt,
+            board: item.type === 'board' ? item : undefined,
           });
         });
     } else {
@@ -227,16 +229,31 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
     </TouchableOpacity>
   );
 
-  const renderFileItem = ({ item }: { item: MediaItem }) => (
-    <TouchableOpacity
-      onPress={() => Linking.openURL(item.uri)}
-    >
-      <View style={[styles.fileItem, { width: THUMBNAIL_SIZE }]}>
-        <Text style={styles.fileIcon}>📄</Text>
-        <Text style={styles.fileName} numberOfLines={2}>{item.title}</Text>
-      </View>
-    </TouchableOpacity>
-  );
+  const renderFileItem = ({ item }: { item: MediaItem }) => {
+    const handleOpenFile = async () => {
+      try {
+        if (item.file?.url) {
+          if (item.file.url.startsWith('http')) {
+            Linking.openURL(item.file.url);
+          } else {
+            const presignedUrl = await getUploadObject(item.file.url.split('key=')[1]);
+            Linking.openURL(presignedUrl.url || presignedUrl);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to open file:', error);
+      }
+    };
+
+    return (
+      <TouchableOpacity onPress={handleOpenFile}>
+        <View style={[styles.fileItem, { width: THUMBNAIL_SIZE }]}>
+          <Text style={styles.fileIcon}>📄</Text>
+          <Text style={styles.fileName} numberOfLines={2}>{item.title}</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   const renderLinkItem = ({ item }: { item: MediaItem }) => {
     const linkUrl = item.note?.url || '';
