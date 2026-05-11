@@ -335,6 +335,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           <Text style={styles['section-label']}>첨부</Text>
 
           {/* 이미지 */}
+          <Text style={styles['subsection-label']}>이미지</Text>
           <View style={styles['images-section']}>
             <ScrollView
               horizontal
@@ -369,6 +370,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           </View>
 
           {/* 링크 */}
+          <Text style={styles['subsection-label']}>링크</Text>
           <View style={styles['link-section']}>
             {editUrl ? (
               <OgPreviewCard
@@ -388,6 +390,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           </View>
 
           {/* 파일 */}
+          <Text style={styles['subsection-label']}>파일</Text>
           <View style={styles['files-section']}>
             {editFiles.map(file => (
               <View key={file.id} style={styles['file-row']}>
@@ -536,6 +539,14 @@ const styles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
     letterSpacing: 0.5,
     marginBottom: 12,
+  },
+  'subsection-label': {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#588DFF',
+    fontFamily: 'PretendardVariable',
+    letterSpacing: 0.3,
+    marginBottom: 8,
   },
   'images-section': { marginBottom: 12 },
   'images-row': {
