@@ -55,8 +55,13 @@ const MainScreen = () => {
   // 로그인한 사용자 ID 로드
   useEffect(() => {
     const loadUserId = async () => {
-      const id = await AsyncStorage.getItem('userId');
-      setUserId(id || '');
+      try {
+        const id = await AsyncStorage.getItem('userId');
+        console.log('🔥 AsyncStorage에서 로드한 userId:', id);
+        setUserId(id || '');
+      } catch (error) {
+        console.error('🔥 userId 로드 실패:', error);
+      }
     };
     loadUserId();
   }, []);
@@ -177,29 +182,45 @@ const MainScreen = () => {
   }, []);
 
   useEffect(() => {
-    if (!userId) return;
+    console.log('🔥 useEffect: userId 변경됨', { userId });
 
     const getShared = async () => {
       try {
-        const url = await nativeShareModule?.getSharedURL?.();
-        console.log('🔥 공유된 링크:', url);
+        console.log('🔥 getShared 시작, nativeShareModule:', nativeShareModule);
+
+        if (!nativeShareModule) {
+          console.error('🔥 nativeShareModule이 undefined입니다!');
+          return;
+        }
+
+        const url = await nativeShareModule.getSharedURL();
+        console.log('🔥 getSharedURL 결과:', { url, type: typeof url });
+
         if (typeof url === 'string' && url.trim() && url.startsWith('http')) {
           console.log('🔥 링크 처리 시작:', url);
           await handleSharedUrl(url);
-          await nativeShareModule?.clearSharedURL?.();
+          const cleared = await nativeShareModule.clearSharedURL();
+          console.log('🔥 clearSharedURL 완료:', cleared);
+        } else {
+          console.log('🔥 유효한 링크가 없음:', { url, isString: typeof url === 'string' });
         }
       } catch (error) {
         console.error('🔥 링크 공유 처리 실패:', error);
       }
     };
 
-    getShared();
+    if (userId) {
+      console.log('🔥 getShared 호출 (마운트)');
+      getShared();
+    }
 
     const sub = AppState.addEventListener('change', state => {
       console.log('🔥 AppState 변경:', state);
       if (state === 'active') {
         console.log('🔥 앱이 활성화됨, 공유 링크 확인');
-        getShared();
+        if (userId) {
+          getShared();
+        }
       }
     });
 

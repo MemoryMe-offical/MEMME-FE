@@ -59,6 +59,21 @@ const LoginScreen = () => {
     return emailRegex.test(value);
   };
 
+  const extractUserIdFromJWT = (token: string): string | null => {
+    try {
+      const parts = token.split('.');
+      if (parts.length !== 3) return null;
+
+      const payload = parts[1];
+      const decoded = Buffer.from(payload, 'base64').toString('utf8');
+      const json = JSON.parse(decoded);
+      return json.sub || null;
+    } catch (error) {
+      console.error('🔥 JWT 디코딩 실패:', error);
+      return null;
+    }
+  };
+
   const parseErrorMessage = async (response: Response) => {
     try {
       const data = await response.json();
@@ -108,11 +123,23 @@ const LoginScreen = () => {
         throw new Error('토큰이 응답에 없습니다.');
       }
 
+      // JWT에서 userId 추출
+      const userId = extractUserIdFromJWT(accessToken);
+      console.log('🔥 JWT에서 추출한 userId:', userId);
+
+      if (!userId) {
+        throw new Error('토큰에서 userId를 추출할 수 없습니다.');
+      }
+
+      // AsyncStorage에 저장
       await AsyncStorage.setItem('accessToken', accessToken);
+      await AsyncStorage.setItem('userId', userId);
       await AsyncStorage.setItem(
         STORAGE_KEYS.AUTO_LOGIN,
         autoLogin ? 'true' : 'false',
       );
+
+      console.log('🔥 userId가 AsyncStorage에 저장되었습니다:', userId);
 
       navigation.reset({
         index: 0,
