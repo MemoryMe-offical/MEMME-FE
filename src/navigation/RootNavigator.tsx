@@ -33,8 +33,6 @@ export type RootStackParamList = {
         boardId: string;
         boardTitle?: string;
         isNew?: boolean;
-        onSave?: (note: Note) => void;
-        onDelete?: (noteId: string) => void;
     };
     MediaGallery: {
         items: TimelineItem[];

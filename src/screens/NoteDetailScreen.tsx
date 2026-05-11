@@ -33,7 +33,7 @@ import OgPreviewCard from '../components/note/OgPreviewCard';
 type Props = NativeStackScreenProps<RootStackParamList, 'NoteDetail'>;
 
 const NoteDetailScreen = ({ route, navigation }: Props) => {
-  const { note, boardTitle, isNew, onSave, onDelete } = route.params;
+  const { note, boardTitle, isNew } = route.params;
   const insets = useSafeAreaInsets();
 
   const [editTitle, setEditTitle] = useState(note?.title ?? '');
@@ -138,7 +138,6 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       ogData: editOgData,
       files: editFiles.length > 0 ? editFiles : undefined,
     };
-    onSave?.(noteToSave);
     isSavingRef.current = true;
     navigation.goBack();
   };
@@ -150,7 +149,6 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         text: '삭제',
         style: 'destructive',
         onPress: () => {
-          onDelete?.(note!.id);
           navigation.goBack();
         },
       },

@@ -21,7 +21,6 @@ import {
 import TagInput from '../components/common/TagInput';
 import NoteCard from '../components/note/NoteCard';
 import * as boardService from '../services/boardService';
-import * as noteService from '../services/noteService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BoardDetail'>;
 
@@ -89,66 +88,6 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
     }
   };
 
-  // 노트 저장 콜백 (NoteDetailScreen에서 돌아올 때)
-  const handleNoteSave = async (note: Note) => {
-    try {
-      const existingNotes = board.notes ?? [];
-      const isNewNote = !existingNotes.some(n => n.id === note.id);
-
-      if (isNewNote) {
-        await noteService.createNote(board.id, {
-          title: note.title,
-          content: note.content,
-          imageUris: note.imageUris,
-          videoUris: note.videoUris,
-          files: note.files,
-          url: note.url,
-        });
-      } else {
-        const existingNote = existingNotes.find(n => n.id === note.id);
-        if (existingNote) {
-          await noteService.updateNote(board.id, note.id, {
-            title: note.title,
-            content: note.content,
-            imageUris: note.imageUris,
-            videoUris: note.videoUris,
-            files: note.files,
-            url: note.url,
-          });
-        }
-      }
-
-      const updated: Board = {
-        ...board,
-        notes: isNewNote
-          ? [...existingNotes, note]
-          : existingNotes.map(n => n.id === note.id ? note : n),
-        updatedAt: new Date().toISOString(),
-      };
-      setBoard(updated);
-      onSave?.(updated);
-    } catch (error) {
-      console.error('Failed to save note:', error);
-      Alert.alert('오류', '노트 저장에 실패했습니다.');
-    }
-  };
-
-  // 노트 삭제 콜백
-  const handleNoteDelete = async (noteId: string) => {
-    try {
-      await noteService.deleteNote(board.id, noteId);
-      const updated: Board = {
-        ...board,
-        notes: (board.notes ?? []).filter(n => n.id !== noteId),
-        updatedAt: new Date().toISOString(),
-      };
-      setBoard(updated);
-      onSave?.(updated);
-    } catch (error) {
-      console.error('Failed to delete note:', error);
-      Alert.alert('오류', '노트 삭제에 실패했습니다.');
-    }
-  };
 
   const handleAddNote = () => {
     navigation.navigate('NoteDetail', {
@@ -156,7 +95,6 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
       boardId: board.id,
       boardTitle: board.title,
       isNew: true,
-      onSave: handleNoteSave,
     });
   };
 
@@ -165,8 +103,6 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
       note,
       boardId: board.id,
       boardTitle: board.title,
-      onSave: handleNoteSave,
-      onDelete: handleNoteDelete,
     });
   };
 
