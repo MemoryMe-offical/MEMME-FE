@@ -38,8 +38,10 @@ const TagInput = ({ tags, onChange, maxTags = 10, suggestions: initialSuggestion
         });
 
         if (response.ok) {
-          const data = await response.json();
-          setSuggestions(data.tags || initialSuggestions);
+          const apiResponse: any = await response.json();
+          const tags = apiResponse.data?.tags || [];
+          const tagNames = tags.map((t: any) => t.name);
+          setSuggestions(tagNames.length > 0 ? tagNames : initialSuggestions);
         } else {
           setSuggestions(initialSuggestions);
         }

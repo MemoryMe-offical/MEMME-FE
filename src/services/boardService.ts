@@ -144,7 +144,7 @@ export const deleteBoard = async (boardUid: string): Promise<void> => {
 /**
  * 보드 북마크 토글
  */
-export const toggleBoardBookmark = async (boardUid: string): Promise<Board> => {
+export const toggleBoardBookmark = async (boardUid: string, bookmarked?: boolean): Promise<Board> => {
   try {
     const token = await AsyncStorage.getItem('accessToken');
 
@@ -154,6 +154,7 @@ export const toggleBoardBookmark = async (boardUid: string): Promise<Board> => {
         'Content-Type': 'application/json',
         ...(token && { 'Authorization': `Bearer ${token}` }),
       },
+      body: JSON.stringify({ bookmarked: bookmarked ?? true }),
     });
 
     if (!response.ok) {

@@ -3,6 +3,13 @@ import { PendingLink } from '../types';
 
 const BASE_URL = 'https://memme.o-r.kr/v1';
 
+interface ApiResponse<T> {
+  success: boolean;
+  status: number;
+  message: string;
+  data: T;
+}
+
 /**
  * 새 대기 링크 추가
  */
@@ -16,15 +23,18 @@ export const addPendingLink = async (link: Omit<PendingLink, 'id'>): Promise<Pen
         'Content-Type': 'application/json',
         ...(token && { 'Authorization': `Bearer ${token}` }),
       },
-      body: JSON.stringify(link),
+      body: JSON.stringify({ url: link.url }),
     });
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    return data;
+    const apiResponse: ApiResponse<{ pendingLink: PendingLink }> = await response.json();
+    return {
+      ...apiResponse.data.pendingLink,
+      id: apiResponse.data.pendingLink.id || apiResponse.data.pendingLink.uid,
+    };
   } catch (error) {
     console.error('Failed to add pending link:', error);
     throw error;
@@ -54,8 +64,11 @@ export const loadPendingLinks = async (): Promise<PendingLink[]> => {
       throw new Error(`API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    return data.pendingLinks || [];
+    const apiResponse: ApiResponse<{ pendingLinks: any[] }> = await response.json();
+    return (apiResponse.data.pendingLinks || []).map((link: any) => ({
+      ...link,
+      id: link.uid || link.id,
+    }));
   } catch (error) {
     console.error('Failed to load pending links:', error);
     return [];

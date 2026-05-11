@@ -12,6 +12,20 @@ export interface TimelineQuery {
   tags?: string[];
 }
 
+interface ApiResponse<T> {
+  success: boolean;
+  status: number;
+  message: string;
+  data: T;
+}
+
+interface TimelineData {
+  items: any[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 /**
  * 타임라인 조회 (메모 + 보드 통합)
  */
@@ -22,7 +36,7 @@ export const fetchTimeline = async (query?: TimelineQuery): Promise<TimelineItem
     const params = new URLSearchParams();
     if (query?.type) params.append('type', query.type);
     if (query?.sort) params.append('sort', query.sort);
-    if (query?.order) params.append('order', query.order);
+    if (query?.order) params.append('order', query.order || 'desc');
     if (query?.limit) params.append('limit', query.limit.toString());
     if (query?.offset) params.append('offset', query.offset.toString());
     if (query?.tags?.length) {
@@ -43,10 +57,9 @@ export const fetchTimeline = async (query?: TimelineQuery): Promise<TimelineItem
       throw new Error(`API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    console.log('fetchTimeline response:', JSON.stringify(data, null, 2));
+    const apiResponse: ApiResponse<TimelineData> = await response.json();
+    const items = apiResponse.data?.items || [];
 
-    const items = data.data?.items || [];
     return items.map((item: any) => ({
       ...item,
       id: item.uid,

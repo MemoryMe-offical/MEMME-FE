@@ -3,6 +3,13 @@ import { Memo } from '../types';
 
 const BASE_URL = 'https://memme.o-r.kr/v1';
 
+interface ApiResponse<T> {
+  success: boolean;
+  status: number;
+  message: string;
+  data: T;
+}
+
 /**
  * 빠른 메모 생성
  */
@@ -23,9 +30,9 @@ export const createMemo = async (text: string): Promise<Memo> => {
       throw new Error(`API error: ${response.status}`);
     }
 
-    const response_data = await response.json();
-    const memo = response_data.data;
-    const result: Memo = {
+    const apiResponse: ApiResponse<any> = await response.json();
+    const memo = apiResponse.data;
+    return {
       id: memo.uid,
       userId: memo.userId || '',
       type: 'memo',
@@ -33,7 +40,6 @@ export const createMemo = async (text: string): Promise<Memo> => {
       bookMark: memo.bookmarked ?? false,
       createdAt: memo.createdAt,
     };
-    return result;
   } catch (error) {
     console.error('Failed to create memo:', error);
     throw error;
@@ -67,7 +73,7 @@ export const deleteMemo = async (memoUid: string): Promise<void> => {
 /**
  * 메모 북마크 토글
  */
-export const toggleMemoBookmark = async (memoUid: string): Promise<Memo> => {
+export const toggleMemoBookmark = async (memoUid: string, bookmarked?: boolean): Promise<Memo> => {
   try {
     const token = await AsyncStorage.getItem('accessToken');
 
@@ -77,14 +83,23 @@ export const toggleMemoBookmark = async (memoUid: string): Promise<Memo> => {
         'Content-Type': 'application/json',
         ...(token && { 'Authorization': `Bearer ${token}` }),
       },
+      body: JSON.stringify({ bookmarked: bookmarked ?? true }),
     });
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    return data;
+    const apiResponse: ApiResponse<any> = await response.json();
+    const memo = apiResponse.data;
+    return {
+      id: memo.uid,
+      userId: memo.userId || '',
+      type: 'memo',
+      text: memo.text,
+      bookMark: memo.bookmarked ?? false,
+      createdAt: memo.createdAt,
+    };
   } catch (error) {
     console.error('Failed to toggle memo bookmark:', error);
     throw error;

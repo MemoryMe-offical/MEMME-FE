@@ -3,6 +3,13 @@ import { OgData } from '../types';
 
 const BASE_URL = 'https://memme.o-r.kr/v1';
 
+interface ApiResponse<T> {
+  success: boolean;
+  status: number;
+  message: string;
+  data: T;
+}
+
 /**
  * URL의 Open Graph 메타데이터 조회
  */
@@ -22,8 +29,8 @@ export const fetchOgData = async (url: string): Promise<OgData> => {
       throw new Error(`API error: ${response.status}`);
     }
 
-    const data = await response.json();
-    return data.ogData || { title: url };
+    const apiResponse: ApiResponse<OgData> = await response.json();
+    return apiResponse.data || { title: url };
   } catch (error) {
     console.error('Failed to fetch OG data:', error);
     return { title: url };
