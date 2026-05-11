@@ -8,6 +8,7 @@ import {
   Image,
   FlatList,
   Dimensions,
+  Linking,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,6 +16,8 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { Board, Note, FileAttachment, Memo } from '../types';
 import { ArrowLeftIcon } from '../components/common/Icons';
 import { fetchOgData } from '../services/ogService';
+import ImageViewerModal from '../components/common/ImageViewerModal';
+import InAppBrowser from 'react-native-inappbrowser-reborn';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MediaGallery'>;
 
@@ -37,6 +40,11 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
   const { items: allItems, galleryType } = route.params;
   const insets = useSafeAreaInsets();
   const [cachedOgData, setCachedOgData] = useState<Record<string, any>>({});
+  const [imageViewerState, setImageViewerState] = useState({
+    visible: false,
+    uris: [] as string[],
+    index: 0,
+  });
 
   const mediaItems = useMemo(() => {
     const items: MediaItem[] = [];
@@ -169,7 +177,14 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
   }, [galleryType, allItems]);
 
   const renderBookmarkItem = ({ item }: { item: MediaItem }) => (
-    <TouchableOpacity style={[styles.bookmarkItem, { width: THUMBNAIL_SIZE }]}>
+    <TouchableOpacity
+      style={[styles.bookmarkItem, { width: THUMBNAIL_SIZE }]}
+      onPress={() => {
+        if (item.board) {
+          navigation.navigate('BoardDetail', { board: item.board });
+        }
+      }}
+    >
       <View style={styles.bookmarkItemContent}>
         <Text style={styles.bookmarkItemEmoji}>⭐</Text>
         <Text style={styles.bookmarkItemTitle} numberOfLines={2}>{item.title}</Text>
@@ -177,38 +192,75 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
     </TouchableOpacity>
   );
 
-  const renderImageItem = ({ item }: { item: MediaItem }) => (
-    <Image
-      source={{ uri: item.uri }}
-      style={[styles.thumbnail, { width: THUMBNAIL_SIZE, height: THUMBNAIL_SIZE }]}
-    />
+  const renderImageItem = ({ item, index }: { item: MediaItem; index?: number }) => (
+    <TouchableOpacity
+      onPress={() => {
+        const images = mediaItems.filter(m => m.type === 'image');
+        const currentIdx = images.findIndex(m => m.id === item.id);
+        setImageViewerState({
+          visible: true,
+          uris: images.map(m => m.uri),
+          index: currentIdx,
+        });
+      }}
+    >
+      <Image
+        source={{ uri: item.uri }}
+        style={[styles.thumbnail, { width: THUMBNAIL_SIZE, height: THUMBNAIL_SIZE }]}
+      />
+    </TouchableOpacity>
   );
 
   const renderVideoItem = ({ item }: { item: MediaItem }) => (
-    <View style={[styles.thumbnail, { width: THUMBNAIL_SIZE, height: THUMBNAIL_SIZE }]}>
-      <Image
-        source={{ uri: item.uri }}
-        style={StyleSheet.absoluteFill}
-      />
-      <View style={styles.videoOverlay}>
-        <Text style={styles.videoPlayIcon}>▶</Text>
+    <TouchableOpacity
+      onPress={() => Linking.openURL(item.uri)}
+    >
+      <View style={[styles.thumbnail, { width: THUMBNAIL_SIZE, height: THUMBNAIL_SIZE }]}>
+        <Image
+          source={{ uri: item.uri }}
+          style={StyleSheet.absoluteFill}
+        />
+        <View style={styles.videoOverlay}>
+          <Text style={styles.videoPlayIcon}>▶</Text>
+        </View>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   const renderFileItem = ({ item }: { item: MediaItem }) => (
-    <View style={[styles.fileItem, { width: THUMBNAIL_SIZE }]}>
-      <Text style={styles.fileIcon}>📄</Text>
-      <Text style={styles.fileName} numberOfLines={2}>{item.title}</Text>
-    </View>
+    <TouchableOpacity
+      onPress={() => Linking.openURL(item.uri)}
+    >
+      <View style={[styles.fileItem, { width: THUMBNAIL_SIZE }]}>
+        <Text style={styles.fileIcon}>📄</Text>
+        <Text style={styles.fileName} numberOfLines={2}>{item.title}</Text>
+      </View>
+    </TouchableOpacity>
   );
 
   const renderLinkItem = ({ item }: { item: MediaItem }) => {
     const linkUrl = item.note?.url || '';
     const linkTitle = item.ogData?.title || item.title || linkUrl;
 
+    const handleOpenLink = async () => {
+      try {
+        if (await InAppBrowser.isAvailable()) {
+          await InAppBrowser.open(linkUrl, {
+            modalPresentationStyle: 'pageSheet',
+          });
+        } else {
+          Linking.openURL(linkUrl);
+        }
+      } catch (error) {
+        Linking.openURL(linkUrl);
+      }
+    };
+
     return (
-      <TouchableOpacity style={[styles.linkItem, { width: THUMBNAIL_SIZE }]}>
+      <TouchableOpacity
+        style={[styles.linkItem, { width: THUMBNAIL_SIZE }]}
+        onPress={handleOpenLink}
+      >
         {item.uri ? (
           <Image
             source={{ uri: item.uri }}
@@ -270,6 +322,13 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
           scrollIndicatorInsets={{ right: 1 }}
         />
       )}
+
+      <ImageViewerModal
+        visible={imageViewerState.visible}
+        imageUris={imageViewerState.uris}
+        initialIndex={imageViewerState.index}
+        onClose={() => setImageViewerState(prev => ({ ...prev, visible: false }))}
+      />
     </SafeAreaView>
   );
 };

@@ -11,12 +11,15 @@ import {
   Image,
   StatusBar,
   Dimensions,
+  Linking,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Board, TimelineItem, Memo, Note, FileAttachment, OgData } from '../../types';
 import { CloseIcon, EditIcon, SettingsIcon, ChevronRightIcon } from './Icons';
 import { SIDE_MENU_WIDTH, sideMenuStyles as styles } from '../../styles/SideMenu.styles';
 import { fetchOgData } from '../../services/ogService';
+import ImageViewerModal from './ImageViewerModal';
+import InAppBrowser from 'react-native-inappbrowser-reborn';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const MAX_DISPLAY_ITEMS = 4;
@@ -36,6 +39,11 @@ const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress, isBook
   const slideAnim = useRef(new Animated.Value(SIDE_MENU_WIDTH)).current;
   const insets = useSafeAreaInsets();
   const [cachedOgData, setCachedOgData] = useState<{ [url: string]: OgData }>({});
+  const [imageViewerState, setImageViewerState] = useState({
+    visible: false,
+    uris: [] as string[],
+    index: 0,
+  });
 
   useEffect(() => {
     if (visible) {
@@ -88,7 +96,7 @@ const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress, isBook
     const images: string[] = [];
     const videos: string[] = [];
     const files: FileAttachment[] = [];
-    const links: { url: string; title: string; imageUrl?: string }[] = [];
+    const links: { url: string; title: string; imageUrl?: string; hasOgData?: boolean }[] = [];
 
     boards.forEach(board => {
       (board.notes ?? []).forEach(note => {
@@ -326,11 +334,21 @@ const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress, isBook
                       showsHorizontalScrollIndicator={false}
                       contentContainerStyle={styles['sideMenu-mediaRow']}>
                       {mediaData.images.slice(0, MAX_DISPLAY_ITEMS).map((uri, idx) => (
-                        <Image
+                        <TouchableOpacity
                           key={`image-${idx}`}
-                          source={{ uri }}
-                          style={styles['sideMenu-mediaThumbnail']}
-                        />
+                          onPress={() => {
+                            setImageViewerState({
+                              visible: true,
+                              uris: mediaData.images,
+                              index: idx,
+                            });
+                          }}
+                        >
+                          <Image
+                            source={{ uri }}
+                            style={styles['sideMenu-mediaThumbnail']}
+                          />
+                        </TouchableOpacity>
                       ))}
                     </ScrollView>
                   </>
@@ -367,15 +385,20 @@ const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress, isBook
                       showsHorizontalScrollIndicator={false}
                       contentContainerStyle={styles['sideMenu-mediaRow']}>
                       {mediaData.videos.slice(0, MAX_DISPLAY_ITEMS).map((uri, idx) => (
-                        <View key={`video-${idx}`} style={styles['sideMenu-videoThumbnail']}>
-                          <Image
-                            source={{ uri }}
-                            style={styles['sideMenu-mediaThumbnail']}
-                          />
-                          <View style={styles['sideMenu-videoPlayIcon']}>
-                            <Text style={styles['sideMenu-videoPlayText']}>▶</Text>
+                        <TouchableOpacity
+                          key={`video-${idx}`}
+                          onPress={() => Linking.openURL(uri)}
+                        >
+                          <View style={styles['sideMenu-videoThumbnail']}>
+                            <Image
+                              source={{ uri }}
+                              style={styles['sideMenu-mediaThumbnail']}
+                            />
+                            <View style={styles['sideMenu-videoPlayIcon']}>
+                              <Text style={styles['sideMenu-videoPlayText']}>▶</Text>
+                            </View>
                           </View>
-                        </View>
+                        </TouchableOpacity>
                       ))}
                     </ScrollView>
                   </>
@@ -409,7 +432,23 @@ const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress, isBook
                   <>
                     <View style={styles['sideMenu-filesList']}>
                       {mediaData.links.slice(0, MAX_DISPLAY_ITEMS).map((link, idx) => (
-                        <View key={`link-${idx}`} style={styles['sideMenu-linkPreview']}>
+                        <TouchableOpacity
+                          key={`link-${idx}`}
+                          style={styles['sideMenu-linkPreview']}
+                          onPress={async () => {
+                            try {
+                              if (await InAppBrowser.isAvailable()) {
+                                await InAppBrowser.open(link.url, {
+                                  modalPresentationStyle: 'pageSheet',
+                                });
+                              } else {
+                                Linking.openURL(link.url);
+                              }
+                            } catch (error) {
+                              Linking.openURL(link.url);
+                            }
+                          }}
+                        >
                           {link.imageUrl && (
                             <Image
                               source={{ uri: link.imageUrl }}
@@ -420,7 +459,7 @@ const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress, isBook
                             <Text style={styles['sideMenu-linkTitle']} numberOfLines={2}>{link.title}</Text>
                             <Text style={styles['sideMenu-linkUrl']} numberOfLines={1}>{link.url}</Text>
                           </View>
-                        </View>
+                        </TouchableOpacity>
                       ))}
                     </View>
                   </>
@@ -454,10 +493,14 @@ const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress, isBook
                   <>
                     <View style={styles['sideMenu-filesList']}>
                       {mediaData.files.slice(0, MAX_DISPLAY_ITEMS).map((file, idx) => (
-                        <View key={`file-${idx}`} style={styles['sideMenu-fileItem']}>
+                        <TouchableOpacity
+                          key={`file-${idx}`}
+                          style={styles['sideMenu-fileItem']}
+                          onPress={() => Linking.openURL(file.url)}
+                        >
                           <Text style={styles['sideMenu-fileIcon']}>📄</Text>
                           <Text style={styles['sideMenu-fileName']} numberOfLines={2}>{file.name}</Text>
-                        </View>
+                        </TouchableOpacity>
                       ))}
                     </View>
                   </>
@@ -467,6 +510,13 @@ const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress, isBook
           </View>
         </Animated.View>
       </View>
+
+      <ImageViewerModal
+        visible={imageViewerState.visible}
+        imageUris={imageViewerState.uris}
+        initialIndex={imageViewerState.index}
+        onClose={() => setImageViewerState(prev => ({ ...prev, visible: false }))}
+      />
     </Modal>
   );
 };
