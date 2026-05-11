@@ -3,22 +3,24 @@ import { fetchWithAutoLogoutHandler } from '../utils/tokenUtils';
 
 const BASE_URL = 'https://memme.o-r.kr/v1';
 
-const transformBoard = (data: any): Board => ({
-  ...data,
-  id: data.uid,
-  bookMark: data.bookmarked ?? false,
-  userId: data.userId || '',
-  notes: data.notes?.map((note: any) => ({
-    id: note.uid,
-    title: note.title,
-    content: note.content,
-    imageUris: note.imageUris,
-    videoUris: note.videoUris,
-    files: note.files,
-    url: note.url,
-    ogData: note.ogData,
-  })),
-});
+const transformBoard = (data: any): Board => {
+  return {
+    ...data,
+    id: data.uid,
+    bookMark: data.bookmarked ?? false,
+    userId: data.userId || '',
+    notes: data.notes?.map((note: any) => ({
+      id: note.uid,
+      title: note.title,
+      content: note.content,
+      imageUris: note.imageUris, // keys 그대로 사용
+      videoUris: note.videoUris,
+      files: note.files,
+      url: note.url,
+      ogData: note.ogData,
+    })),
+  };
+};
 
 /**
  * 새 보드 생성

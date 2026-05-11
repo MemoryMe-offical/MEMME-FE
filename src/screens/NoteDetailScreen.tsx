@@ -29,11 +29,13 @@ import { pick, types, isErrorWithCode, errorCodes } from '@react-native-document
 import { fetchOgData } from '../services/ogService';
 import { uploadImages, uploadFile } from '../services/uploadService';
 import OgPreviewCard from '../components/note/OgPreviewCard';
+import * as noteService from '../services/noteService';
+import { getUploadObjectUrl } from '../services/uploadService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NoteDetail'>;
 
 const NoteDetailScreen = ({ route, navigation }: Props) => {
-  const { note, boardTitle, isNew } = route.params;
+  const { note, boardId, boardTitle, isNew } = route.params;
   const insets = useSafeAreaInsets();
 
   const [editTitle, setEditTitle] = useState(note?.title ?? '');
@@ -48,6 +50,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
   const [isFetchingOg, setIsFetchingOg] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoadingOgData, setIsLoadingOgData] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [contentHeight, setContentHeight] = useState(140);
 
   // 저장 버튼으로 인한 goBack()과 일반 뒤로가기를 구분하는 플래그
@@ -124,22 +127,39 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
     return unsubscribe;
   }, [navigation, isDirty]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editTitle.trim()) {
       Alert.alert('알림', '노트 이름을 입력해주세요.');
       return;
     }
-    const noteToSave: Note = {
-      id: note?.id ?? `note_${Date.now()}`,
-      title: editTitle.trim(),
-      content: editContent.trim() || undefined,
-      imageUris: editImageUris.length > 0 ? editImageUris : undefined,
-      url: editUrl,
-      ogData: editOgData,
-      files: editFiles.length > 0 ? editFiles : undefined,
-    };
+
+    setIsSaving(true);
     isSavingRef.current = true;
-    navigation.goBack();
+
+    try {
+      const noteData = {
+        title: editTitle.trim(),
+        content: editContent.trim() || undefined,
+        imageUris: editImageUris.length > 0 ? editImageUris : undefined,
+        url: editUrl,
+        files: editFiles.length > 0 ? editFiles : undefined,
+      };
+      console.log('Saving note with data:', noteData);
+
+      if (isNew) {
+        await noteService.createNote(boardId, noteData);
+      } else if (note) {
+        await noteService.updateNote(boardId, note.id, noteData);
+      }
+      console.log('Note saved successfully');
+      navigation.goBack();
+    } catch (error) {
+      console.error('Failed to save note:', error);
+      Alert.alert('오류', '노트 저장에 실패했습니다.');
+      isSavingRef.current = false;
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDelete = () => {
@@ -166,7 +186,10 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         setIsUploading(true);
         try {
           const response = await uploadImages(localUris);
-          setEditImageUris(prev => [...prev, ...response.urls]);
+          console.log('Upload response:', response);
+          console.log('Image keys:', response.keys);
+          // keys를 저장 (imageUris에 keys를 저장)
+          setEditImageUris(prev => [...prev, ...response.keys]);
         } catch (error) {
           Alert.alert('오류', '이미지 업로드에 실패했습니다.');
           console.error('Image upload error:', error);
@@ -286,10 +309,10 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           <TouchableOpacity
             onPress={handleSave}
             hitSlop={8}
-            disabled={!editTitle.trim() || isUploading}
+            disabled={!editTitle.trim() || isUploading || isSaving}
             activeOpacity={0.6}>
-            <Text style={[styles['save-text'], (!editTitle.trim() || isUploading) && styles['save-text-disabled']]}>
-              {isUploading ? '업로드 중...' : '저장'}
+            <Text style={[styles['save-text'], (!editTitle.trim() || isUploading || isSaving) && styles['save-text-disabled']]}>
+              {isUploading ? '업로드 중...' : isSaving ? '저장 중...' : '저장'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -356,7 +379,13 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                 contentContainerStyle={styles['images-row']}>
                 {editImageUris.map((uri, idx) => (
                   <View key={`${idx}`} style={styles['image-wrapper']}>
-                    <Image source={{ uri }} style={styles.thumbnail} resizeMode="cover" />
+                    <Image
+                      source={{ uri }}
+                      style={styles.thumbnail}
+                      resizeMode="cover"
+                      onError={(e) => console.log(`Image load error [${idx}] for URI: ${uri}`, e.nativeEvent.error)}
+                      onLoad={() => console.log(`Image loaded [${idx}]: ${uri}`)}
+                    />
                     <TouchableOpacity
                       style={styles['image-remove-btn']}
                       onPress={() => handleRemoveImage(idx)}

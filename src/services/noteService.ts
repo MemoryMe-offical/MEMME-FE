@@ -7,7 +7,7 @@ const transformNote = (data: any): Note => ({
   id: data.uid,
   title: data.title,
   content: data.content,
-  imageUris: data.imageUris,
+  imageUris: data.imageUris, // keys 그대로 사용
   videoUris: data.videoUris,
   files: data.files,
   url: data.url,

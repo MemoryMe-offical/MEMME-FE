@@ -3,11 +3,41 @@ import { View, Text, TouchableOpacity, Image, Linking, StyleSheet, Modal, FlatLi
 import { Note, OgData } from '../../types';
 import { LinkIcon } from '../common/Icons';
 import { fetchOgData } from '../../services/ogService';
+import { getUploadObjectUrl } from '../../services/uploadService';
 
 interface NoteCardProps {
   note: Note;
   onPress?: () => void;
 }
+
+const ImageThumbnail = ({ imageKey, onPress }: { imageKey: string; onPress: () => void }) => {
+  const [imageUrl, setImageUrl] = useState<string>('');
+
+  useEffect(() => {
+    getUploadObjectUrl(imageKey)
+      .then(url => setImageUrl(url))
+      .catch(() => console.log('Failed to load image URL for key:', imageKey));
+  }, [imageKey]);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles['image-thumbnail'],
+        pressed && styles['image-thumbnail-pressed'],
+      ]}>
+      {imageUrl ? (
+        <Image
+          source={{ uri: imageUrl }}
+          style={styles['image-thumbnail']}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={[styles['image-thumbnail'], { backgroundColor: '#EEF3FF' }]} />
+      )}
+    </Pressable>
+  );
+};
 
 const NoteCard = ({ note, onPress }: NoteCardProps) => {
   const [ogDataCache, setOgDataCache] = useState<Record<string, OgData>>({});
@@ -62,24 +92,29 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
             <View style={styles['section-row']}>
               <Text style={styles['section-label']}>이미지</Text>
               <View style={styles['images-preview']}>
-                {note.imageUris!.slice(0, 2).map((uri, idx) => (
-                  <Pressable
+                {note.imageUris!.slice(0, 2).map((key, idx) => (
+                  <ImageThumbnail
                     key={`${note.id}-img-${idx}`}
-                    onPress={() => openImageViewer(note.imageUris!)}
-                    style={({ pressed }) => [
-                      styles['image-thumbnail'],
-                      pressed && styles['image-thumbnail-pressed'],
-                    ]}>
-                    <Image
-                      source={{ uri }}
-                      style={styles['image-thumbnail']}
-                      resizeMode="cover"
-                    />
-                  </Pressable>
+                    imageKey={key}
+                    onPress={() => {
+                      // 모든 이미지 URL 미리 조회
+                      Promise.all(
+                        note.imageUris!.map(k => getUploadObjectUrl(k).catch(() => ''))
+                      ).then(urls => {
+                        openImageViewer(urls.filter(u => !!u));
+                      });
+                    }}
+                  />
                 ))}
                 {(note.imageUris!.length ?? 0) > 2 && (
                   <Pressable
-                    onPress={() => openImageViewer(note.imageUris!)}
+                    onPress={() => {
+                      Promise.all(
+                        note.imageUris!.map(k => getUploadObjectUrl(k).catch(() => ''))
+                      ).then(urls => {
+                        openImageViewer(urls.filter(u => !!u));
+                      });
+                    }}
                     style={({ pressed }) => [
                       styles['image-more'],
                       pressed && styles['image-more-pressed'],

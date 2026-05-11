@@ -63,7 +63,7 @@ export const fetchTimeline = async (query?: TimelineQuery): Promise<TimelineItem
         id: note.uid,
         title: note.title,
         content: note.content,
-        imageUris: note.imageUris,
+        imageUris: note.imageUris, // keys 그대로 사용
         videoUris: note.videoUris,
         files: note.files,
         url: note.url,

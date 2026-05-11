@@ -698,7 +698,10 @@ const MainScreen = () => {
         visible={sideMenuVisible}
         items={items}
         onClose={() => setSideMenuVisible(false)}
-        onSettings={() => {}}
+        onSettings={() => {
+          navigation.navigate('Settings');
+          setSideMenuVisible(false);
+        }}
         onBookmarkPress={handleBookmarkPress}
         isBookmarkFilterActive={filterBookmarkOnly}
         onBookmarkFilterToggle={(active) => {

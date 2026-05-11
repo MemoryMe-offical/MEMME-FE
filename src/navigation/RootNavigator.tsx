@@ -10,6 +10,7 @@ import TermsScreen from '../screens/Termsscreen';
 import BoardDetailScreen from '../screens/BoardDetailScreen';
 import NoteDetailScreen from '../screens/NoteDetailScreen';
 import MediaGalleryScreen from '../screens/MediaGalleryScreen';
+import SettingsScreen from '../screens/SettingsScreen';
 import DevicePairingScreen from '../screens/DevicePairingScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import { Board, Note, TimelineItem } from '../types';
@@ -38,6 +39,7 @@ export type RootStackParamList = {
         items: TimelineItem[];
         galleryType: 'images' | 'videos' | 'files' | 'links' | 'bookmarks';
     };
+    Settings: undefined;
     EncryptionTest: undefined;
     DevicePairing: undefined;
     ForgotPassword: undefined;
@@ -69,6 +71,9 @@ const RootNavigator = () => {
 
             {/* 미디어 갤러리 화면 */}
             <Stack.Screen name="MediaGallery" component={MediaGalleryScreen} />
+
+            {/* 설정 화면 */}
+            <Stack.Screen name="Settings" component={SettingsScreen} />
 
             <Stack.Screen name="DevicePairing" component={DevicePairingScreen} options={{ title: '기기 페어링' }} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: '비밀번호 찾기' }} />

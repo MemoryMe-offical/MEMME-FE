@@ -59,7 +59,12 @@ export const uploadImages = async (
     }
 
     const apiResponse: ApiResponse<ImageUploadResponse> = await response.json();
-    return apiResponse.data;
+    console.log('Raw image upload response:', apiResponse.data);
+    console.log('Raw URLs:', apiResponse.data.urls);
+    console.log('Keys:', apiResponse.data.keys);
+
+    // keys만 반환 (imageUris에는 keys를 저장)
+    return { keys: apiResponse.data.keys, urls: apiResponse.data.urls };
   } catch (error) {
     console.error('Failed to upload images:', error);
     throw error;
@@ -90,7 +95,13 @@ export const uploadVideo = async (fileUri: string): Promise<VideoUploadResponse>
     }
 
     const apiResponse: ApiResponse<VideoUploadResponse> = await response.json();
-    return apiResponse.data;
+    // URL이 상대 경로이면 절대 경로로 변환
+    const url = apiResponse.data.url.startsWith('http')
+      ? apiResponse.data.url
+      : apiResponse.data.url.startsWith('/')
+        ? `https://memme.o-r.kr${apiResponse.data.url}`
+        : `https://memme.o-r.kr/v1/upload/${apiResponse.data.url}`;
+    return { ...apiResponse.data, url };
   } catch (error) {
     console.error('Failed to upload video:', error);
     throw error;
@@ -121,7 +132,13 @@ export const uploadFile = async (fileUri: string): Promise<FileUploadResponse> =
     }
 
     const apiResponse: ApiResponse<FileUploadResponse> = await response.json();
-    return apiResponse.data;
+    // URL이 상대 경로이면 절대 경로로 변환
+    const url = apiResponse.data.url.startsWith('http')
+      ? apiResponse.data.url
+      : apiResponse.data.url.startsWith('/')
+        ? `https://memme.o-r.kr${apiResponse.data.url}`
+        : `https://memme.o-r.kr/v1/upload/${apiResponse.data.url}`;
+    return { ...apiResponse.data, url };
   } catch (error) {
     console.error('Failed to upload file:', error);
     throw error;
@@ -129,7 +146,28 @@ export const uploadFile = async (fileUri: string): Promise<FileUploadResponse> =
 };
 
 /**
- * S3 객체 조회
+ * S3 객체 접근 URL 조회 (presigned URL)
+ */
+export const getUploadObjectUrl = async (key: string): Promise<string> => {
+  try {
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/upload/object-url?key=${encodeURIComponent(key)}`, {
+      method: 'GET',
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const apiResponse: ApiResponse<{ url: string }> = await response.json();
+    return apiResponse.data.url;
+  } catch (error) {
+    console.error('Failed to get upload object URL:', error);
+    throw error;
+  }
+};
+
+/**
+ * S3 객체 조회 (레거시 - redirect API)
  */
 export const getUploadObject = async (key: string): Promise<any> => {
   try {
