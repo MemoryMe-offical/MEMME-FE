@@ -396,9 +396,6 @@ const MainScreen = () => {
     navigation.navigate('BoardDetail', {
       board,
       noteId,
-      onSave: (updated: Board) => {
-        setItems(prev => prev.map(item => item.id === updated.id ? updated : item));
-      },
     });
   };
 
@@ -406,9 +403,6 @@ const MainScreen = () => {
     if (item.type === 'board') {
       navigation.navigate('BoardDetail', {
         board: item as Board,
-        onSave: (updated: Board) => {
-          setItems(prev => prev.map(i => i.id === updated.id ? updated : i));
-        },
       });
     } else {
       const index = items.findIndex(i => i.id === item.id);
