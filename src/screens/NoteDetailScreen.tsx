@@ -339,8 +339,9 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           {/* 첨부 섹션 */}
           <View style={styles['section-divider']} />
 
-          {/* 이미지 */}
-          <View style={styles['subsection-header']}>
+          <View style={styles['attachments-container']}>
+            {/* 이미지 */}
+            <View style={styles['subsection-header']}>
             <Text style={styles['subsection-label']}>이미지</Text>
             <TouchableOpacity
               onPress={handleAddImage}
@@ -401,14 +402,15 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
               </TouchableOpacity>
             )}
           </View>
-          <View style={styles['link-section']}>
-            {editUrl && (
-              <OgPreviewCard
-                url={editUrl}
-                ogData={editOgData || { title: editUrl }}
-                onRemove={handleRemoveLink}
-              />
-            )}
+            <View style={styles['link-section']}>
+              {editUrl && (
+                <OgPreviewCard
+                  url={editUrl}
+                  ogData={editOgData || { title: editUrl }}
+                  onRemove={handleRemoveLink}
+                />
+              )}
+            </View>
           </View>
 
           <View style={{ height: 32 }} />
@@ -543,6 +545,12 @@ const styles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
     letterSpacing: 0.3,
     marginBottom: 14,
+  },
+  'attachments-container': {
+    backgroundColor: '#F7FAFF',
+    borderRadius: 12,
+    padding: 16,
+    gap: 16,
   },
   'subsection-header': {
     flexDirection: 'row',
