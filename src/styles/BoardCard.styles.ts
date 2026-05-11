@@ -41,9 +41,14 @@ export const boardCardStyles = StyleSheet.create({
     paddingVertical: 13,
   },
 
+  // 헤더 제목 터치 영역
+  'card-header-title-touch': {
+    flex: 1,
+    paddingVertical: 4,
+  },
+
   // 헤더 제목 텍스트
   'card-header-title': {
-    flex: 1,
     fontSize: 14,
     fontWeight: '700',
     color: '#FFFFFF',

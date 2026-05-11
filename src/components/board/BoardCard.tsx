@@ -34,18 +34,20 @@ const BoardCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardCardPro
   return (
     <View style={styles['card-row']}>
       <Text style={styles['card-time']}>{formatTime(item.createdAt)}</Text>
-      <TouchableOpacity
-        activeOpacity={0.97}
-        onPress={() => onPress?.(item)}
+      <View
         onLongPress={() => onContextMenu(item)}
-        delayLongPress={400}
         style={styles['card-wrapper']}>
 
         {/* 헤더 */}
         <View style={styles['card-header']}>
-          <Text style={styles['card-header-title']} numberOfLines={1}>
-            {item.title}
-          </Text>
+          <TouchableOpacity
+            style={styles['card-header-title-touch']}
+            onPress={() => onDetailPress(item)}
+            activeOpacity={0.7}>
+            <Text style={styles['card-header-title']} numberOfLines={1}>
+              {item.title}
+            </Text>
+          </TouchableOpacity>
           <View style={styles['card-header-actions']}>
             <TouchableOpacity onPress={() => onContextMenu(item)} hitSlop={8}>
               <MoreIcon color="#FFFFFF" size={20} />
@@ -93,10 +95,7 @@ const BoardCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardCardPro
                       <View key={note.id}>
                         <TouchableOpacity
                           style={styles['sub-accordion-header']}
-                          onPress={() => {
-                            toggleNote(note.id);
-                            onDetailPress(item, note.id);
-                          }}
+                          onPress={() => toggleNote(note.id)}
                           activeOpacity={0.7}>
                           <Text style={styles['sub-accordion-title']} numberOfLines={1}>
                             {note.title}
@@ -107,7 +106,9 @@ const BoardCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardCardPro
                         </TouchableOpacity>
 
                         {isNoteExpanded && !!note.content && (
-                          <View>
+                          <TouchableOpacity
+                            onPress={() => onDetailPress(item, note.id)}
+                            activeOpacity={0.7}>
                             <View style={styles['card-section-divider']} />
                             <View style={styles['card-section-row']}>
                               <Text style={styles['card-section-label']}>내용</Text>
@@ -115,7 +116,7 @@ const BoardCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardCardPro
                                 {note.content}
                               </Text>
                             </View>
-                          </View>
+                          </TouchableOpacity>
                         )}
 
                         {!isLast && <View style={styles['sub-accordion-divider']} />}
@@ -144,7 +145,7 @@ const BoardCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardCardPro
               )}
           </View>
         )}
-      </TouchableOpacity>
+      </View>
     </View>
   );
 };
