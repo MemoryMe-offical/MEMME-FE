@@ -170,8 +170,10 @@ const MainScreen = () => {
       });
       console.log('🔥 pendingLink 생성 완료:', link);
 
+      // ← 백엔드 응답과 무관하게 프론트에서 fetch한 ogData를 직접 사용
+      const linkWithOgData = { ...link, ogData };
       setPendingLinks(prev => {
-        const updated = [...prev, link];
+        const updated = [...prev, linkWithOgData];
         console.log('🔥 pendingLinks 업데이트:', updated);
         return updated;
       });
@@ -197,7 +199,24 @@ const MainScreen = () => {
     };
 
     loadTimeline();
-    pendingLinkService.loadPendingLinks().then(setPendingLinks);
+
+    // 기존 pending links 로드 + OG 데이터 미리 fetch
+    pendingLinkService.loadPendingLinks().then(async (links) => {
+      const linksWithOgData = await Promise.all(
+        links.map(async (link) => {
+          if (link.ogData) return link;
+          try {
+            console.log('🔥 로드된 링크의 OG 데이터 fetch:', link.url);
+            const ogData = await fetchOgData(link.url);
+            return { ...link, ogData };
+          } catch (error) {
+            console.error('🔥 OG 데이터 로드 실패:', link.url, error);
+            return link;
+          }
+        })
+      );
+      setPendingLinks(linksWithOgData);
+    });
   }, []);
 
   useEffect(() => {

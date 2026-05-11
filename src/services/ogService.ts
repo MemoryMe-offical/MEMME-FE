@@ -11,55 +11,59 @@ interface ApiResponse<T> {
 }
 
 /**
- * HTML에서 OG 메타태그 추출
+ * HTML 엔티티 디코딩 (과거 구현 기반)
  */
-const extractOgData = (html: string, url: string): OgData => {
-  const ogData: OgData = {};
+const decodeHtmlEntities = (str: string): string =>
+  str
+    .replace(/&quot;/gi, '"')
+    .replace(/&apos;/gi, "'")
+    .replace(/&#39;/gi, "'")
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&amp;/gi, '&')
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
 
-  // og:title
-  const titleMatch = html.match(/<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i);
-  if (titleMatch) {
-    ogData.title = titleMatch[1];
+/**
+ * HTML에서 OG 메타데이터 추출 (과거 구현 기반)
+ * - HTML 엔티티 디코딩 적용
+ * - 속성 순서 상관없이 매칭 (2가지 패턴)
+ */
+const extractOgDataFromHtml = (html: string, url: string): OgData => {
+  const getMeta = (prop: string): string => {
+    // 패턴 1: property 먼저, content 나중
+    const m1 = html.match(new RegExp(`<meta[^>]+property=["']og:${prop}["'][^>]+content=["']([^"']+)["']`, 'i'));
+    if (m1?.[1]) return decodeHtmlEntities(m1[1]);
+
+    // 패턴 2: content 먼저, property 나중
+    const m2 = html.match(new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:${prop}["']`, 'i'));
+    if (m2?.[1]) return decodeHtmlEntities(m2[1]);
+
+    return '';
+  };
+
+  const title = getMeta('title');
+  const description = getMeta('description');
+  const imageUrl = getMeta('image');
+  const siteName = getMeta('site_name');
+
+  // title 폴백: <title> 태그 사용
+  let finalTitle = title;
+  if (!finalTitle) {
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    finalTitle = titleMatch?.[1] ? decodeHtmlEntities(titleMatch[1]) : url;
   }
 
-  // og:description
-  const descMatch = html.match(/<meta\s+property=["']og:description["']\s+content=["']([^"']+)["']/i);
-  if (descMatch) {
-    ogData.description = descMatch[1];
-  }
-
-  // og:image
-  const imageMatch = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i);
-  if (imageMatch) {
-    ogData.imageUrl = imageMatch[1];
-  }
-
-  // og:site_name
-  const siteMatch = html.match(/<meta\s+property=["']og:site_name["']\s+content=["']([^"']+)["']/i);
-  if (siteMatch) {
-    ogData.siteName = siteMatch[1];
-  }
-
-  // 폴백: title이 없으면 <title> 태그 사용
-  if (!ogData.title) {
-    const pageTitleMatch = html.match(/<title>([^<]+)<\/title>/i);
-    if (pageTitleMatch) {
-      ogData.title = pageTitleMatch[1];
-    }
-  }
-
-  // 폴백: 모든 데이터가 없으면 URL 도메인 사용
-  if (!ogData.title) {
-    const domain = url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || url;
-    ogData.title = domain;
-  }
-
-  console.log('🔥 추출된 OG 데이터:', ogData);
-  return ogData;
+  return {
+    title: finalTitle,
+    description: description || undefined,
+    imageUrl: imageUrl || undefined,
+    siteName: siteName || undefined,
+  };
 };
 
 /**
- * URL에서 직접 OG 데이터 크롤링 (프론트엔드)
+ * URL에서 직접 OG 데이터 크롤링
  */
 const fetchOgDataDirect = async (url: string): Promise<OgData> => {
   try {
@@ -76,7 +80,7 @@ const fetchOgDataDirect = async (url: string): Promise<OgData> => {
     }
 
     const html = await response.text();
-    const ogData = extractOgData(html, url);
+    const ogData = extractOgDataFromHtml(html, url);
     console.log('🔥 직접 크롤링 완료:', ogData);
     return ogData;
   } catch (error) {
@@ -87,8 +91,8 @@ const fetchOgDataDirect = async (url: string): Promise<OgData> => {
 
 /**
  * URL의 Open Graph 메타데이터 조회
- * 1차: 직접 크롤링 시도
- * 2차: 백엔드 API 요청 (폴백)
+ * 1차: 직접 크롤링 (클라이언트)
+ * 2차: 백엔드 API (폴백)
  */
 export const fetchOgData = async (url: string): Promise<OgData> => {
   try {
@@ -98,13 +102,13 @@ export const fetchOgData = async (url: string): Promise<OgData> => {
     console.log('🔥 [1차] 직접 크롤링 시도...');
     const directData = await fetchOgDataDirect(url);
 
-    // 제목이 있으면 직접 크롤링 성공
+    // 제목이 있고 URL이 아니면 성공
     if (directData.title && directData.title !== url && !directData.title.includes('://')) {
       console.log('🔥 ✅ 직접 크롤링 성공!', directData);
       return directData;
     }
 
-    // 2차 시도: 백엔드 API로 요청
+    // 2차 시도: 백엔드 API
     console.log('🔥 [2차] 백엔드 API 요청...');
     const token = await AsyncStorage.getItem('accessToken');
     const endpoint = `${BASE_URL}/og?url=${encodeURIComponent(url)}`;
@@ -125,7 +129,6 @@ export const fetchOgData = async (url: string): Promise<OgData> => {
       }
     }
 
-    // 모두 실패하면 직접 크롤링 결과 사용
     console.log('🔥 ⚠️ 둘 다 실패, 직접 크롤링 결과 사용:', directData);
     return directData;
   } catch (error) {
