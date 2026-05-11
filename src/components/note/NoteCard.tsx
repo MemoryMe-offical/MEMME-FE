@@ -5,20 +5,34 @@ import { ImageIcon, LinkIcon } from '../common/Icons';
 
 interface NoteCardProps {
   note: Note;
-  onPress: () => void;
+  expanded?: boolean;
+  onToggleExpand?: (note: Note) => void;
+  onPress?: () => void;
 }
 
-const NoteCard = ({ note, onPress }: NoteCardProps) => {
+const NoteCard = ({ note, expanded = false, onToggleExpand, onPress }: NoteCardProps) => {
   const imageCount = note.imageUris?.length ?? 0;
   const fileCount = note.files?.length ?? 0;
   const hasLink = !!note.url;
   const hasAttachments = imageCount > 0 || fileCount > 0 || hasLink;
+  const isLongContent = note.content && note.content.length > 100;
+
+  const handlePress = () => {
+    if (isLongContent && onToggleExpand) {
+      onToggleExpand(note);
+    } else if (onPress) {
+      onPress();
+    }
+  };
 
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={styles.container} onPress={handlePress} activeOpacity={0.7}>
       <Text style={styles.title} numberOfLines={1}>{note.title}</Text>
       {!!note.content && (
-        <Text style={styles.preview} numberOfLines={2}>{note.content}</Text>
+        <Text style={styles.preview} numberOfLines={expanded ? 0 : 2}>
+          {note.content}
+          {!expanded && isLongContent && '...'}
+        </Text>
       )}
       {hasAttachments && (
         <View style={styles.attachments}>
