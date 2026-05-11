@@ -65,8 +65,10 @@ const LoginScreen = () => {
       if (parts.length !== 3) return null;
 
       const payload = parts[1];
-      const decoded = Buffer.from(payload, 'base64').toString('utf8');
+      // React Native에서는 atob() 사용
+      const decoded = atob(payload);
       const json = JSON.parse(decoded);
+      console.log('🔥 JWT 디코딩 성공:', json);
       return json.sub || null;
     } catch (error) {
       console.error('🔥 JWT 디코딩 실패:', error);
