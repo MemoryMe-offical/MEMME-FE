@@ -429,9 +429,11 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles['images-row']}>
-                {editImageUris.map((imageKey, idx) => (
-                  <ImagePreview key={imageKey} imageKey={imageKey} onRemove={() => handleRemoveImage(idx)} />
-                ))}
+                <>
+                  {editImageUris.map((imageKey, idx) => (
+                    <ImagePreview key={imageKey} imageKey={imageKey} onRemove={() => handleRemoveImage(idx)} />
+                  ))}
+                </>
               </ScrollView>
             ) : (
               <Text style={styles['empty-section-text']}>첨부된 이미지가 없습니다</Text>
