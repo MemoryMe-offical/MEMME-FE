@@ -1,4 +1,4 @@
-import { Note } from '../types';
+import { Note, MediaAttachment } from '../types';
 import { fetchWithAutoLogoutHandler } from '../utils/tokenUtils';
 
 const BASE_URL = 'https://memme.o-r.kr/v1';
@@ -14,6 +14,8 @@ const transformNote = (data: any): Note => ({
   images: data.images,
   videos: data.videos,
   files: data.files,
+  urls: data.urls,
+  ogDatas: data.ogDatas,
   url: data.url,
   ogData: data.ogData,
 });
@@ -27,9 +29,9 @@ export const createNote = async (
     title: string;
     content?: string;
     imageUris?: string[];
-    videoUris?: string[];
+    videos?: MediaAttachment[];
     files?: any[];
-    url?: string;
+    urls?: string[];
   }
 ): Promise<Note> => {
   try {
@@ -61,9 +63,9 @@ export const updateNote = async (
     title?: string;
     content?: string;
     imageUris?: string[];
-    videoUris?: string[];
+    videos?: MediaAttachment[];
     files?: any[];
-    url?: string;
+    urls?: string[];
   }
 ): Promise<Note> => {
   try {

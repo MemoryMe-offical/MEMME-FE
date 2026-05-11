@@ -60,7 +60,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
   }, [note.url, note.ogData, ogDataCache]);
 
   const hasImages = (note.imageUris?.length ?? 0) > 0;
-  const hasVideos = (note.videoUris?.length ?? 0) > 0;
+  const hasVideos = (note.videos?.length ?? 0) > 0;
   const hasLinks = (note.urls?.length ?? 0) > 0 || !!note.url;
   const hasFiles = (note.files?.length ?? 0) > 0;
 
