@@ -67,8 +67,6 @@ const extractOgDataFromHtml = (html: string, url: string): OgData => {
  */
 const fetchOgDataDirect = async (url: string): Promise<OgData> => {
   try {
-    console.log('🔥 직접 OG 크롤링 시작:', url);
-
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
@@ -81,10 +79,9 @@ const fetchOgDataDirect = async (url: string): Promise<OgData> => {
 
     const html = await response.text();
     const ogData = extractOgDataFromHtml(html, url);
-    console.log('🔥 직접 크롤링 완료:', ogData);
     return ogData;
   } catch (error) {
-    console.error('🔥 직접 크롤링 실패:', error);
+    console.error('Failed to fetch OG data directly:', error);
     return { title: url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || url };
   }
 };
@@ -96,20 +93,12 @@ const fetchOgDataDirect = async (url: string): Promise<OgData> => {
  */
 export const fetchOgData = async (url: string): Promise<OgData> => {
   try {
-    console.log('🔥 ===== OG 데이터 조회 시작 =====');
-
-    // 1차 시도: 프론트에서 직접 크롤링
-    console.log('🔥 [1차] 직접 크롤링 시도...');
     const directData = await fetchOgDataDirect(url);
 
-    // 제목이 있고 URL이 아니면 성공
     if (directData.title && directData.title !== url && !directData.title.includes('://')) {
-      console.log('🔥 ✅ 직접 크롤링 성공!', directData);
       return directData;
     }
 
-    // 2차 시도: 백엔드 API
-    console.log('🔥 [2차] 백엔드 API 요청...');
     const token = await AsyncStorage.getItem('accessToken');
     const endpoint = `${BASE_URL}/og?url=${encodeURIComponent(url)}`;
 
@@ -124,15 +113,13 @@ export const fetchOgData = async (url: string): Promise<OgData> => {
     if (response.ok) {
       const apiResponse: ApiResponse<OgData> = await response.json();
       if (apiResponse.data) {
-        console.log('🔥 ✅ 백엔드 API 성공!', apiResponse.data);
         return apiResponse.data;
       }
     }
 
-    console.log('🔥 ⚠️ 둘 다 실패, 직접 크롤링 결과 사용:', directData);
     return directData;
   } catch (error) {
-    console.error('🔥 OG 데이터 조회 최종 실패:', error);
+    console.error('Failed to fetch OG data:', error);
     return { title: url };
   }
 };

@@ -36,6 +36,7 @@ import * as pendingLinkService from '../services/pendingLinkService';
 import * as timelineService from '../services/timelineService';
 import * as memoService from '../services/memoService';
 import * as boardService from '../services/boardService';
+import * as noteService from '../services/noteService';
 
 const MainScreen = () => {
   const insets = useSafeAreaInsets();
@@ -57,10 +58,9 @@ const MainScreen = () => {
     const loadUserId = async () => {
       try {
         const id = await AsyncStorage.getItem('userId');
-        console.log('🔥 AsyncStorage에서 로드한 userId:', id);
         setUserId(id || '');
       } catch (error) {
-        console.error('🔥 userId 로드 실패:', error);
+        console.error('Failed to load userId:', error);
       }
     };
     loadUserId();
@@ -150,35 +150,21 @@ const MainScreen = () => {
       : NativeModules.SharedIntentModule;
 
   const handleSharedUrl = async (url: string) => {
-    console.log('🔥 handleSharedUrl 시작:', { url, userId });
-    if (!userId) {
-      console.warn('🔥 userId가 없어서 공유 링크 처리 불가');
-      return;
-    }
+    if (!userId) return;
 
     try {
-      console.log('🔥 OG 데이터 요청 중...');
       const ogData = await fetchOgData(url);
-      console.log('🔥 fetchOgData 완료:', ogData);
-
-      console.log('🔥 pendingLink 생성 중...');
       const link = await pendingLinkService.addPendingLink({
         userId,
         url,
         ogData,
         receivedAt: new Date().toISOString(),
       });
-      console.log('🔥 pendingLink 생성 완료:', link);
 
-      // ← 백엔드 응답과 무관하게 프론트에서 fetch한 ogData를 직접 사용
       const linkWithOgData = { ...link, ogData };
-      setPendingLinks(prev => {
-        const updated = [...prev, linkWithOgData];
-        console.log('🔥 pendingLinks 업데이트:', updated);
-        return updated;
-      });
+      setPendingLinks(prev => [...prev, linkWithOgData]);
     } catch (error) {
-      console.error('🔥 공유 링크 처리 실패:', error);
+      console.error('Failed to handle shared URL:', error);
     }
   };
 
@@ -206,11 +192,10 @@ const MainScreen = () => {
         links.map(async (link) => {
           if (link.ogData) return link;
           try {
-            console.log('🔥 로드된 링크의 OG 데이터 fetch:', link.url);
             const ogData = await fetchOgData(link.url);
             return { ...link, ogData };
           } catch (error) {
-            console.error('🔥 OG 데이터 로드 실패:', link.url, error);
+            console.error('Failed to load OG data:', link.url, error);
             return link;
           }
         })
@@ -220,45 +205,27 @@ const MainScreen = () => {
   }, []);
 
   useEffect(() => {
-    console.log('🔥 useEffect: userId 변경됨', { userId });
-
     const getShared = async () => {
       try {
-        console.log('🔥 getShared 시작, nativeShareModule:', nativeShareModule);
-
-        if (!nativeShareModule) {
-          console.error('🔥 nativeShareModule이 undefined입니다!');
-          return;
-        }
+        if (!nativeShareModule) return;
 
         const url = await nativeShareModule.getSharedURL();
-        console.log('🔥 getSharedURL 결과:', { url, type: typeof url });
-
         if (typeof url === 'string' && url.trim() && url.startsWith('http')) {
-          console.log('🔥 링크 처리 시작:', url);
           await handleSharedUrl(url);
-          const cleared = await nativeShareModule.clearSharedURL();
-          console.log('🔥 clearSharedURL 완료:', cleared);
-        } else {
-          console.log('🔥 유효한 링크가 없음:', { url, isString: typeof url === 'string' });
+          await nativeShareModule.clearSharedURL();
         }
       } catch (error) {
-        console.error('🔥 링크 공유 처리 실패:', error);
+        console.error('Failed to handle shared URL:', error);
       }
     };
 
     if (userId) {
-      console.log('🔥 getShared 호출 (마운트)');
       getShared();
     }
 
     const sub = AppState.addEventListener('change', state => {
-      console.log('🔥 AppState 변경:', state);
-      if (state === 'active') {
-        console.log('🔥 앱이 활성화됨, 공유 링크 확인');
-        if (userId) {
-          getShared();
-        }
+      if (state === 'active' && userId) {
+        getShared();
       }
     });
 
@@ -451,21 +418,26 @@ const MainScreen = () => {
     }
   };
 
-  const handlePendingLinkAddToBoard = (link: PendingLink, board: Board) => {
-    const newNote = {
-      id: `note_${Date.now()}`,
-      title: link.ogData?.title || link.url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || link.url,
-      url: link.url,
-      ogData: link.ogData,
-    };
-    const updatedBoard: Board = {
-      ...board,
-      notes: [...(board.notes ?? []), newNote],
-      updatedAt: new Date().toISOString(),
-    };
-    setItems(prev => prev.map(i => i.id === board.id ? updatedBoard : i));
-    pendingLinkService.removePendingLink(link.id);
-    setPendingLinks(prev => prev.filter(l => l.id !== link.id));
+  const handlePendingLinkAddToBoard = async (link: PendingLink, board: Board) => {
+    try {
+      const createdNote = await noteService.createNote(board.id, {
+        title: link.ogData?.title || link.url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || link.url,
+        url: link.url,
+      });
+
+      const updatedBoard: Board = {
+        ...board,
+        notes: [...(board.notes ?? []), createdNote],
+        updatedAt: new Date().toISOString(),
+      };
+      setItems(prev => prev.map(i => i.id === board.id ? updatedBoard : i));
+
+      await pendingLinkService.removePendingLink(link.id);
+      setPendingLinks(prev => prev.filter(l => l.id !== link.id));
+    } catch (error) {
+      console.error('Failed to add note to board:', error);
+      Alert.alert('오류', '노트 추가에 실패했습니다.');
+    }
   };
 
   const handlePendingLinkDismiss = (linkId: string) => {

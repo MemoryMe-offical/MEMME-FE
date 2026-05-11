@@ -22,8 +22,6 @@ export const addPendingLink = async (link: Omit<PendingLink, 'id'>): Promise<Pen
       ...(link.ogData && { ogData: link.ogData }),
     };
 
-    console.log('🔥 pendingLink 요청 payload:', payload);
-
     const response = await fetch(`${BASE_URL}/pending-links`, {
       method: 'POST',
       headers: {
@@ -38,14 +36,13 @@ export const addPendingLink = async (link: Omit<PendingLink, 'id'>): Promise<Pen
     }
 
     const apiResponse: ApiResponse<{ pendingLink: PendingLink }> = await response.json();
-    console.log('🔥 pendingLink 응답:', apiResponse.data.pendingLink);
 
     return {
       ...apiResponse.data.pendingLink,
       id: apiResponse.data.pendingLink.id || apiResponse.data.pendingLink.uid,
     };
   } catch (error) {
-    console.error('🔥 pendingLink 추가 실패:', error);
+    console.error('Failed to add pending link:', error);
     throw error;
   }
 };

@@ -65,15 +65,13 @@ const PendingLinksBottomSheet = ({
 
       for (const link of newUrls) {
         try {
-          console.log('🔥 OG 데이터 로드:', link.url);
           const ogData = await fetchOgData(link.url);
-          console.log('🔥 OG 데이터 로드 완료:', ogData);
           setOgDataCache(prev => ({
             ...prev,
             [link.url]: ogData,
           }));
         } catch (error) {
-          console.error('🔥 OG 데이터 로드 실패:', link.url, error);
+          console.error('Failed to load OG data:', link.url, error);
         }
       }
 
