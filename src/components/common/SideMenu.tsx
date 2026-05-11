@@ -497,15 +497,23 @@ const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress, isBook
                         <TouchableOpacity
                           key={`file-${idx}`}
                           style={styles['sideMenu-fileItem']}
-                          onPress={() => {
+                          onPress={async () => {
                             try {
                               let fileUrl = file.url;
                               if (!fileUrl.startsWith('http')) {
                                 fileUrl = `https://memme.o-r.kr${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
                               }
-                              Linking.openURL(fileUrl);
+                              console.log('🔗 Opening file:', fileUrl);
+
+                              if (await InAppBrowser.isAvailable()) {
+                                console.log('📱 Using InAppBrowser');
+                                await InAppBrowser.open(fileUrl);
+                              } else {
+                                console.log('🔗 Using Linking.openURL');
+                                Linking.openURL(fileUrl);
+                              }
                             } catch (error) {
-                              console.error('Failed to open file:', error);
+                              console.error('❌ Failed to open file:', error);
                             }
                           }}
                         >
