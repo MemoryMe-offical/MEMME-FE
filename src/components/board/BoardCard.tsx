@@ -84,42 +84,59 @@ const BoardCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardCardPro
         {isExpanded && (
           <View style={styles['card-inner-card']}>
             {hasNotes
-              ? item.notes!.slice(0, 3).map((note, idx) => {
-                  const isNoteExpanded = expandedNoteId === note.id;
-                  const isLast = idx === Math.min(item.notes!.length - 1, 2);
-                  return (
-                    <View key={note.id}>
-                      <TouchableOpacity
-                        style={styles['sub-accordion-header']}
-                        onPress={() => {
-                          toggleNote(note.id);
-                          onDetailPress(item, note.id);
-                        }}
-                        activeOpacity={0.7}>
-                        <Text style={styles['sub-accordion-title']} numberOfLines={1}>
-                          {note.title}
-                        </Text>
-                        {isNoteExpanded
-                          ? <ChevronUpIcon color="#555555" size={16} />
-                          : <ChevronDownIcon color="#555555" size={16} />}
-                      </TouchableOpacity>
+              ? (
+                <View>
+                  {item.notes!.slice(0, 3).map((note, idx) => {
+                    const isNoteExpanded = expandedNoteId === note.id;
+                    const isLast = idx === Math.min(item.notes!.length - 1, 2);
+                    return (
+                      <View key={note.id}>
+                        <TouchableOpacity
+                          style={styles['sub-accordion-header']}
+                          onPress={() => {
+                            toggleNote(note.id);
+                            onDetailPress(item, note.id);
+                          }}
+                          activeOpacity={0.7}>
+                          <Text style={styles['sub-accordion-title']} numberOfLines={1}>
+                            {note.title}
+                          </Text>
+                          {isNoteExpanded
+                            ? <ChevronUpIcon color="#555555" size={16} />
+                            : <ChevronDownIcon color="#555555" size={16} />}
+                        </TouchableOpacity>
 
-                      {isNoteExpanded && !!note.content && (
-                        <View>
-                          <View style={styles['card-section-divider']} />
-                          <View style={styles['card-section-row']}>
-                            <Text style={styles['card-section-label']}>내용</Text>
-                            <Text style={styles['card-content-text']} numberOfLines={3}>
-                              {note.content}
-                            </Text>
+                        {isNoteExpanded && !!note.content && (
+                          <View>
+                            <View style={styles['card-section-divider']} />
+                            <View style={styles['card-section-row']}>
+                              <Text style={styles['card-section-label']}>내용</Text>
+                              <Text style={styles['card-content-text']} numberOfLines={3}>
+                                {note.content}
+                              </Text>
+                            </View>
                           </View>
-                        </View>
-                      )}
+                        )}
 
-                      {!isLast && <View style={styles['sub-accordion-divider']} />}
-                    </View>
-                  );
-                })
+                        {!isLast && <View style={styles['sub-accordion-divider']} />}
+                      </View>
+                    );
+                  })}
+                  {item.notes!.length > 3 && (
+                    <>
+                      <View style={styles['sub-accordion-divider']} />
+                      <TouchableOpacity
+                        style={styles['more-notes-button']}
+                        onPress={() => onDetailPress(item)}
+                        activeOpacity={0.7}>
+                        <Text style={styles['more-notes-text']}>
+                          +{item.notes!.length - 3}개 더보기
+                        </Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
+              )
               : (
                 <View style={styles['card-empty-notes']}>
                   <Text style={styles['card-empty-notes-text']}>노트 없음</Text>

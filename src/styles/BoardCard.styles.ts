@@ -170,4 +170,18 @@ export const boardCardStyles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
     fontWeight: '500',
   },
+
+  // 더보기 버튼
+  'more-notes-button': {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+
+  'more-notes-text': {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#588DFF',
+    fontFamily: 'PretendardVariable',
+  },
 });
