@@ -306,7 +306,6 @@ export const boardCardStyles = StyleSheet.create({
   'card-files-preview': {
     gap: 8,
     paddingHorizontal: 0,
-    paddingVertical: 12,
     marginTop: 0,
   },
 
