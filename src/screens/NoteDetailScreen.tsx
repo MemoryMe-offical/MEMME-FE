@@ -450,15 +450,17 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           </View>
           <View style={styles['files-section']}>
             {editFiles.length > 0 ? (
-              editFiles.map(file => (
-                <View key={file.id} style={styles['file-row']}>
-                  <Text style={styles['file-icon']}>📄</Text>
-                  <Text style={styles['file-name']} numberOfLines={1}>{file.name}</Text>
-                  <TouchableOpacity onPress={() => handleRemoveFile(file.id)} hitSlop={8}>
-                    <CloseIcon color="#9DAFC8" size={16} />
-                  </TouchableOpacity>
-                </View>
-              ))
+              <>
+                {editFiles.map(file => (
+                  <View key={file.id} style={styles['file-row']}>
+                    <Text style={styles['file-icon']}>📄</Text>
+                    <Text style={styles['file-name']} numberOfLines={1}>{file.name}</Text>
+                    <TouchableOpacity onPress={() => handleRemoveFile(file.id)} hitSlop={8}>
+                      <CloseIcon color="#9DAFC8" size={16} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </>
             ) : (
               <Text style={styles['empty-section-text']}>첨부된 파일이 없습니다</Text>
             )}
