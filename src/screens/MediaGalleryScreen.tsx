@@ -235,15 +235,14 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
   );
 
   const renderFileItem = ({ item }: { item: MediaItem }) => {
-    const handleOpenFile = async () => {
+    const handleOpenFile = () => {
       try {
         if (item.file?.url) {
-          if (item.file.url.startsWith('http')) {
-            Linking.openURL(item.file.url);
-          } else {
-            const presignedUrl = await getUploadObject(item.file.url.split('key=')[1]);
-            Linking.openURL(presignedUrl.url || presignedUrl);
+          let fileUrl = item.file.url;
+          if (!fileUrl.startsWith('http')) {
+            fileUrl = `https://memme.o-r.kr${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
           }
+          Linking.openURL(fileUrl);
         }
       } catch (error) {
         console.error('Failed to open file:', error);
