@@ -158,7 +158,10 @@ const MainScreen = () => {
   useEffect(() => {
     const loadTimeline = async () => {
       try {
-        const timelineItems = await timelineService.fetchTimeline();
+        const timelineItems = await timelineService.fetchTimeline({
+          sort: 'createdAt',
+          order: 'asc',
+        });
         setItems(timelineItems);
       } catch (error) {
         console.error('Failed to load timeline:', error);
