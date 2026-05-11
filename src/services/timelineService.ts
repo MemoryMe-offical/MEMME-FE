@@ -37,30 +37,48 @@ const transformTimelineItem = (item: any): TimelineItem => {
     };
   }
 
-  return {
+  const board = {
     ...base,
     type: 'board' as const,
     title: item.title,
     description: item.description,
     tags: item.tags,
     updatedAt: item.updatedAt,
-    notes: item.notes?.map((note: any) => ({
-      id: note.uid,
-      title: note.title,
-      content: note.content,
-      imageUris: note.imageUris,
-      videoUris: note.videoUris,
-      imageKeys: note.imageKeys,
-      videoKeys: note.videoKeys,
-      images: note.images,
-      videos: note.videos,
-      files: note.files,
-      urls: note.urls,
-      ogDatas: note.ogDatas,
-      url: note.url,
-      ogData: note.ogData,
-    })),
+    notes: item.notes?.map((note: any) => {
+      // videoUris가 있지만 videos가 없으면 videoUris를 기반으로 videos 생성
+      const videos = note.videos || (note.videoUris?.map((uri: string, idx: number) => ({
+        uid: `video-${idx}`,
+        url: uri,
+        key: note.videoKeys?.[idx] || '',
+        mimeType: 'video/mp4',
+        size: 0,
+      })) ?? []);
+
+      // urls가 없지만 url이 있으면 urls 배열 생성
+      const urls = note.urls || (note.url ? [note.url] : []);
+      const ogDatas = note.ogDatas || (note.ogData ? [note.ogData] : []);
+
+      const transformedNote = {
+        id: note.uid,
+        title: note.title,
+        content: note.content,
+        imageUris: note.imageUris,
+        videoUris: note.videoUris,
+        imageKeys: note.imageKeys,
+        videoKeys: note.videoKeys,
+        images: note.images,
+        videos: videos,
+        files: note.files,
+        urls: urls,
+        ogDatas: ogDatas,
+        url: note.url,
+        ogData: note.ogData,
+      };
+      console.log('Transformed note:', transformedNote);
+      return transformedNote;
+    }),
   };
+  return board;
 };
 
 /**
