@@ -35,6 +35,7 @@ interface MediaItem {
   board?: Board;
   file?: FileAttachment;
   ogData?: any;
+  timelineItem?: any;
 }
 
 const MediaGalleryScreen = ({ route, navigation }: Props) => {
@@ -62,6 +63,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
             type: item.type === 'board' ? 'link' : 'image',
             createdAt: item.createdAt,
             board: item.type === 'board' ? item : undefined,
+            timelineItem: item,
           });
         });
     } else {
@@ -184,6 +186,9 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
       onPress={() => {
         if (item.board) {
           navigation.navigate('BoardDetail', { board: item.board });
+        } else if (item.timelineItem && route.params.onBookmarkPress) {
+          route.params.onBookmarkPress(item.timelineItem);
+          navigation.goBack();
         }
       }}
     >

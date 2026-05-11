@@ -39,6 +39,7 @@ export type RootStackParamList = {
     MediaGallery: {
         items: TimelineItem[];
         galleryType: 'images' | 'videos' | 'files' | 'links' | 'bookmarks';
+        onBookmarkPress?: (item: TimelineItem) => void;
     };
     EncryptionTest: undefined;
     DevicePairing: undefined;

@@ -699,6 +699,7 @@ const MainScreen = () => {
           navigation.navigate('MediaGallery', {
             items,
             galleryType,
+            onBookmarkPress: handleBookmarkPress,
           });
           setSideMenuVisible(false);
         }}
