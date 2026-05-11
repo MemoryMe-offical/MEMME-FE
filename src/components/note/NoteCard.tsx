@@ -58,7 +58,8 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
   }, [note.url, note.ogData, ogDataCache]);
 
   const hasImages = (note.imageUris?.length ?? 0) > 0;
-  const hasLink = !!note.url;
+  const hasVideos = (note.videoUris?.length ?? 0) > 0;
+  const hasLinks = (note.urls?.length ?? 0) > 0 || !!note.url;
   const hasFiles = (note.files?.length ?? 0) > 0;
 
   return (
@@ -109,6 +110,29 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
           </>
         )}
 
+        {hasVideos && (
+          <>
+            <View style={styles['section-divider']} />
+            <View style={styles['section-row']}>
+              <Text style={styles['section-label']}>동영상</Text>
+              <View style={styles['videos-preview']}>
+                <>
+                  {note.videoUris!.slice(0, 2).map((videoUrl) => (
+                    <View key={videoUrl} style={styles['video-thumbnail']}>
+                      <Text style={styles['video-icon']}>🎬</Text>
+                    </View>
+                  ))}
+                </>
+                {(note.videoUris!.length ?? 0) > 2 && (
+                  <Text style={styles['video-more']}>
+                    +{note.videoUris!.length - 2}개
+                  </Text>
+                )}
+              </View>
+            </View>
+          </>
+        )}
+
         {hasFiles && (
           <>
             <View style={styles['section-divider']} />
@@ -142,26 +166,31 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
           </>
         )}
 
-        {hasLink && (() => {
-          const ogData = note.ogData ?? ogDataCache[note.url!];
-          const displayDomain = note.url!.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || note.url!;
+        {hasLinks && (() => {
+          const urlsToShow = note.urls && note.urls.length > 0 ? note.urls : (note.url ? [note.url] : []);
+          const ogDatasToShow = note.ogDatas && note.ogDatas.length > 0 ? note.ogDatas : (note.ogData ? [note.ogData] : []);
 
           return (
             <>
               <View style={styles['section-divider']} />
               <View style={styles['section-row']}>
-                <Text style={styles['section-label']}>링크</Text>
+                <View style={styles['link-header']}>
+                  <Text style={styles['section-label']}>링크</Text>
+                  {urlsToShow.length > 2 && (
+                    <Text style={styles['link-count']}>+{urlsToShow.length - 1}</Text>
+                  )}
+                </View>
                 <TouchableOpacity
                   style={styles['link-card']}
                   onPress={() => {
-                    Linking.openURL(note.url!).catch(() => {
-                      console.error('Failed to open URL:', note.url);
+                    Linking.openURL(urlsToShow[0]).catch(() => {
+                      console.error('Failed to open URL:', urlsToShow[0]);
                     });
                   }}
                   activeOpacity={0.7}>
-                  {ogData?.imageUrl ? (
+                  {ogDatasToShow[0]?.imageUrl ? (
                     <Image
-                      source={{ uri: ogData.imageUrl }}
+                      source={{ uri: ogDatasToShow[0].imageUrl }}
                       style={styles['link-image']}
                       resizeMode="cover"
                     />
@@ -172,14 +201,14 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                   )}
                   <View style={styles['link-info']}>
                     <Text style={styles['link-domain']} numberOfLines={1}>
-                      {ogData?.siteName || displayDomain}
+                      {ogDatasToShow[0]?.siteName || (urlsToShow[0].match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || urlsToShow[0])}
                     </Text>
                     <Text style={styles['link-title']} numberOfLines={2}>
-                      {ogData?.title || '링크'}
+                      {ogDatasToShow[0]?.title || '링크'}
                     </Text>
-                    {!!ogData?.description && (
+                    {!!ogDatasToShow[0]?.description && (
                       <Text style={styles['link-desc']} numberOfLines={1}>
-                        {ogData.description}
+                        {ogDatasToShow[0].description}
                       </Text>
                     )}
                   </View>
@@ -313,6 +342,38 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     color: '#588DFF',
+    fontFamily: 'PretendardVariable',
+  },
+  'videos-preview': {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  'video-thumbnail': {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+    backgroundColor: '#EEF3FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  'video-icon': {
+    fontSize: 20,
+  },
+  'video-more': {
+    fontSize: 11,
+    color: '#AABBCC',
+    fontFamily: 'PretendardVariable',
+    paddingHorizontal: 0,
+  },
+  'link-header': {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  'link-count': {
+    fontSize: 11,
+    color: '#AABBCC',
     fontFamily: 'PretendardVariable',
   },
   'link-card': {

@@ -59,6 +59,9 @@ export interface Note {
   images?: MediaAttachment[];
   videos?: MediaAttachment[];
   files?: FileAttachment[];
+  urls?: string[];
+  ogDatas?: OgData[];
+  // 레거시 지원 (단일 링크)
   url?: string;
   ogData?: OgData;
 }
