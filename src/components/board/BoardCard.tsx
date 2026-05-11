@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { Board } from '../../types';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, Image, Linking, Modal, FlatList, Dimensions, StyleSheet } from 'react-native';
+import { Board, OgData } from '../../types';
 import { boardCardStyles as styles } from '../../styles/BoardCard.styles';
-import { ChevronDownIcon, ChevronUpIcon, MoreIcon } from '../common/Icons';
+import { ChevronDownIcon, ChevronUpIcon, MoreIcon, LinkIcon } from '../common/Icons';
+import { fetchOgData } from '../../services/ogService';
 
 const formatTime = (isoString: string): string => {
   const date = new Date(isoString);
@@ -26,10 +27,48 @@ const BoardCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardCardPro
   const [expandedNoteId, setExpandedNoteId] = useState<string | null>(
     hasNotes ? item.notes![0].id : null,
   );
+  const [ogDataCache, setOgDataCache] = useState<Record<string, OgData>>({});
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const [imageViewerImages, setImageViewerImages] = useState<string[]>([]);
+  const [imageViewerIndex, setImageViewerIndex] = useState(0);
+  const flatListRef = useRef<FlatList>(null);
 
   const toggleNote = (noteId: string) => {
     setExpandedNoteId(prev => (prev === noteId ? null : noteId));
   };
+
+  const openImageViewer = (images: string[]) => {
+    setImageViewerImages(images);
+    setImageViewerIndex(0);
+    setImageViewerVisible(true);
+  };
+
+  // OG 데이터 로드
+  useEffect(() => {
+    const loadOgData = async () => {
+      if (!hasNotes) return;
+
+      const notesNeedingOgData = item.notes!.filter(
+        note => note.url && !note.ogData && !ogDataCache[note.url]
+      );
+
+      if (notesNeedingOgData.length === 0) return;
+
+      for (const note of notesNeedingOgData) {
+        try {
+          const ogData = await fetchOgData(note.url!);
+          setOgDataCache(prev => ({
+            ...prev,
+            [note.url!]: ogData,
+          }));
+        } catch (error) {
+          console.error('Failed to load OG data for note:', note.url, error);
+        }
+      }
+    };
+
+    loadOgData();
+  }, [item.id, hasNotes, item.notes, ogDataCache]);
 
   return (
     <View style={styles['card-row']}>
@@ -92,7 +131,7 @@ const BoardCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardCardPro
                     const isNoteExpanded = expandedNoteId === note.id;
                     const isLast = idx === Math.min(item.notes!.length - 1, 2);
                     return (
-                      <View key={note.id}>
+                      <View key={note.id} style={styles['note-card-wrapper']}>
                         <TouchableOpacity
                           style={styles['sub-accordion-header']}
                           onPress={() => toggleNote(note.id)}
@@ -105,36 +144,162 @@ const BoardCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardCardPro
                             : <ChevronDownIcon color="#555555" size={16} />}
                         </TouchableOpacity>
 
-                        {isNoteExpanded && !!note.content && (
+                        {isNoteExpanded && (
                           <TouchableOpacity
                             onPress={() => onDetailPress(item, note.id)}
                             activeOpacity={0.7}>
-                            <View style={styles['card-section-divider']} />
-                            <View style={styles['card-section-row']}>
-                              <Text style={styles['card-section-label']}>내용</Text>
-                              <Text style={styles['card-content-text']} numberOfLines={3}>
-                                {note.content}
-                              </Text>
-                            </View>
+                            {!!note.content && (
+                              <View style={styles['card-section-row']}>
+                                <Text style={styles['card-section-label']}>내용</Text>
+                                <Text style={styles['card-content-text']} numberOfLines={3}>
+                                  {note.content}
+                                </Text>
+                              </View>
+                            )}
+                            {((note.imageUris?.length ?? 0) > 0 || note.url || (note.files?.length ?? 0) > 0) && (
+                              <>
+                                <View style={styles['card-attachments-container']}>
+                                  {(note.imageUris?.length ?? 0) > 0 && (
+                                    <>
+                                      <View style={styles['card-section-divider']} />
+                                      <View style={styles['card-section-row']}>
+                                        <Text style={styles['card-section-label']}>이미지</Text>
+                                      </View>
+                                      <TouchableOpacity
+                                        onPress={() => openImageViewer(note.imageUris!)}
+                                        activeOpacity={0.7}>
+                                        <View style={styles['card-images-preview']}>
+                                          {note.imageUris!.slice(0, 2).map((uri, idx) => (
+                                            <Image
+                                              key={`${note.id}-img-${idx}`}
+                                              source={{ uri }}
+                                              style={styles['card-image-thumbnail']}
+                                              resizeMode="cover"
+                                            />
+                                          ))}
+                                          {(note.imageUris!.length ?? 0) > 2 && (
+                                            <View style={styles['card-image-more']}>
+                                              <Text style={styles['card-image-more-text']}>
+                                                +{note.imageUris!.length - 2}
+                                              </Text>
+                                            </View>
+                                          )}
+                                        </View>
+                                      </TouchableOpacity>
+                                    </>
+                                  )}
+                                  {note.url && (() => {
+                                    const ogData = note.ogData ?? ogDataCache[note.url];
+                                    const displayDomain = note.url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || note.url;
+
+                                    return (
+                                      <>
+                                        <View style={styles['card-section-divider']} />
+                                        <View style={styles['card-section-row']}>
+                                          <Text style={styles['card-section-label']}>링크</Text>
+                                        </View>
+                                        <TouchableOpacity
+                                          style={styles['card-link-card']}
+                                          onPress={() => {
+                                            Linking.openURL(note.url!).catch(() => {
+                                              console.error('Failed to open URL:', note.url);
+                                            });
+                                          }}
+                                          activeOpacity={0.7}>
+                                          {ogData?.imageUrl ? (
+                                            <Image
+                                              source={{ uri: ogData.imageUrl }}
+                                              style={styles['card-link-image']}
+                                              resizeMode="cover"
+                                            />
+                                          ) : (
+                                            <View style={styles['card-link-image-placeholder']}>
+                                              <LinkIcon color="#AABBCC" size={20} />
+                                            </View>
+                                          )}
+                                          <View style={styles['card-link-info']}>
+                                            <Text style={styles['card-link-domain']} numberOfLines={1}>
+                                              {ogData?.siteName || displayDomain}
+                                            </Text>
+                                            <Text style={styles['card-link-title']} numberOfLines={2}>
+                                              {ogData?.title || '링크'}
+                                            </Text>
+                                            {!!ogData?.description && (
+                                              <Text style={styles['card-link-desc']} numberOfLines={1}>
+                                                {ogData.description}
+                                              </Text>
+                                            )}
+                                          </View>
+                                        </TouchableOpacity>
+                                      </>
+                                    );
+                                  })()}
+                                  {(note.files?.length ?? 0) > 0 && (
+                                    <>
+                                      <View style={styles['card-section-divider']} />
+                                      <View style={styles['card-section-row']}>
+                                        <Text style={styles['card-section-label']}>파일</Text>
+                                      </View>
+                                      <View style={styles['card-files-preview']}>
+                                        {note.files!.slice(0, 2).map((file, idx) => (
+                                          <TouchableOpacity
+                                            key={`${note.id}-file-${idx}`}
+                                            style={styles['card-file-item']}
+                                            onPress={() => {
+                                              const fileUrl = typeof file === 'string' ? file : file.url;
+                                              Linking.openURL(fileUrl).catch(() => {
+                                                console.error('Failed to open file:', fileUrl);
+                                              });
+                                            }}
+                                            activeOpacity={0.7}>
+                                            <Text style={styles['card-file-name']} numberOfLines={1}>
+                                              {typeof file === 'string' ? file.split('/').pop() || file : file.name || 'file'}
+                                            </Text>
+                                          </TouchableOpacity>
+                                        ))}
+                                        {(note.files!.length ?? 0) > 2 && (
+                                          <Text style={styles['card-file-more']}>
+                                            +{note.files!.length - 2}개
+                                          </Text>
+                                        )}
+                                      </View>
+                                    </>
+                                  )}
+                                  {(() => {
+                                    const hasExtraImages = (note.imageUris?.length ?? 0) > 2;
+                                    const hasExtraFiles = (note.files?.length ?? 0) > 2;
+                                    if (hasExtraImages || hasExtraFiles) {
+                                      return (
+                                        <View style={styles['card-more-content-badge']}>
+                                          <Text style={styles['card-more-content-text']}>
+                                            {hasExtraImages && hasExtraFiles
+                                              ? '더 많은 이미지와 파일이 있습니다'
+                                              : hasExtraImages
+                                                ? '더 많은 이미지가 있습니다'
+                                                : '더 많은 파일이 있습니다'}
+                                          </Text>
+                                        </View>
+                                      );
+                                    }
+                                    return null;
+                                  })()}
+                                </View>
+                              </>
+                            )}
                           </TouchableOpacity>
                         )}
-
-                        {!isLast && <View style={styles['sub-accordion-divider']} />}
                       </View>
                     );
                   })}
                   {item.notes!.length > 3 && (
-                    <>
-                      <View style={styles['sub-accordion-divider']} />
-                      <TouchableOpacity
-                        style={styles['more-notes-button']}
-                        onPress={() => onDetailPress(item)}
-                        activeOpacity={0.7}>
-                        <Text style={styles['more-notes-text']}>
-                          +{item.notes!.length - 3}개 더보기
-                        </Text>
-                      </TouchableOpacity>
-                    </>
+                    <TouchableOpacity
+                      style={styles['more-notes-button']}
+                      onPress={() => onDetailPress(item)}
+                      activeOpacity={0.7}>
+                      <Text style={styles['more-notes-text']}>
+                        +{item.notes!.length - 3}개 더보기
+                      </Text>
+                    </TouchableOpacity>
                   )}
                 </View>
               )
@@ -146,8 +311,114 @@ const BoardCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardCardPro
           </View>
         )}
       </View>
+
+      {/* 이미지 뷰어 모달 */}
+      <Modal
+        visible={imageViewerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setImageViewerVisible(false)}>
+        <View style={imageViewerStyles.container}>
+          <TouchableOpacity
+            style={imageViewerStyles.closeButton}
+            onPress={() => setImageViewerVisible(false)}>
+            <Text style={imageViewerStyles.closeText}>✕</Text>
+          </TouchableOpacity>
+
+          <FlatList
+            ref={flatListRef}
+            data={imageViewerImages}
+            keyExtractor={(_, idx) => `image-${idx}`}
+            renderItem={({ item }) => (
+              <View style={imageViewerStyles.slide}>
+                <Image
+                  source={{ uri: item }}
+                  style={imageViewerStyles.image}
+                  resizeMode="contain"
+                />
+              </View>
+            )}
+            horizontal
+            pagingEnabled
+            scrollEventThrottle={16}
+            onMomentumScrollEnd={(event) => {
+              const index = Math.round(
+                event.nativeEvent.contentOffset.x / Dimensions.get('window').width
+              );
+              setImageViewerIndex(index);
+            }}
+            scrollIndicatorInsets={{ right: 1 }}
+            showsHorizontalScrollIndicator={false}
+          />
+
+          {imageViewerImages.length > 1 && (
+            <View style={imageViewerStyles.indicatorContainer}>
+              {imageViewerImages.map((_, idx) => (
+                <View
+                  key={idx}
+                  style={[
+                    imageViewerStyles.indicator,
+                    idx === imageViewerIndex && imageViewerStyles.indicatorActive,
+                  ]}
+                />
+              ))}
+            </View>
+          )}
+        </View>
+      </Modal>
     </View>
   );
 };
+
+const imageViewerStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#000000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    zIndex: 10,
+    padding: 8,
+  },
+  closeText: {
+    fontSize: 28,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  slide: {
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').height,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  indicatorContainer: {
+    position: 'absolute',
+    bottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  indicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+  },
+  indicatorActive: {
+    backgroundColor: '#FFFFFF',
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+});
 
 export default BoardCard;
