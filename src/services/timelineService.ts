@@ -55,6 +55,8 @@ const transformTimelineItem = (item: any): TimelineItem => {
       images: note.images,
       videos: note.videos,
       files: note.files,
+      urls: note.urls,
+      ogDatas: note.ogDatas,
       url: note.url,
       ogData: note.ogData,
     })),
