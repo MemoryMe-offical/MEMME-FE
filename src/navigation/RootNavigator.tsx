@@ -25,7 +25,6 @@ export type RootStackParamList = {
     BoardDetail: {
         board: Board;
         noteId?: string;
-        onSave?: (updated: Board) => void;
         startEditing?: boolean;
     };
     NoteDetail: {

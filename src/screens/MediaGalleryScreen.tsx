@@ -235,25 +235,17 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
   );
 
   const renderFileItem = ({ item }: { item: MediaItem }) => {
-    const handleOpenFile = async () => {
+    const handleOpenFile = () => {
       try {
         if (item.file?.url) {
           let fileUrl = item.file.url;
           if (!fileUrl.startsWith('http')) {
             fileUrl = `https://memme.o-r.kr${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
           }
-          console.log('🔗 Opening file:', fileUrl);
-
-          if (await InAppBrowser.isAvailable()) {
-            console.log('📱 Using InAppBrowser');
-            await InAppBrowser.open(fileUrl);
-          } else {
-            console.log('🔗 Using Linking.openURL');
-            Linking.openURL(fileUrl);
-          }
+          Linking.openURL(fileUrl);
         }
       } catch (error) {
-        console.error('❌ Failed to open file:', error);
+        console.error('Failed to open file:', error);
       }
     };
 

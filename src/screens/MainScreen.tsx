@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   FlatList,
@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Board, Memo, PendingLink, TimelineItem } from '../types';
 import ChatMessageItem from '../components/chat/ChatMessageItem';
@@ -168,22 +168,22 @@ const MainScreen = () => {
     }
   };
 
-  useEffect(() => {
-    const loadTimeline = async () => {
-      try {
-        const timelineItems = await timelineService.fetchTimeline({
-          sort: 'createdAt',
-          order: 'asc',
-        });
-        setItems(timelineItems);
-      } catch (error) {
-        console.error('Failed to load timeline:', error);
-        setItems([]);
-      } finally {
-        setLoaded(true);
-      }
-    };
+  const loadTimeline = useCallback(async () => {
+    try {
+      const timelineItems = await timelineService.fetchTimeline({
+        sort: 'createdAt',
+        order: 'asc',
+      });
+      setItems(timelineItems);
+    } catch (error) {
+      console.error('Failed to load timeline:', error);
+      setItems([]);
+    } finally {
+      setLoaded(true);
+    }
+  }, []);
 
+  useEffect(() => {
     loadTimeline();
 
     // 기존 pending links 로드 + OG 데이터 미리 fetch
@@ -202,7 +202,13 @@ const MainScreen = () => {
       );
       setPendingLinks(linksWithOgData);
     });
-  }, []);
+  }, [loadTimeline]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadTimeline();
+    }, [loadTimeline])
+  );
 
   useEffect(() => {
     const getShared = async () => {
@@ -380,9 +386,6 @@ const MainScreen = () => {
     navigation.navigate('BoardDetail', {
       board,
       noteId,
-      onSave: (updated: Board) => {
-        setItems(prev => prev.map(item => item.id === updated.id ? updated : item));
-      },
     });
   };
 
@@ -390,9 +393,6 @@ const MainScreen = () => {
     if (item.type === 'board') {
       navigation.navigate('BoardDetail', {
         board: item as Board,
-        onSave: (updated: Board) => {
-          setItems(prev => prev.map(i => i.id === updated.id ? updated : i));
-        },
       });
     } else {
       const index = items.findIndex(i => i.id === item.id);
