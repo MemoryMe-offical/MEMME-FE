@@ -221,7 +221,6 @@ export const boardCardStyles = StyleSheet.create({
     gap: 8,
     alignItems: 'center',
     paddingHorizontal: 0,
-    paddingVertical: 12,
     marginTop: 0,
   },
 

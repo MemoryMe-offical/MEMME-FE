@@ -39,7 +39,6 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
   const [board, setBoard] = useState<Board>(initialBoard);
   const [isEditing, setIsEditing] = useState(startEditing ?? false);
   const [isSaving, setIsSaving] = useState(false);
-  const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
 
   // 편집 임시 상태
   const [editTitle, setEditTitle] = useState(initialBoard.title);
@@ -300,8 +299,6 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
                 <NoteCard
                   key={note.id}
                   note={note}
-                  expanded={expandedNoteId === note.id}
-                  onToggleExpand={(n) => setExpandedNoteId(expandedNoteId === n.id ? null : n.id)}
                   onPress={() => handleNotePress(note)}
                 />
               )))
