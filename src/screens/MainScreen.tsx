@@ -36,12 +36,10 @@ import * as timelineService from '../services/timelineService';
 import * as memoService from '../services/memoService';
 import * as boardService from '../services/boardService';
 
-// TEMP_USER_ID는 로그인된 사용자의 userId로 교체 예정
-const TEMP_USER_ID = '24';
-
 const MainScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Main'>>();
+  const [userId, setUserId] = useState<string>('');
   const [items, setItems] = useState<TimelineItem[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [inputText, setInputText] = useState('');
@@ -51,6 +49,15 @@ const MainScreen = () => {
   const [androidKeyboardHeight, setAndroidKeyboardHeight] = useState(0);
   const flatListRef = useRef<FlatList<TimelineItem>>(null);
   const shouldScrollToEnd = useRef(false);
+
+  // 로그인한 사용자 ID 로드
+  useEffect(() => {
+    const loadUserId = async () => {
+      const id = await AsyncStorage.getItem('userId');
+      setUserId(id || '');
+    };
+    loadUserId();
+  }, []);
 
   // 인박스 (공유된 링크 임시 저장)
   const [pendingLinks, setPendingLinks] = useState<PendingLink[]>([]);
@@ -135,11 +142,11 @@ const MainScreen = () => {
       ? NativeModules.SharedDefaultsModule
       : NativeModules.SharedIntentModule;
 
-  // TODO(P3): addPendingLink를 pendingLinkService + API 호출로 교체
   const handleSharedUrl = async (url: string) => {
+    if (!userId) return;
     const ogData = await fetchOgData(url);
     const link = await pendingLinkService.addPendingLink({
-      userId: TEMP_USER_ID,
+      userId,
       url,
       ogData,
       receivedAt: new Date().toISOString(),
