@@ -41,15 +41,22 @@ const ImagePreview = ({ imageKey, onRemove }: { imageKey: string; onRemove: () =
 
   useEffect(() => {
     setLoading(true);
-    getUploadObjectUrl(imageKey)
-      .then(url => {
-        setImageUrl(url);
-        setLoading(false);
-      })
-      .catch(() => {
-        console.log('Failed to load image URL for key:', imageKey);
-        setLoading(false);
-      });
+    const isPresignedUrl = imageKey.startsWith('http');
+
+    if (isPresignedUrl) {
+      setImageUrl(imageKey);
+      setLoading(false);
+    } else {
+      getUploadObjectUrl(imageKey)
+        .then(url => {
+          setImageUrl(url);
+          setLoading(false);
+        })
+        .catch(() => {
+          console.log('Failed to load image URL for key:', imageKey);
+          setLoading(false);
+        });
+    }
   }, [imageKey]);
 
   return (
