@@ -308,6 +308,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           keyboardShouldPersistTaps="handled">
 
           {/* 노트 제목 */}
+          <Text style={styles['input-label']}>제목</Text>
           <TextInput
             style={styles['title-input']}
             value={editTitle}
@@ -320,6 +321,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           <View style={styles.divider} />
 
           {/* 본문 */}
+          <Text style={styles['input-label']}>내용</Text>
           <TextInput
             style={styles['content-input']}
             value={editContent}
@@ -557,6 +559,14 @@ const styles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
     letterSpacing: 0.3,
     marginBottom: 8,
+  },
+  'input-label': {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#588DFF',
+    fontFamily: 'PretendardVariable',
+    letterSpacing: 0.3,
+    marginBottom: 6,
   },
   'images-section': { marginBottom: 12 },
   'images-row': {
