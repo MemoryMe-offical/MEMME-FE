@@ -188,6 +188,36 @@ const BoardCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardCardPro
                                       </View>
                                     </>
                                   )}
+                                  {(note.files?.length ?? 0) > 0 && (
+                                    <>
+                                      <View style={styles['card-section-divider']} />
+                                      <View style={styles['card-section-row']}>
+                                        <Text style={styles['card-section-label']}>파일</Text>
+                                        <View style={styles['card-files-preview']}>
+                                          {note.files!.slice(0, 2).map((file, idx) => (
+                                            <TouchableOpacity
+                                              key={`${note.id}-file-${idx}`}
+                                              style={styles['card-file-item']}
+                                              onPress={() => {
+                                                Linking.openURL(file.url).catch(() => {
+                                                  console.error('Failed to open file:', file.url);
+                                                });
+                                              }}
+                                              activeOpacity={0.7}>
+                                              <Text style={styles['card-file-name']} numberOfLines={1}>
+                                                {file.name || 'file'}
+                                              </Text>
+                                            </TouchableOpacity>
+                                          ))}
+                                          {(note.files!.length ?? 0) > 2 && (
+                                            <Text style={styles['card-file-more']}>
+                                              +{note.files!.length - 2}개
+                                            </Text>
+                                          )}
+                                        </View>
+                                      </View>
+                                    </>
+                                  )}
                                   {note.url && (() => {
                                     const ogData = note.ogData ?? ogDataCache[note.url];
                                     const displayDomain = note.url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || note.url;
@@ -234,36 +264,6 @@ const BoardCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardCardPro
                                       </>
                                     );
                                   })()}
-                                  {(note.files?.length ?? 0) > 0 && (
-                                    <>
-                                      <View style={styles['card-section-divider']} />
-                                      <View style={styles['card-section-row']}>
-                                        <Text style={styles['card-section-label']}>파일</Text>
-                                        <View style={styles['card-files-preview']}>
-                                          {note.files!.slice(0, 2).map((file, idx) => (
-                                            <TouchableOpacity
-                                              key={`${note.id}-file-${idx}`}
-                                              style={styles['card-file-item']}
-                                              onPress={() => {
-                                                Linking.openURL(file.url).catch(() => {
-                                                  console.error('Failed to open file:', file.url);
-                                                });
-                                              }}
-                                              activeOpacity={0.7}>
-                                              <Text style={styles['card-file-name']} numberOfLines={1}>
-                                                {file.name || 'file'}
-                                              </Text>
-                                            </TouchableOpacity>
-                                          ))}
-                                          {(note.files!.length ?? 0) > 2 && (
-                                            <Text style={styles['card-file-more']}>
-                                              +{note.files!.length - 2}개
-                                            </Text>
-                                          )}
-                                        </View>
-                                      </View>
-                                    </>
-                                  )}
                                   {(() => {
                                     const hasExtraImages = (note.imageUris?.length ?? 0) > 2;
                                     const hasExtraFiles = (note.files?.length ?? 0) > 2;

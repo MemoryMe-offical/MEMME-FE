@@ -84,6 +84,37 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
           </>
         )}
 
+        {hasFiles && (
+          <>
+            <View style={styles['section-divider']} />
+            <View style={styles['section-row']}>
+              <Text style={styles['section-label']}>파일</Text>
+              <View style={styles['files-preview']}>
+                {note.files!.slice(0, 2).map((file, idx) => (
+                  <TouchableOpacity
+                    key={`${note.id}-file-${idx}`}
+                    style={styles['file-item']}
+                    onPress={() => {
+                      Linking.openURL(file.url).catch(() => {
+                        console.error('Failed to open file:', file.url);
+                      });
+                    }}
+                    activeOpacity={0.7}>
+                    <Text style={styles['file-name']} numberOfLines={1}>
+                      {file.name || 'file'}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                {(note.files!.length ?? 0) > 2 && (
+                  <Text style={styles['file-more']}>
+                    +{note.files!.length - 2}개
+                  </Text>
+                )}
+              </View>
+            </View>
+          </>
+        )}
+
         {hasLink && (() => {
           const ogData = note.ogData ?? ogDataCache[note.url!];
           const displayDomain = note.url!.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || note.url!;
@@ -130,37 +161,6 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
             </>
           );
         })()}
-
-        {hasFiles && (
-          <>
-            <View style={styles['section-divider']} />
-            <View style={styles['section-row']}>
-              <Text style={styles['section-label']}>파일</Text>
-              <View style={styles['files-preview']}>
-                {note.files!.slice(0, 2).map((file, idx) => (
-                  <TouchableOpacity
-                    key={`${note.id}-file-${idx}`}
-                    style={styles['file-item']}
-                    onPress={() => {
-                      Linking.openURL(file.url).catch(() => {
-                        console.error('Failed to open file:', file.url);
-                      });
-                    }}
-                    activeOpacity={0.7}>
-                    <Text style={styles['file-name']} numberOfLines={1}>
-                      {file.name || 'file'}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-                {(note.files!.length ?? 0) > 2 && (
-                  <Text style={styles['file-more']}>
-                    +{note.files!.length - 2}개
-                  </Text>
-                )}
-              </View>
-            </View>
-          </>
-        )}
       </TouchableOpacity>
 
       {/* 이미지 뷰어 모달 */}

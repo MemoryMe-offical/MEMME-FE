@@ -371,26 +371,6 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
             </ScrollView>
           </View>
 
-          {/* 링크 */}
-          <Text style={styles['subsection-label']}>링크</Text>
-          <View style={styles['link-section']}>
-            {editUrl ? (
-              <OgPreviewCard
-                url={editUrl}
-                ogData={editOgData || { title: editUrl }}
-                onRemove={handleRemoveLink}
-              />
-            ) : (
-              <TouchableOpacity
-                style={styles['add-attach-btn']}
-                onPress={handleOpenLinkModal}
-                activeOpacity={0.7}>
-                <LinkIcon color="#588DFF" size={16} />
-                <Text style={styles['add-attach-btn-text']}>링크 추가</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
           {/* 파일 */}
           <Text style={styles['subsection-label']}>파일</Text>
           <View style={styles['files-section']}>
@@ -417,6 +397,26 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                 </>
               )}
             </TouchableOpacity>
+          </View>
+
+          {/* 링크 */}
+          <Text style={styles['subsection-label']}>링크</Text>
+          <View style={styles['link-section']}>
+            {editUrl ? (
+              <OgPreviewCard
+                url={editUrl}
+                ogData={editOgData || { title: editUrl }}
+                onRemove={handleRemoveLink}
+              />
+            ) : (
+              <TouchableOpacity
+                style={styles['add-attach-btn']}
+                onPress={handleOpenLinkModal}
+                activeOpacity={0.7}>
+                <LinkIcon color="#588DFF" size={16} />
+                <Text style={styles['add-attach-btn-text']}>링크 추가</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           <View style={{ height: 32 }} />
