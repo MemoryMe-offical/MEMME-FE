@@ -16,7 +16,7 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { Board, Note, FileAttachment, Memo } from '../types';
 import { ArrowLeftIcon } from '../components/common/Icons';
 import { fetchOgData } from '../services/ogService';
-import { getUploadObject } from '../services/uploadService';
+import { getUploadObject, getUploadObjectUrl } from '../services/uploadService';
 import ImageViewerModal from '../components/common/ImageViewerModal';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
 
@@ -37,6 +37,24 @@ interface MediaItem {
   ogData?: any;
   timelineItem?: any;
 }
+
+const GalleryImageThumbnail = ({ imageKey, width, height }: { imageKey: string; width: number; height: number }) => {
+  const [imageUrl, setImageUrl] = useState<string>('');
+
+  useEffect(() => {
+    getUploadObjectUrl(imageKey)
+      .then(url => setImageUrl(url))
+      .catch(() => console.log('Failed to load gallery image URL for key:', imageKey));
+  }, [imageKey]);
+
+  return (
+    <Image
+      source={imageUrl ? { uri: imageUrl } : undefined}
+      style={[styles.thumbnail, { width, height, backgroundColor: imageUrl ? undefined : '#EEF3FF' }]}
+      onError={() => console.log('Failed to render gallery image')}
+    />
+  );
+};
 
 const MediaGalleryScreen = ({ route, navigation }: Props) => {
   const { items: allItems, galleryType } = route.params;
@@ -201,20 +219,21 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
 
   const renderImageItem = ({ item, index }: { item: MediaItem; index?: number }) => (
     <TouchableOpacity
-      onPress={() => {
+      onPress={async () => {
         const images = mediaItems.filter(m => m.type === 'image');
         const currentIdx = images.findIndex(m => m.id === item.id);
+        // 모든 이미지 키에 대해 presigned URL 조회
+        const presignedUrls = await Promise.all(
+          images.map(m => getUploadObjectUrl(m.uri).catch(() => ''))
+        );
         setImageViewerState({
           visible: true,
-          uris: images.map(m => m.uri),
+          uris: presignedUrls.filter(u => !!u),
           index: currentIdx,
         });
       }}
     >
-      <Image
-        source={{ uri: item.uri }}
-        style={[styles.thumbnail, { width: THUMBNAIL_SIZE, height: THUMBNAIL_SIZE }]}
-      />
+      <GalleryImageThumbnail imageKey={item.uri} width={THUMBNAIL_SIZE} height={THUMBNAIL_SIZE} />
     </TouchableOpacity>
   );
 

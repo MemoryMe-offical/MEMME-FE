@@ -4,6 +4,7 @@ import { Board, OgData } from '../../types';
 import { boardCardStyles as styles } from '../../styles/BoardCard.styles';
 import { ChevronDownIcon, ChevronUpIcon, MoreIcon, LinkIcon } from '../common/Icons';
 import { fetchOgData } from '../../services/ogService';
+import { getUploadObjectUrl } from '../../services/uploadService';
 
 const formatTime = (isoString: string): string => {
   const date = new Date(isoString);
@@ -12,6 +13,35 @@ const formatTime = (isoString: string): string => {
   const isAM = hours < 12;
   const displayHours = hours % 12 || 12;
   return `${isAM ? '오전' : '오후'} ${displayHours}:${minutes.toString().padStart(2, '0')}`;
+};
+
+const CardImageThumbnail = ({ imageKey, onPress }: { imageKey: string; onPress: () => void }) => {
+  const [imageUrl, setImageUrl] = useState<string>('');
+
+  useEffect(() => {
+    getUploadObjectUrl(imageKey)
+      .then(url => setImageUrl(url))
+      .catch(() => console.log('Failed to load image URL for key:', imageKey));
+  }, [imageKey]);
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles['card-image-thumbnail'],
+        pressed && styles['card-image-thumbnail-pressed'],
+      ]}>
+      {imageUrl ? (
+        <Image
+          source={{ uri: imageUrl }}
+          style={styles['card-image-thumbnail']}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={[styles['card-image-thumbnail'], { backgroundColor: '#EEF3FF' }]} />
+      )}
+    </Pressable>
+  );
 };
 
 interface BoardCardProps {
@@ -165,24 +195,28 @@ const BoardCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardCardPro
                                       <View style={styles['card-section-row']}>
                                         <Text style={styles['card-section-label']}>이미지</Text>
                                         <View style={styles['card-images-preview']}>
-                                          {note.imageUris!.slice(0, 2).map((uri, idx) => (
-                                            <Pressable
+                                          {note.imageUris!.slice(0, 2).map((imageKey, idx) => (
+                                            <CardImageThumbnail
                                               key={`${note.id}-img-${idx}`}
-                                              onPress={() => openImageViewer(note.imageUris!)}
-                                              style={({ pressed }) => [
-                                                styles['card-image-thumbnail'],
-                                                pressed && styles['card-image-thumbnail-pressed'],
-                                              ]}>
-                                              <Image
-                                                source={{ uri }}
-                                                style={styles['card-image-thumbnail']}
-                                                resizeMode="cover"
-                                              />
-                                            </Pressable>
+                                              imageKey={imageKey}
+                                              onPress={() => {
+                                                Promise.all(
+                                                  note.imageUris!.map(k => getUploadObjectUrl(k).catch(() => ''))
+                                                ).then(urls => {
+                                                  openImageViewer(urls.filter(u => !!u));
+                                                });
+                                              }}
+                                            />
                                           ))}
                                           {(note.imageUris!.length ?? 0) > 2 && (
                                             <Pressable
-                                              onPress={() => openImageViewer(note.imageUris!)}
+                                              onPress={() => {
+                                                Promise.all(
+                                                  note.imageUris!.map(k => getUploadObjectUrl(k).catch(() => ''))
+                                                ).then(urls => {
+                                                  openImageViewer(urls.filter(u => !!u));
+                                                });
+                                              }}
                                               style={({ pressed }) => [
                                                 styles['card-image-more'],
                                                 pressed && styles['card-image-more-pressed'],
