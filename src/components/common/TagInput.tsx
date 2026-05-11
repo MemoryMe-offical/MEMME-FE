@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,19 +7,49 @@ import {
   ScrollView,
   StyleSheet,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface TagInputProps {
   tags: string[];
   onChange: (tags: string[]) => void;
   maxTags?: number;
-  suggestions?: string[]; // TODO(P3): GET /api/tags 결과로 교체
+  suggestions?: string[];
   placeholder?: string;
 }
 
-const TagInput = ({ tags, onChange, maxTags = 10, suggestions = [], placeholder }: TagInputProps) => {
+const BASE_URL = 'https://memme.o-r.kr/v1';
+
+const TagInput = ({ tags, onChange, maxTags = 10, suggestions: initialSuggestions = [], placeholder }: TagInputProps) => {
   const [inputText, setInputText] = useState('');
   const [dropdownVisible, setDropdownVisible] = useState(false);
+  const [suggestions, setSuggestions] = useState(initialSuggestions);
   const inputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    const loadSuggestions = async () => {
+      try {
+        const token = await AsyncStorage.getItem('accessToken');
+        const response = await fetch(`${BASE_URL}/tags`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token && { 'Authorization': `Bearer ${token}` }),
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setSuggestions(data.tags || initialSuggestions);
+        } else {
+          setSuggestions(initialSuggestions);
+        }
+      } catch (error) {
+        setSuggestions(initialSuggestions);
+      }
+    };
+
+    loadSuggestions();
+  }, [initialSuggestions]);
 
   const isMaxReached = tags.length >= maxTags;
 

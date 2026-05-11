@@ -68,16 +68,26 @@ const MainScreen = () => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isTagFilterVisible, setIsTagFilterVisible] = useState(false);
 
-  // TODO(P3): GET /api/timeline?type=board&sort=updatedAt 로 교체
-  const recentBoards = useMemo(
-    () =>
-      (items.filter(i => i.type === 'board') as Board[]).sort((a, b) => {
-        const aTime = a.updatedAt ?? a.createdAt;
-        const bTime = b.updatedAt ?? b.createdAt;
-        return bTime.localeCompare(aTime);
-      }),
-    [items],
-  );
+  const [recentBoards, setRecentBoards] = useState<Board[]>([]);
+
+  useEffect(() => {
+    const loadRecentBoards = async () => {
+      try {
+        const boards = await timelineService.fetchTimeline({
+          type: 'board',
+          sort: 'updatedAt',
+          order: 'desc',
+          limit: 5,
+        });
+        setRecentBoards(boards as Board[]);
+      } catch (error) {
+        console.error('Failed to load recent boards:', error);
+        setRecentBoards((items.filter(i => i.type === 'board') as Board[]).slice(0, 5));
+      }
+    };
+
+    loadRecentBoards();
+  }, []);
 
   const filteredItems = useMemo(() => {
     let result = items;

@@ -38,11 +38,15 @@ export const loadPendingLinks = async (): Promise<PendingLink[]> => {
   try {
     const token = await AsyncStorage.getItem('accessToken');
 
+    if (!token) {
+      return [];
+    }
+
     const response = await fetch(`${BASE_URL}/pending-links`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
+        'Authorization': `Bearer ${token}`,
       },
     });
 
