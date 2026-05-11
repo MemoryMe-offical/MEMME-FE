@@ -80,6 +80,10 @@ export const ChevronUpIcon = ({ color = '#1A1A1A', size = 18, style }: IconProps
   <MCI name="chevron-up" color={color} size={size} style={style} />
 );
 
+export const ChevronRightIcon = ({ color = '#1A1A1A', size = 18, style }: IconProps) => (
+  <MCI name="chevron-right" color={color} size={size} style={style} />
+);
+
 export const ArrowLeftIcon = ({ color = '#1A1A1A', size = 22, style }: IconProps) => (
   <MCI name="arrow-left" color={color} size={size} style={style} />
 );

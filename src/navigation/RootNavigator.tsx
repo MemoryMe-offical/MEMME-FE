@@ -9,9 +9,10 @@ import SignupScreen from '../screens/SignupScreen';
 import TermsScreen from '../screens/Termsscreen';
 import BoardDetailScreen from '../screens/BoardDetailScreen';
 import NoteDetailScreen from '../screens/NoteDetailScreen';
+import MediaGalleryScreen from '../screens/MediaGalleryScreen';
 import DevicePairingScreen from '../screens/DevicePairingScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
-import { Board, Note } from '../types';
+import { Board, Note, TimelineItem } from '../types';
 
 // 네비게이션에서 사용할 화면 목록과 파라미터 타입 정의
 export type RootStackParamList = {
@@ -34,6 +35,10 @@ export type RootStackParamList = {
         isNew?: boolean;
         onSave?: (note: Note) => void;
         onDelete?: (noteId: string) => void;
+    };
+    MediaGallery: {
+        items: TimelineItem[];
+        galleryType: 'images' | 'videos' | 'files' | 'links' | 'bookmarks';
     };
     EncryptionTest: undefined;
     DevicePairing: undefined;
@@ -63,6 +68,9 @@ const RootNavigator = () => {
 
             {/* 노트 상세 화면 */}
             <Stack.Screen name="NoteDetail" component={NoteDetailScreen} />
+
+            {/* 미디어 갤러리 화면 */}
+            <Stack.Screen name="MediaGallery" component={MediaGalleryScreen} />
 
             <Stack.Screen name="DevicePairing" component={DevicePairingScreen} options={{ title: '기기 페어링' }} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: '비밀번호 찾기' }} />

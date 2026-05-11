@@ -297,4 +297,127 @@ export const sideMenuStyles = StyleSheet.create({
     color: '#B8C8D8',
     fontFamily: 'PretendardVariable',
   },
+
+  // 미디어 행
+  'sideMenu-mediaRow': {
+    flexDirection: 'row',
+    gap: 8,
+    paddingVertical: 4,
+  },
+
+  'sideMenu-mediaThumbnail': {
+    width: 70,
+    height: 70,
+    borderRadius: 10,
+    backgroundColor: '#F0F5FF',
+  },
+
+  'sideMenu-videoThumbnail': {
+    position: 'relative',
+  },
+
+  'sideMenu-videoPlayIcon': {
+    position: 'absolute',
+    width: 70,
+    height: 70,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    borderRadius: 10,
+  },
+
+  'sideMenu-videoPlayText': {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '600',
+  },
+
+  // 파일 목록
+  'sideMenu-filesList': {
+    gap: 8,
+  },
+
+  'sideMenu-fileItem': {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F7FAFF',
+    borderRadius: 8,
+    padding: 8,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: '#E2EAFF',
+  },
+
+  'sideMenu-fileIcon': {
+    fontSize: 14,
+  },
+
+  'sideMenu-fileName': {
+    flex: 1,
+    fontSize: 11,
+    color: '#1A1A1A',
+    fontFamily: 'PretendardVariable',
+    lineHeight: 14,
+  },
+
+  // 더보기 버튼
+  'sideMenu-moreButton': {
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    marginTop: 8,
+    backgroundColor: '#F0F5FF',
+    borderRadius: 10,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#C0D0F0',
+    borderStyle: 'dashed',
+  },
+
+  'sideMenu-moreButtonText': {
+    fontSize: 13,
+    color: '#588DFF',
+    fontFamily: 'PretendardVariable',
+    fontWeight: '600',
+  },
+
+  // 링크 프리뷰
+  'sideMenu-linkPreview': {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F7FAFF',
+    borderRadius: 10,
+    padding: 6,
+    gap: 6,
+    borderWidth: 1,
+    borderColor: '#E2EAFF',
+    marginBottom: 6,
+  },
+
+  'sideMenu-linkPreviewImage': {
+    width: 44,
+    height: 44,
+    borderRadius: 6,
+    backgroundColor: '#F0F5FF',
+    flexShrink: 0,
+  },
+
+  'sideMenu-linkPreviewContent': {
+    flex: 1,
+    gap: 3,
+  },
+
+  'sideMenu-linkTitle': {
+    fontSize: 11,
+    color: '#1A1A1A',
+    fontFamily: 'PretendardVariable',
+    lineHeight: 14,
+    fontWeight: '500',
+  },
+
+  'sideMenu-linkUrl': {
+    fontSize: 9,
+    color: '#9DAFC8',
+    fontFamily: 'PretendardVariable',
+    lineHeight: 12,
+  },
 });

@@ -695,6 +695,13 @@ const MainScreen = () => {
           setFilterBookmarkOnly(active);
           setIsSearchMode(false);
         }}
+        onMediaGalleryPress={(galleryType) => {
+          navigation.navigate('MediaGallery', {
+            items,
+            galleryType,
+          });
+          setSideMenuVisible(false);
+        }}
       />
 
       <ContextMenu
