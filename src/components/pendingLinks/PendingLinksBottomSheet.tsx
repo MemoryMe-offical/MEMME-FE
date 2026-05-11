@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,10 +8,11 @@ import {
   StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Board, PendingLink } from '../../types';
+import { Board, PendingLink, OgData } from '../../types';
 import OgPreviewCard from '../note/OgPreviewCard';
 import BoardPickerBottomSheet from '../common/BoardPickerBottomSheet';
 import { CloseIcon } from '../common/Icons';
+import { fetchOgData } from '../../services/ogService';
 
 interface PendingLinksBottomSheetProps {
   visible: boolean;
@@ -48,6 +49,43 @@ const PendingLinksBottomSheet = ({
   const insets = useSafeAreaInsets();
   const [pickerVisible, setPickerVisible] = useState(false);
   const [activePendingLink, setActivePendingLink] = useState<PendingLink | null>(null);
+  const [ogDataCache, setOgDataCache] = useState<Record<string, OgData>>({});
+  const [loadingUrls, setLoadingUrls] = useState<Set<string>>(new Set());
+
+  // 링크가 변경될 때 OG 데이터 로드
+  useEffect(() => {
+    const loadOgData = async () => {
+      const newUrls = pendingLinks.filter(
+        link => !link.ogData && !ogDataCache[link.url] && !loadingUrls.has(link.url)
+      );
+
+      if (newUrls.length === 0) return;
+
+      setLoadingUrls(prev => new Set([...prev, ...newUrls.map(l => l.url)]));
+
+      for (const link of newUrls) {
+        try {
+          console.log('🔥 OG 데이터 로드:', link.url);
+          const ogData = await fetchOgData(link.url);
+          console.log('🔥 OG 데이터 로드 완료:', ogData);
+          setOgDataCache(prev => ({
+            ...prev,
+            [link.url]: ogData,
+          }));
+        } catch (error) {
+          console.error('🔥 OG 데이터 로드 실패:', link.url, error);
+        }
+      }
+
+      setLoadingUrls(prev => {
+        const updated = new Set(prev);
+        newUrls.forEach(l => updated.delete(l.url));
+        return updated;
+      });
+    };
+
+    loadOgData();
+  }, [pendingLinks, ogDataCache, loadingUrls]);
 
   const handleAddPress = (link: PendingLink) => {
     setActivePendingLink(link);
@@ -106,7 +144,8 @@ const PendingLinksBottomSheet = ({
               ) : (
                 pendingLinks.map(link => {
                   const hostname = link.url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] ?? link.url;
-                  const displayOgData = link.ogData ?? {
+                  // 우선순위: 백엔드 ogData → 캐시된 ogData → hostname
+                  const displayOgData = link.ogData ?? ogDataCache[link.url] ?? {
                     title: hostname,
                   };
 
