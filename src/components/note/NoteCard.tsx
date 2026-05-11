@@ -138,7 +138,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                         />
                       ) : (
                         <View style={styles['video-thumbnail-placeholder']}>
-                          <Text style={styles['video-icon']}>🎬</Text>
+                          <Text style={styles['video-icon']}>▶</Text>
                         </View>
                       )}
                     </Pressable>
@@ -247,11 +247,16 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
         animationType="fade"
         onRequestClose={() => setImageViewerVisible(false)}>
         <View style={imageViewerStyles.container}>
-          <TouchableOpacity
-            style={imageViewerStyles.closeButton}
-            onPress={() => setImageViewerVisible(false)}>
-            <Text style={imageViewerStyles.closeText}>✕</Text>
-          </TouchableOpacity>
+          <View style={imageViewerStyles.header}>
+            <TouchableOpacity
+              style={imageViewerStyles.closeButton}
+              onPress={() => setImageViewerVisible(false)}>
+              <Text style={imageViewerStyles.closeText}>✕</Text>
+            </TouchableOpacity>
+            <Text style={imageViewerStyles.fileName} numberOfLines={1}>
+              {imageViewerImages[imageViewerIndex]?.split('/').pop() || `이미지 ${imageViewerIndex + 1}`}
+            </Text>
+          </View>
 
           <FlatList
             data={imageViewerImages}
@@ -278,19 +283,24 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
             showsHorizontalScrollIndicator={false}
           />
 
-          {imageViewerImages.length > 1 && (
-            <View style={imageViewerStyles.indicatorContainer}>
-              {imageViewerImages.map((_, idx) => (
-                <View
-                  key={idx}
-                  style={[
-                    imageViewerStyles.indicator,
-                    idx === imageViewerIndex && imageViewerStyles.indicatorActive,
-                  ]}
-                />
-              ))}
-            </View>
-          )}
+          <View style={imageViewerStyles.indicatorContainer}>
+            {imageViewerImages.length > 1 && (
+              <>
+                {imageViewerImages.map((_, idx) => (
+                  <View
+                    key={idx}
+                    style={[
+                      imageViewerStyles.indicator,
+                      idx === imageViewerIndex && imageViewerStyles.indicatorActive,
+                    ]}
+                  />
+                ))}
+              </>
+            )}
+            <Text style={imageViewerStyles.imageCounter}>
+              {imageViewerIndex + 1} / {imageViewerImages.length}
+            </Text>
+          </View>
         </View>
       </Modal>
 
@@ -301,11 +311,16 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
         animationType="fade"
         onRequestClose={() => setVideoViewerVisible(false)}>
         <View style={imageViewerStyles.container}>
-          <TouchableOpacity
-            style={imageViewerStyles.closeButton}
-            onPress={() => setVideoViewerVisible(false)}>
-            <Text style={imageViewerStyles.closeText}>✕</Text>
-          </TouchableOpacity>
+          <View style={imageViewerStyles.header}>
+            <TouchableOpacity
+              style={imageViewerStyles.closeButton}
+              onPress={() => setVideoViewerVisible(false)}>
+              <Text style={imageViewerStyles.closeText}>✕</Text>
+            </TouchableOpacity>
+            <Text style={imageViewerStyles.fileName} numberOfLines={1}>
+              동영상
+            </Text>
+          </View>
 
           {selectedVideoUrl && (
             <TouchableOpacity
@@ -532,17 +547,35 @@ const imageViewerStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeButton: {
+  header: {
     position: 'absolute',
-    top: 40,
-    right: 20,
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 12,
     zIndex: 10,
+  },
+  closeButton: {
     padding: 8,
   },
   closeText: {
     fontSize: 28,
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+  fileName: {
+    flex: 1,
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontFamily: 'PretendardVariable',
+    textAlign: 'center',
+    marginHorizontal: 12,
   },
   slide: {
     width: Dimensions.get('window').width,
@@ -573,6 +606,13 @@ const imageViewerStyles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
+  },
+  imageCounter: {
+    fontSize: 13,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    marginLeft: 12,
+    fontFamily: 'PretendardVariable',
   },
 });
 

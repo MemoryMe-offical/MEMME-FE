@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   Dimensions,
+  Text,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CloseIcon } from './Icons';
@@ -45,6 +46,9 @@ const ImageViewerModal = ({ visible, imageUris, initialIndex = 0, onClose }: Pro
               <CloseIcon color="#FFFFFF" size={24} />
             </TouchableOpacity>
             <View style={styles.indexIndicator}>
+              <Text style={styles.fileName} numberOfLines={1}>
+                {imageUris[currentIndex]?.split('/').pop() || `이미지 ${currentIndex + 1}`}
+              </Text>
               <View style={styles.indexText}>
                 {imageUris.map((_, idx) => (
                   <View
@@ -110,6 +114,14 @@ const styles = StyleSheet.create({
   indexIndicator: {
     flex: 1,
     alignItems: 'center',
+    gap: 8,
+  },
+  fileName: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontFamily: 'PretendardVariable',
+    maxWidth: 200,
   },
   indexText: {
     flexDirection: 'row',

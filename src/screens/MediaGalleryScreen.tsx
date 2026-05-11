@@ -8,6 +8,7 @@ import {
   FlatList,
   Dimensions,
   Linking,
+  Modal,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -55,6 +56,10 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
     uris: [] as string[],
     index: 0,
   });
+  const [videoViewerState, setVideoViewerState] = useState({
+    visible: false,
+    url: '',
+  });
 
   const mediaItems = useMemo(() => {
     const items: MediaItem[] = [];
@@ -91,15 +96,20 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
                 board,
               });
             });
-          } else if (galleryType === 'videos' && note.videoUris) {
-            note.videoUris.forEach((uri, idx) => {
+          } else if (galleryType === 'videos' && (note.videos || note.videoUris)) {
+            const videoList = note.videos || note.videoUris || [];
+            videoList.forEach((video, idx) => {
+              const videoUrl = typeof video === 'string' ? video : video.url;
+              const videoThumb = typeof video === 'string' ? undefined : video.thumbnailUrl;
               items.push({
                 id: `video-${board.id}-${note.id}-${idx}`,
-                uri,
+                uri: videoUrl,
+                title: `${idx + 1}`,
                 type: 'video',
                 createdAt: board.updatedAt || board.createdAt,
                 note,
                 board,
+                file: typeof video === 'string' ? undefined : video,
               });
             });
           } else if (galleryType === 'files' && note.files) {
@@ -228,16 +238,24 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
 
   const renderVideoItem = ({ item }: { item: MediaItem }) => (
     <TouchableOpacity
-      onPress={() => Linking.openURL(item.uri)}
+      onPress={() => setVideoViewerState({ visible: true, url: item.uri })}
     >
       <View style={[styles.thumbnail, { width: THUMBNAIL_SIZE, height: THUMBNAIL_SIZE }]}>
-        <Image
-          source={{ uri: item.uri }}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={styles.videoOverlay}>
-          <Text style={styles.videoPlayIcon}>▶</Text>
-        </View>
+        {(item.file as any)?.thumbnailUrl ? (
+          <>
+            <Image
+              source={{ uri: (item.file as any).thumbnailUrl }}
+              style={StyleSheet.absoluteFill}
+            />
+            <View style={styles.videoOverlay}>
+              <Text style={styles.videoPlayIcon}>▶</Text>
+            </View>
+          </>
+        ) : (
+          <View style={[StyleSheet.absoluteFill, styles.videoPlaceholder]}>
+            <Text style={styles.videoPlayIcon}>▶</Text>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );
@@ -358,6 +376,42 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
         initialIndex={imageViewerState.index}
         onClose={() => setImageViewerState(prev => ({ ...prev, visible: false }))}
       />
+
+      {/* 동영상 뷰어 모달 */}
+      <Modal
+        visible={videoViewerState.visible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setVideoViewerState({ visible: false, url: '' })}
+      >
+        <View style={styles.videoViewerContainer}>
+          <View style={styles.videoViewerHeader}>
+            <TouchableOpacity
+              style={styles.videoViewerClose}
+              onPress={() => setVideoViewerState({ visible: false, url: '' })}
+            >
+              <Text style={styles.videoViewerCloseText}>✕</Text>
+            </TouchableOpacity>
+            <Text style={styles.videoViewerFileName} numberOfLines={1}>
+              {videoViewerState.url?.split('/').pop() || '동영상'}
+            </Text>
+          </View>
+
+          {videoViewerState.url && (
+            <TouchableOpacity
+              style={styles.videoPlayerContainer}
+              onPress={() => {
+                Linking.openURL(videoViewerState.url).catch(() => {
+                  console.error('Failed to open video:', videoViewerState.url);
+                });
+              }}
+            >
+              <Text style={styles.videoPlayerIcon}>▶</Text>
+              <Text style={styles.videoPlayerText}>눌러서 재생</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -519,6 +573,65 @@ const styles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
     textAlign: 'center',
     lineHeight: 15,
+  },
+  videoPlaceholder: {
+    backgroundColor: '#EEF3FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoViewerContainer: {
+    flex: 1,
+    backgroundColor: '#000000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  videoViewerHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 12,
+    zIndex: 10,
+  },
+  videoViewerClose: {
+    padding: 8,
+  },
+  videoViewerCloseText: {
+    fontSize: 28,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  videoViewerFileName: {
+    flex: 1,
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontFamily: 'PretendardVariable',
+    textAlign: 'center',
+    marginHorizontal: 12,
+  },
+  videoPlayerContainer: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  videoPlayerIcon: {
+    fontSize: 48,
+    color: '#FFFFFF',
+  },
+  videoPlayerText: {
+    fontSize: 12,
+    color: '#FFFFFF',
+    fontFamily: 'PretendardVariable',
   },
 });
 

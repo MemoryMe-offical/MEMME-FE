@@ -255,6 +255,69 @@ export const boardCardStyles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
   },
 
+  // 동영상 미리보기
+  'card-videos-preview': {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+    paddingHorizontal: 0,
+    marginTop: 0,
+  },
+
+  'card-video-thumbnail': {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+    backgroundColor: '#EEF3FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  'card-video-thumbnail-pressed': {
+    opacity: 0.7,
+  },
+
+  'card-video-thumbnail-placeholder': {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+    backgroundColor: '#EEF3FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  'card-video-icon': {
+    fontSize: 20,
+  },
+
+  'card-video-more': {
+    fontSize: 11,
+    color: '#AABBCC',
+    fontFamily: 'PretendardVariable',
+    paddingHorizontal: 0,
+  },
+
+  'video-player-container': {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+
+  'video-play-icon': {
+    fontSize: 48,
+    color: '#FFFFFF',
+  },
+
+  'video-open-text': {
+    fontSize: 12,
+    color: '#FFFFFF',
+    fontFamily: 'PretendardVariable',
+  },
+
   // 링크 카드
   'card-link-card': {
     flexDirection: 'row',

@@ -48,6 +48,8 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [imageViewerImages, setImageViewerImages] = useState<string[]>([]);
   const [imageViewerIndex, setImageViewerIndex] = useState(0);
+  const [videoViewerVisible, setVideoViewerVisible] = useState(false);
+  const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
   const toggleNote = (noteId: string) => {
@@ -146,7 +148,6 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                 <View>
                   {item.notes!.slice(0, 3).map((note, idx) => {
                     const isNoteExpanded = expandedNoteId === note.id;
-                    const isLast = idx === Math.min(item.notes!.length - 1, 2);
                     return (
                       <View key={note.id} style={styles['note-card-wrapper']}>
                         <TouchableOpacity
@@ -173,7 +174,7 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                 </Text>
                               </View>
                             )}
-                            {((note.imageUris?.length ?? 0) > 0 || note.url || (note.files?.length ?? 0) > 0) && (
+                            {((note.imageUris?.length ?? 0) > 0 || (note.videos?.length ?? 0) > 0 || note.url || (note.files?.length ?? 0) > 0) && (
                               <>
                                 <View style={styles['card-attachments-container']}>
                                   {(note.imageUris?.length ?? 0) > 0 && (
@@ -204,6 +205,49 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                                 +{note.imageUris!.length - 2}
                                               </Text>
                                             </Pressable>
+                                          )}
+                                        </View>
+                                      </View>
+                                    </>
+                                  )}
+                                  {((note.videos?.length ?? 0) > 0 || (note.videoUris?.length ?? 0) > 0) && (
+                                    <>
+                                      <View style={styles['card-section-divider']} />
+                                      <View style={styles['card-section-row']}>
+                                        <Text style={styles['card-section-label']}>동영상</Text>
+                                        <View style={styles['card-videos-preview']}>
+                                          {(note.videos || note.videoUris || [])!.slice(0, 2).map((video, idx) => {
+                                            const videoUrl = typeof video === 'string' ? video : video.url;
+                                            const thumbnailUrl = typeof video === 'string' ? undefined : video.thumbnailUrl;
+                                            return (
+                                              <Pressable
+                                                key={`${note.id}-video-${idx}`}
+                                                onPress={() => {
+                                                  setSelectedVideoUrl(videoUrl);
+                                                  setVideoViewerVisible(true);
+                                                }}
+                                                style={({ pressed }) => [
+                                                  styles['card-video-thumbnail'],
+                                                  pressed && styles['card-video-thumbnail-pressed'],
+                                                ]}>
+                                                {thumbnailUrl ? (
+                                                  <Image
+                                                    source={{ uri: thumbnailUrl }}
+                                                    style={styles['card-video-thumbnail']}
+                                                    resizeMode="cover"
+                                                  />
+                                                ) : (
+                                                  <View style={styles['card-video-thumbnail-placeholder']}>
+                                                    <Text style={styles['card-video-icon']}>▶</Text>
+                                                  </View>
+                                                )}
+                                              </Pressable>
+                                            );
+                                          })}
+                                          {((note.videos?.length ?? 0) + (note.videoUris?.length ?? 0)) > 2 && (
+                                            <Text style={styles['card-video-more']}>
+                                              +{((note.videos?.length ?? 0) + (note.videoUris?.length ?? 0)) - 2}개
+                                            </Text>
                                           )}
                                         </View>
                                       </View>
@@ -287,15 +331,24 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                   })()}
                                   {(() => {
                                     const hasExtraImages = (note.imageUris?.length ?? 0) > 2;
+                                    const hasExtraVideos = (note.videos?.length ?? 0) > 2;
                                     const hasExtraFiles = (note.files?.length ?? 0) > 2;
-                                    if (hasExtraImages || hasExtraFiles) {
+                                    if (hasExtraImages || hasExtraVideos || hasExtraFiles) {
                                       return (
                                         <View style={styles['card-more-content-badge']}>
                                           <Text style={styles['card-more-content-text']}>
-                                            {hasExtraImages && hasExtraFiles
-                                              ? '더 많은 이미지와 파일이 있습니다'
+                                            {hasExtraImages && hasExtraVideos && hasExtraFiles
+                                              ? '더 많은 이미지, 동영상, 파일이 있습니다'
+                                              : hasExtraImages && hasExtraVideos
+                                                ? '더 많은 이미지와 동영상이 있습니다'
+                                              : hasExtraImages && hasExtraFiles
+                                                ? '더 많은 이미지와 파일이 있습니다'
+                                              : hasExtraVideos && hasExtraFiles
+                                                ? '더 많은 동영상과 파일이 있습니다'
                                               : hasExtraImages
                                                 ? '더 많은 이미지가 있습니다'
+                                              : hasExtraVideos
+                                                ? '더 많은 동영상이 있습니다'
                                                 : '더 많은 파일이 있습니다'}
                                           </Text>
                                         </View>
@@ -339,11 +392,16 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
         animationType="fade"
         onRequestClose={() => setImageViewerVisible(false)}>
         <View style={imageViewerStyles.container}>
-          <TouchableOpacity
-            style={imageViewerStyles.closeButton}
-            onPress={() => setImageViewerVisible(false)}>
-            <Text style={imageViewerStyles.closeText}>✕</Text>
-          </TouchableOpacity>
+          <View style={imageViewerStyles.header}>
+            <TouchableOpacity
+              style={imageViewerStyles.closeButton}
+              onPress={() => setImageViewerVisible(false)}>
+              <Text style={imageViewerStyles.closeText}>✕</Text>
+            </TouchableOpacity>
+            <Text style={imageViewerStyles.fileName} numberOfLines={1}>
+              {imageViewerImages[imageViewerIndex]?.split('/').pop() || `이미지 ${imageViewerIndex + 1}`}
+            </Text>
+          </View>
 
           <FlatList
             ref={flatListRef}
@@ -371,18 +429,56 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
             showsHorizontalScrollIndicator={false}
           />
 
-          {imageViewerImages.length > 1 && (
-            <View style={imageViewerStyles.indicatorContainer}>
-              {imageViewerImages.map((_, idx) => (
-                <View
-                  key={idx}
-                  style={[
-                    imageViewerStyles.indicator,
-                    idx === imageViewerIndex && imageViewerStyles.indicatorActive,
-                  ]}
-                />
-              ))}
-            </View>
+          <View style={imageViewerStyles.indicatorContainer}>
+            {imageViewerImages.length > 1 && (
+              <>
+                {imageViewerImages.map((_, idx) => (
+                  <View
+                    key={idx}
+                    style={[
+                      imageViewerStyles.indicator,
+                      idx === imageViewerIndex && imageViewerStyles.indicatorActive,
+                    ]}
+                  />
+                ))}
+              </>
+            )}
+            <Text style={imageViewerStyles.imageCounter}>
+              {imageViewerIndex + 1} / {imageViewerImages.length}
+            </Text>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 동영상 뷰어 모달 */}
+      <Modal
+        visible={videoViewerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setVideoViewerVisible(false)}>
+        <View style={imageViewerStyles.container}>
+          <View style={imageViewerStyles.header}>
+            <TouchableOpacity
+              style={imageViewerStyles.closeButton}
+              onPress={() => setVideoViewerVisible(false)}>
+              <Text style={imageViewerStyles.closeText}>✕</Text>
+            </TouchableOpacity>
+            <Text style={imageViewerStyles.fileName} numberOfLines={1}>
+              동영상
+            </Text>
+          </View>
+
+          {selectedVideoUrl && (
+            <TouchableOpacity
+              style={styles['video-player-container']}
+              onPress={() => {
+                Linking.openURL(selectedVideoUrl).catch(() => {
+                  console.error('Failed to open video:', selectedVideoUrl);
+                });
+              }}>
+              <Text style={styles['video-play-icon']}>▶</Text>
+              <Text style={styles['video-open-text']}>눌러서 재생</Text>
+            </TouchableOpacity>
           )}
         </View>
       </Modal>
@@ -397,17 +493,35 @@ const imageViewerStyles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeButton: {
+  header: {
     position: 'absolute',
-    top: 40,
-    right: 20,
+    top: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 12,
     zIndex: 10,
+  },
+  closeButton: {
     padding: 8,
   },
   closeText: {
     fontSize: 28,
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+  fileName: {
+    flex: 1,
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    fontFamily: 'PretendardVariable',
+    textAlign: 'center',
+    marginHorizontal: 12,
   },
   slide: {
     width: Dimensions.get('window').width,
@@ -438,6 +552,13 @@ const imageViewerStyles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 4,
+  },
+  imageCounter: {
+    fontSize: 13,
+    color: '#FFFFFF',
+    fontWeight: '600',
+    marginLeft: 12,
+    fontFamily: 'PretendardVariable',
   },
 });
 
