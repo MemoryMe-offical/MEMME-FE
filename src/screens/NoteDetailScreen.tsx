@@ -430,7 +430,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles['images-row']}>
                 {editImageUris.map((imageKey, idx) => (
-                  <ImagePreview key={`${idx}`} imageKey={imageKey} onRemove={() => handleRemoveImage(idx)} />
+                  <ImagePreview key={imageKey} imageKey={imageKey} onRemove={() => handleRemoveImage(idx)} />
                 ))}
               </ScrollView>
             ) : (
