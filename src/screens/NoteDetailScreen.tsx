@@ -21,8 +21,6 @@ import { Note, FileAttachment, OgData } from '../types';
 import {
   ArrowLeftIcon,
   CloseIcon,
-  ImageIcon,
-  LinkIcon,
   TrashIcon,
   PlusIcon,
 } from '../components/common/Icons';
@@ -340,10 +338,17 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
 
           {/* 첨부 섹션 */}
           <View style={styles['section-divider']} />
-          <Text style={styles['section-label']}>첨부</Text>
 
           {/* 이미지 */}
-          <Text style={styles['subsection-label']}>이미지</Text>
+          <View style={styles['subsection-header']}>
+            <Text style={styles['subsection-label']}>이미지</Text>
+            <TouchableOpacity
+              onPress={handleAddImage}
+              disabled={isUploading}
+              hitSlop={8}>
+              <PlusIcon color={isUploading ? '#C0CDD8' : '#588DFF'} size={20} />
+            </TouchableOpacity>
+          </View>
           <View style={styles['images-section']}>
             <ScrollView
               horizontal
@@ -360,25 +365,19 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                   </TouchableOpacity>
                 </View>
               ))}
-              <TouchableOpacity
-                style={[styles['add-image-btn'], isUploading && styles['add-image-btn-disabled']]}
-                onPress={handleAddImage}
-                activeOpacity={0.7}
-                disabled={isUploading}>
-                {isUploading ? (
-                  <ActivityIndicator color="#588DFF" size="small" />
-                ) : (
-                  <>
-                    <ImageIcon color="#588DFF" size={20} />
-                    <Text style={styles['add-btn-text']}>추가</Text>
-                  </>
-                )}
-              </TouchableOpacity>
             </ScrollView>
           </View>
 
           {/* 파일 */}
-          <Text style={styles['subsection-label']}>파일</Text>
+          <View style={styles['subsection-header']}>
+            <Text style={styles['subsection-label']}>파일</Text>
+            <TouchableOpacity
+              onPress={handleAddFile}
+              disabled={isUploading}
+              hitSlop={8}>
+              <PlusIcon color={isUploading ? '#C0CDD8' : '#588DFF'} size={20} />
+            </TouchableOpacity>
+          </View>
           <View style={styles['files-section']}>
             {editFiles.map(file => (
               <View key={file.id} style={styles['file-row']}>
@@ -389,39 +388,26 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                 </TouchableOpacity>
               </View>
             ))}
-            <TouchableOpacity
-              style={[styles['add-attach-btn'], isUploading && styles['add-attach-btn-disabled']]}
-              onPress={handleAddFile}
-              activeOpacity={0.7}
-              disabled={isUploading}>
-              {isUploading ? (
-                <ActivityIndicator color="#588DFF" size="small" />
-              ) : (
-                <>
-                  <PlusIcon color="#588DFF" size={16} />
-                  <Text style={styles['add-attach-btn-text']}>파일 추가</Text>
-                </>
-              )}
-            </TouchableOpacity>
           </View>
 
           {/* 링크 */}
-          <Text style={styles['subsection-label']}>링크</Text>
+          <View style={styles['subsection-header']}>
+            <Text style={styles['subsection-label']}>링크</Text>
+            {!editUrl && (
+              <TouchableOpacity
+                onPress={handleOpenLinkModal}
+                hitSlop={8}>
+                <PlusIcon color="#588DFF" size={20} />
+              </TouchableOpacity>
+            )}
+          </View>
           <View style={styles['link-section']}>
-            {editUrl ? (
+            {editUrl && (
               <OgPreviewCard
                 url={editUrl}
                 ogData={editOgData || { title: editUrl }}
                 onRemove={handleRemoveLink}
               />
-            ) : (
-              <TouchableOpacity
-                style={styles['add-attach-btn']}
-                onPress={handleOpenLinkModal}
-                activeOpacity={0.7}>
-                <LinkIcon color="#588DFF" size={16} />
-                <Text style={styles['add-attach-btn-text']}>링크 추가</Text>
-              </TouchableOpacity>
             )}
           </View>
 
@@ -535,7 +521,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E4ECFF',
   },
-  divider: { height: 1, backgroundColor: '#E8EEF8', marginVertical: 16 },
+  divider: { height: 1, backgroundColor: '#D5DFED', marginVertical: 16 },
   'content-input': {
     fontSize: 15,
     color: '#1A1A1A',
@@ -549,7 +535,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E4ECFF',
   },
-  'section-divider': { height: 1, backgroundColor: '#E8EEF8', marginTop: 20, marginBottom: 16 },
+  'section-divider': { height: 1.2, backgroundColor: '#D5DFED', marginTop: 20, marginBottom: 16 },
   'section-label': {
     fontSize: 13,
     fontWeight: '700',
@@ -558,13 +544,18 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
     marginBottom: 14,
   },
+  'subsection-header': {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
   'subsection-label': {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: '700',
-    color: '#588DFF',
+    color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
-    letterSpacing: 0.4,
-    marginBottom: 10,
+    letterSpacing: 0.2,
   },
   'input-label': {
     fontSize: 12,
@@ -574,7 +565,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
     marginBottom: 8,
   },
-  'images-section': { marginBottom: 18 },
+  'images-section': { marginBottom: 16 },
   'images-row': {
     flexDirection: 'row',
     gap: 8,
