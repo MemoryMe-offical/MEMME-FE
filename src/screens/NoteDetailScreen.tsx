@@ -519,7 +519,7 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   'body-content': { padding: 20, paddingBottom: 40 },
   'title-input': {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
@@ -533,7 +533,7 @@ const styles = StyleSheet.create({
   },
   divider: { height: 1, backgroundColor: '#D5DFED', marginVertical: 16 },
   'content-input': {
-    fontSize: 15,
+    fontSize: 13,
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
     lineHeight: 26,
@@ -643,10 +643,10 @@ const styles = StyleSheet.create({
     borderColor: '#E4ECFF',
     gap: 10,
   },
-  'file-icon': { fontSize: 18 },
+  'file-icon': { fontSize: 14 },
   'file-name': {
     flex: 1,
-    fontSize: 14,
+    fontSize: 12,
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
     lineHeight: 20,
