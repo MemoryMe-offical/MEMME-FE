@@ -39,6 +39,7 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
   const [board, setBoard] = useState<Board>(initialBoard);
   const [isEditing, setIsEditing] = useState(startEditing ?? false);
   const [isSaving, setIsSaving] = useState(false);
+  const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
 
   // 편집 임시 상태
   const [editTitle, setEditTitle] = useState(initialBoard.title);
@@ -159,6 +160,11 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
   };
 
   const handleNotePress = (note: Note) => {
+    // 펼쳐지기/닫기 토글
+    setExpandedNoteId(expandedNoteId === note.id ? null : note.id);
+  };
+
+  const handleNoteEdit = (note: Note) => {
     navigation.navigate('NoteDetail', {
       note,
       boardId: board.id,
@@ -296,11 +302,22 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
 
           {hasNotes
             ? (board.notes!.map(note => (
-                <NoteCard
-                  key={note.id}
-                  note={note}
-                  onPress={() => handleNotePress(note)}
-                />
+                <View key={note.id} style={styles.noteCardWrapper}>
+                  <NoteCard
+                    note={note}
+                    expanded={expandedNoteId === note.id}
+                    onToggleExpand={() => handleNotePress(note)}
+                  />
+                  {expandedNoteId === note.id && (
+                    <TouchableOpacity
+                      style={styles.editNoteButton}
+                      onPress={() => handleNoteEdit(note)}
+                      activeOpacity={0.7}>
+                      <EditIcon color="#FFFFFF" size={16} />
+                      <Text style={styles.editNoteButtonText}>수정</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
               )))
             : (
               <TouchableOpacity style={styles.emptyState} onPress={handleAddNote} activeOpacity={0.7}>
@@ -446,6 +463,26 @@ const styles = StyleSheet.create({
     color: '#AABBCC',
     fontFamily: 'PretendardVariable',
     marginTop: 6,
+  },
+  noteCardWrapper: {
+    gap: 8,
+  },
+  editNoteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    backgroundColor: '#588DFF',
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  editNoteButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'PretendardVariable',
   },
 });
 
