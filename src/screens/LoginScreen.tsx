@@ -26,6 +26,7 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { loginStyles as styles } from '../styles/LoginScreen.styles';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KAKAO_REST_API_KEY, KAKAO_REDIRECT_URI } from '@env';
+import { login as authLogin } from '../utils/auth';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -102,13 +103,14 @@ const LoginScreen = () => {
 
       const data = await response.json();
       const accessToken = data?.accessToken;
+      const userId = data?.userId;
       console.log('로그인 성공, 받은 토큰:', accessToken);
 
-      if (!accessToken) {
-        throw new Error('토큰이 응답에 없습니다.');
+      if (!accessToken || !userId) {
+        throw new Error('토큰 또는 사용자 ID가 응답에 없습니다.');
       }
 
-      await Keychain.setGenericPassword('token', accessToken);
+      await authLogin(userId, accessToken);
       await AsyncStorage.setItem(
         STORAGE_KEYS.AUTO_LOGIN,
         autoLogin ? 'true' : 'false',
