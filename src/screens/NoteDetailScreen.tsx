@@ -351,22 +351,26 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
             </TouchableOpacity>
           </View>
           <View style={styles['images-section']}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles['images-row']}>
-              {editImageUris.map((uri, idx) => (
-                <View key={`${idx}`} style={styles['image-wrapper']}>
-                  <Image source={{ uri }} style={styles.thumbnail} resizeMode="cover" />
-                  <TouchableOpacity
-                    style={styles['image-remove-btn']}
-                    onPress={() => handleRemoveImage(idx)}
-                    hitSlop={4}>
-                    <CloseIcon color="#FFFFFF" size={12} />
-                  </TouchableOpacity>
-                </View>
-              ))}
-            </ScrollView>
+            {editImageUris.length > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles['images-row']}>
+                {editImageUris.map((uri, idx) => (
+                  <View key={`${idx}`} style={styles['image-wrapper']}>
+                    <Image source={{ uri }} style={styles.thumbnail} resizeMode="cover" />
+                    <TouchableOpacity
+                      style={styles['image-remove-btn']}
+                      onPress={() => handleRemoveImage(idx)}
+                      hitSlop={4}>
+                      <CloseIcon color="#FFFFFF" size={12} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </ScrollView>
+            ) : (
+              <Text style={styles['empty-section-text']}>첨부된 이미지가 없습니다</Text>
+            )}
           </View>
 
           {/* 파일 */}
@@ -380,15 +384,19 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
             </TouchableOpacity>
           </View>
           <View style={styles['files-section']}>
-            {editFiles.map(file => (
-              <View key={file.id} style={styles['file-row']}>
-                <Text style={styles['file-icon']}>📄</Text>
-                <Text style={styles['file-name']} numberOfLines={1}>{file.name}</Text>
-                <TouchableOpacity onPress={() => handleRemoveFile(file.id)} hitSlop={8}>
-                  <CloseIcon color="#9DAFC8" size={16} />
-                </TouchableOpacity>
-              </View>
-            ))}
+            {editFiles.length > 0 ? (
+              editFiles.map(file => (
+                <View key={file.id} style={styles['file-row']}>
+                  <Text style={styles['file-icon']}>📄</Text>
+                  <Text style={styles['file-name']} numberOfLines={1}>{file.name}</Text>
+                  <TouchableOpacity onPress={() => handleRemoveFile(file.id)} hitSlop={8}>
+                    <CloseIcon color="#9DAFC8" size={16} />
+                  </TouchableOpacity>
+                </View>
+              ))
+            ) : (
+              <Text style={styles['empty-section-text']}>첨부된 파일이 없습니다</Text>
+            )}
           </View>
 
           {/* 링크 */}
@@ -574,6 +582,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   'images-section': { marginBottom: 0 },
+  'empty-section-text': {
+    fontSize: 13,
+    color: '#AABBCC',
+    fontFamily: 'PretendardVariable',
+    textAlign: 'center',
+    paddingVertical: 12,
+  },
   'images-row': {
     flexDirection: 'row',
     gap: 8,
