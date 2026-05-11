@@ -103,11 +103,25 @@ const LoginScreen = () => {
 
       const data = await response.json();
       const accessToken = data?.accessToken;
-      const userId = data?.userId;
       console.log('로그인 성공, 받은 토큰:', accessToken);
 
-      if (!accessToken || !userId) {
-        throw new Error('토큰 또는 사용자 ID가 응답에 없습니다.');
+      if (!accessToken) {
+        throw new Error('토큰이 응답에 없습니다.');
+      }
+
+      // JWT 토큰에서 userId (sub) 추출
+      const tokenParts = accessToken.split('.');
+      if (tokenParts.length !== 3) {
+        throw new Error('유효하지 않은 토큰 형식입니다.');
+      }
+
+      const payload = JSON.parse(
+        Buffer.from(tokenParts[1], 'base64').toString('utf-8')
+      );
+      const userId = payload.sub;
+
+      if (!userId) {
+        throw new Error('토큰에 사용자 ID가 없습니다.');
       }
 
       await authLogin(userId, accessToken);
