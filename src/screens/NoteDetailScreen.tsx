@@ -14,6 +14,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Note, FileAttachment, OgData } from '../types';
@@ -48,9 +49,41 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
   const [linkInput, setLinkInput] = useState('');
   const [isFetchingOg, setIsFetchingOg] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isLoadingOgData, setIsLoadingOgData] = useState(false);
 
   // 저장 버튼으로 인한 goBack()과 일반 뒤로가기를 구분하는 플래그
   const isSavingRef = useRef(false);
+
+  // 화면 포커스 시 note 데이터 초기화
+  useFocusEffect(
+    useCallback(() => {
+      setEditTitle(route.params.note?.title ?? '');
+      setEditContent(route.params.note?.content ?? '');
+      setEditImageUris(route.params.note?.imageUris ?? []);
+      setEditUrl(route.params.note?.url);
+      setEditOgData(route.params.note?.ogData);
+      setEditFiles(route.params.note?.files ?? []);
+      setIsLoadingOgData(false);
+    }, [route.params.note])
+  );
+
+  // editUrl이 있는데 editOgData가 없으면 자동으로 로드
+  useEffect(() => {
+    const loadOgDataIfNeeded = async () => {
+      if (editUrl && !editOgData && !isLoadingOgData) {
+        setIsLoadingOgData(true);
+        try {
+          const ogData = await fetchOgData(editUrl);
+          setEditOgData(ogData);
+        } catch (error) {
+          console.error('Failed to load OG data:', error);
+        } finally {
+          setIsLoadingOgData(false);
+        }
+      }
+    };
+    loadOgDataIfNeeded();
+  }, [editUrl]);
 
   const isDirty = useCallback(() => {
     if (isNew) {
@@ -337,10 +370,10 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
 
           {/* 링크 */}
           <View style={styles['link-section']}>
-            {editUrl && editOgData ? (
+            {editUrl ? (
               <OgPreviewCard
                 url={editUrl}
-                ogData={editOgData}
+                ogData={editOgData || { title: editUrl }}
                 onRemove={handleRemoveLink}
               />
             ) : (
