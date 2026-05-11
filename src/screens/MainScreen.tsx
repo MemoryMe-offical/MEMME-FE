@@ -44,6 +44,7 @@ const MainScreen = () => {
   const [items, setItems] = useState<TimelineItem[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [inputText, setInputText] = useState('');
+  const [expandedMemoId, setExpandedMemoId] = useState<string | null>(null);
   const [contextMenuItem, setContextMenuItem] = useState<TimelineItem | null>(null);
   const [sideMenuVisible, setSideMenuVisible] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -492,9 +493,12 @@ const MainScreen = () => {
             }}
             renderItem={({ item }) => {
               if (item.type === 'memo') {
+                const memo = item as Memo;
                 return (
                   <ChatMessageItem
-                    item={item as Memo}
+                    item={memo}
+                    expanded={expandedMemoId === memo.id}
+                    onToggleExpand={(m) => setExpandedMemoId(expandedMemoId === m.id ? null : m.id)}
                     onLongPress={handleContextMenu}
                   />
                 );
