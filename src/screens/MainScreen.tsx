@@ -103,6 +103,29 @@ const MainScreen = () => {
     loadRecentBoards();
   }, []);
 
+  // 저장소 사용량 계산 (GB 단위)
+  const storageUsed = useMemo(() => {
+    let totalBytes = 0;
+
+    items.forEach(item => {
+      if (item.type === 'board') {
+        const board = item as Board;
+        (board.notes ?? []).forEach(note => {
+          // 이미지 크기 합산 (각 이미지 약 2MB로 추정)
+          totalBytes += (note.imageUris?.length ?? 0) * (2 * 1024 * 1024);
+          // 비디오 크기 합산 (각 비디오 약 50MB로 추정)
+          totalBytes += (note.videoUris?.length ?? 0) * (50 * 1024 * 1024);
+          // 파일 크기 합산
+          (note.files ?? []).forEach(file => {
+            totalBytes += file.size ?? 0;
+          });
+        });
+      }
+    });
+
+    return totalBytes / (1024 * 1024 * 1024); // GB로 변환
+  }, [items]);
+
   const filteredItems = useMemo(() => {
     let result = items;
 
@@ -696,6 +719,7 @@ const MainScreen = () => {
       <SideMenu
         visible={sideMenuVisible}
         items={items}
+        storageUsed={storageUsed}
         onClose={() => setSideMenuVisible(false)}
         onSettings={() => {
           navigation.navigate('Settings');

@@ -38,6 +38,7 @@ const SideMenuImageThumbnail = ({ imageUrl, onPress }: { imageUrl: string; onPre
 interface Props {
   visible: boolean;
   items: TimelineItem[];
+  storageUsed?: number;
   onClose: () => void;
   onSettings: () => void;
   onBookmarkPress: (item: TimelineItem) => void;
@@ -46,7 +47,7 @@ interface Props {
   onMediaGalleryPress?: (galleryType: 'images' | 'videos' | 'files' | 'links') => void;
 }
 
-const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress, isBookmarkFilterActive, onBookmarkFilterToggle, onMediaGalleryPress }: Props) => {
+const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBookmarkPress, isBookmarkFilterActive, onBookmarkFilterToggle, onMediaGalleryPress }: Props) => {
   const slideAnim = useRef(new Animated.Value(SIDE_MENU_WIDTH)).current;
   const insets = useSafeAreaInsets();
   const [cachedOgData, setCachedOgData] = useState<{ [url: string]: OgData }>({});
@@ -199,8 +200,8 @@ const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress, isBook
               {/* 스토리지 */}
               <View style={styles['sideMenu-storage']}>
                 <View style={styles['sideMenu-storage-textRow']}>
-                  <Text style={styles['sideMenu-storage-usedText']}>0 GB</Text>
-                  <Text style={styles['sideMenu-storage-totalText']}>/ 100 GB</Text>
+                  <Text style={styles['sideMenu-storage-usedText']}>{storageUsed.toFixed(2)} GB</Text>
+                  <Text style={styles['sideMenu-storage-totalText']}>/ 10 GB</Text>
                   <TouchableOpacity style={styles['sideMenu-storage-detailBtn']}>
                     <Text style={styles['sideMenu-storage-detailText']}>자세히</Text>
                   </TouchableOpacity>
@@ -211,14 +212,14 @@ const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress, isBook
                     <View
                       style={[
                         styles['sideMenu-storage-barFill'],
-                        { width: '0%' },
+                        { width: `${Math.min((storageUsed / 10) * 100, 100)}%` },
                       ]}
                     />
                   </View>
                   <View
                     style={[
                       styles['sideMenu-storage-barThumb'],
-                      { left: 0 },
+                      { left: `${Math.min((storageUsed / 10) * 100, 100)}%` },
                     ]}
                   />
                 </View>

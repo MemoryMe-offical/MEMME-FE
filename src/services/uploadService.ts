@@ -2,6 +2,9 @@ import { fetchWithAutoLogoutHandler } from '../utils/tokenUtils';
 
 const BASE_URL = 'https://memme.o-r.kr/v1';
 
+// 파일 업로드 제한
+export const MAX_UPLOAD_SIZE = 100 * 1024 * 1024; // 100MB (한 번에 최대 100MB까지 업로드 가능)
+
 interface ApiResponse<T> {
   success: boolean;
   status: number;

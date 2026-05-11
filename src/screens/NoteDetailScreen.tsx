@@ -28,7 +28,7 @@ import {
 import { launchImageLibrary } from 'react-native-image-picker';
 import { pick, types, isErrorWithCode, errorCodes } from '@react-native-documents/picker';
 import { fetchOgData } from '../services/ogService';
-import { uploadImages, uploadFile } from '../services/uploadService';
+import { uploadImages, uploadFile, MAX_UPLOAD_SIZE } from '../services/uploadService';
 import OgPreviewCard from '../components/note/OgPreviewCard';
 import * as noteService from '../services/noteService';
 
@@ -202,6 +202,27 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         selectionLimit: Math.max(1, 10 - editImageUris.length),
       });
       if (result.assets && result.assets.length > 0) {
+        // 파일 크기 검증
+        let totalSize = 0;
+        let hasOversized = false;
+
+        for (const asset of result.assets) {
+          if (asset.fileSize) {
+            totalSize += asset.fileSize;
+            if (asset.fileSize > MAX_UPLOAD_SIZE) {
+              hasOversized = true;
+            }
+          }
+        }
+
+        if (hasOversized || totalSize > MAX_UPLOAD_SIZE) {
+          Alert.alert(
+            '용량 초과',
+            `최대 100MB까지 업로드할 수 있습니다.\n현재 선택 크기: ${(totalSize / (1024 * 1024)).toFixed(2)}MB`,
+          );
+          return;
+        }
+
         const localUris = result.assets.filter(a => !!a.uri).map(a => a.uri!);
         setIsUploading(true);
         try {
@@ -268,6 +289,32 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         type: [types.allFiles],
         allowMultiSelection: true,
       });
+
+      // 파일 크기 검증
+      let totalSize = 0;
+      let hasOversized = false;
+      let oversizedFileName = '';
+
+      for (const result of results) {
+        if (result.size) {
+          totalSize += result.size;
+          if (result.size > MAX_UPLOAD_SIZE) {
+            hasOversized = true;
+            oversizedFileName = result.name || 'Unknown';
+          }
+        }
+      }
+
+      if (hasOversized || totalSize > MAX_UPLOAD_SIZE) {
+        Alert.alert(
+          '용량 초과',
+          hasOversized
+            ? `'${oversizedFileName}' 파일이 100MB를 초과합니다.`
+            : `최대 100MB까지 업로드할 수 있습니다.\n현재 선택 크기: ${(totalSize / (1024 * 1024)).toFixed(2)}MB`,
+        );
+        return;
+      }
+
       setIsUploading(true);
       try {
         const uploadPromises = results.map(async r => {
