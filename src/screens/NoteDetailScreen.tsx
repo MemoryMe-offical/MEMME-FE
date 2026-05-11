@@ -28,6 +28,7 @@ import {
 import { launchImageLibrary } from 'react-native-image-picker';
 import { pick, types, isErrorWithCode, errorCodes } from '@react-native-documents/picker';
 import { fetchOgData } from '../services/ogService';
+import { uploadImages, uploadFile } from '../services/uploadService';
 import OgPreviewCard from '../components/note/OgPreviewCard';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NoteDetail'>;
@@ -46,6 +47,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
   const [isLinkModalVisible, setIsLinkModalVisible] = useState(false);
   const [linkInput, setLinkInput] = useState('');
   const [isFetchingOg, setIsFetchingOg] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   // 저장 버튼으로 인한 goBack()과 일반 뒤로가기를 구분하는 플래그
   const isSavingRef = useRef(false);
@@ -130,8 +132,17 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         selectionLimit: Math.max(1, 10 - editImageUris.length),
       });
       if (result.assets && result.assets.length > 0) {
-        const uris = result.assets.filter(a => !!a.uri).map(a => a.uri!);
-        setEditImageUris(prev => [...prev, ...uris]);
+        const localUris = result.assets.filter(a => !!a.uri).map(a => a.uri!);
+        setIsUploading(true);
+        try {
+          const response = await uploadImages(localUris);
+          setEditImageUris(prev => [...prev, ...response.urls]);
+        } catch (error) {
+          Alert.alert('오류', '이미지 업로드에 실패했습니다.');
+          console.error('Image upload error:', error);
+        } finally {
+          setIsUploading(false);
+        }
       }
     } catch {
       // 사용자 취소 — 무시
@@ -185,14 +196,26 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         type: [types.allFiles],
         allowMultiSelection: true,
       });
-      const newFiles: FileAttachment[] = results.map(r => ({
-        id: `file_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-        name: r.name ?? 'unknown',
-        url: r.uri,
-        mimeType: r.type ?? 'application/octet-stream',
-        size: r.size ?? 0,
-      }));
-      setEditFiles(prev => [...prev, ...newFiles]);
+      setIsUploading(true);
+      try {
+        const uploadPromises = results.map(async r => {
+          const uploadResponse = await uploadFile(r.uri);
+          return {
+            id: `file_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+            name: r.name ?? 'unknown',
+            url: uploadResponse.url,
+            mimeType: r.type ?? 'application/octet-stream',
+            size: uploadResponse.size ?? r.size ?? 0,
+          };
+        });
+        const newFiles = await Promise.all(uploadPromises);
+        setEditFiles(prev => [...prev, ...newFiles]);
+      } catch (error) {
+        Alert.alert('오류', '파일 업로드에 실패했습니다.');
+        console.error('File upload error:', error);
+      } finally {
+        setIsUploading(false);
+      }
     } catch (e) {
       if (isErrorWithCode(e) && e.code === errorCodes.OPERATION_CANCELED) {
         // 사용자 취소 — 무시
@@ -233,10 +256,10 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           <TouchableOpacity
             onPress={handleSave}
             hitSlop={8}
-            disabled={!editTitle.trim()}
+            disabled={!editTitle.trim() || isUploading}
             activeOpacity={0.6}>
-            <Text style={[styles['save-text'], !editTitle.trim() && styles['save-text-disabled']]}>
-              저장
+            <Text style={[styles['save-text'], (!editTitle.trim() || isUploading) && styles['save-text-disabled']]}>
+              {isUploading ? '업로드 중...' : '저장'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -296,11 +319,18 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                 </View>
               ))}
               <TouchableOpacity
-                style={styles['add-image-btn']}
+                style={[styles['add-image-btn'], isUploading && styles['add-image-btn-disabled']]}
                 onPress={handleAddImage}
-                activeOpacity={0.7}>
-                <ImageIcon color="#588DFF" size={20} />
-                <Text style={styles['add-btn-text']}>추가</Text>
+                activeOpacity={0.7}
+                disabled={isUploading}>
+                {isUploading ? (
+                  <ActivityIndicator color="#588DFF" size="small" />
+                ) : (
+                  <>
+                    <ImageIcon color="#588DFF" size={20} />
+                    <Text style={styles['add-btn-text']}>추가</Text>
+                  </>
+                )}
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -336,11 +366,18 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
               </View>
             ))}
             <TouchableOpacity
-              style={styles['add-attach-btn']}
+              style={[styles['add-attach-btn'], isUploading && styles['add-attach-btn-disabled']]}
               onPress={handleAddFile}
-              activeOpacity={0.7}>
-              <PlusIcon color="#588DFF" size={16} />
-              <Text style={styles['add-attach-btn-text']}>파일 추가</Text>
+              activeOpacity={0.7}
+              disabled={isUploading}>
+              {isUploading ? (
+                <ActivityIndicator color="#588DFF" size="small" />
+              ) : (
+                <>
+                  <PlusIcon color="#588DFF" size={16} />
+                  <Text style={styles['add-attach-btn-text']}>파일 추가</Text>
+                </>
+              )}
             </TouchableOpacity>
           </View>
 
@@ -507,6 +544,9 @@ const styles = StyleSheet.create({
     color: '#588DFF',
     fontFamily: 'PretendardVariable',
   },
+  'add-image-btn-disabled': {
+    opacity: 0.6,
+  },
   'link-section': { marginBottom: 12 },
   'files-section': { gap: 8 },
   'file-row': {
@@ -544,6 +584,9 @@ const styles = StyleSheet.create({
     color: '#588DFF',
     fontFamily: 'PretendardVariable',
     fontWeight: '500',
+  },
+  'add-attach-btn-disabled': {
+    opacity: 0.6,
   },
   'modal-overlay': {
     flex: 1,
