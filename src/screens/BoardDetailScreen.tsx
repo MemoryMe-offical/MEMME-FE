@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Board, Note } from '../types';
@@ -105,6 +106,21 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
       boardTitle: board.title,
     });
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      const refreshBoard = async () => {
+        try {
+          const updatedBoard = await boardService.fetchBoard(board.id);
+          setBoard(updatedBoard);
+        } catch (error) {
+          console.error('Failed to refresh board:', error);
+        }
+      };
+
+      refreshBoard();
+    }, [board.id])
+  );
 
   // ── 편집 모드 ──
   if (isEditing) {
