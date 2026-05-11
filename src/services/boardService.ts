@@ -1,5 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Board } from '../types';
+import { fetchWithAutoLogoutHandler } from '../utils/tokenUtils';
 
 const BASE_URL = 'https://memme.o-r.kr/v1';
 
@@ -29,14 +29,8 @@ export const createBoard = async (boardData: {
   tags?: string[];
 }): Promise<Board> => {
   try {
-    const token = await AsyncStorage.getItem('accessToken');
-
-    const response = await fetch(`${BASE_URL}/boards`, {
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/boards`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
       body: JSON.stringify(boardData),
     });
 
@@ -58,14 +52,8 @@ export const createBoard = async (boardData: {
  */
 export const fetchBoard = async (boardUid: string): Promise<Board> => {
   try {
-    const token = await AsyncStorage.getItem('accessToken');
-
-    const response = await fetch(`${BASE_URL}/boards/${boardUid}`, {
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/boards/${boardUid}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
     });
 
     if (!response.ok) {
@@ -93,14 +81,8 @@ export const updateBoard = async (
   }
 ): Promise<Board> => {
   try {
-    const token = await AsyncStorage.getItem('accessToken');
-
-    const response = await fetch(`${BASE_URL}/boards/${boardUid}`, {
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/boards/${boardUid}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
       body: JSON.stringify(updates),
     });
 
@@ -122,14 +104,8 @@ export const updateBoard = async (
  */
 export const deleteBoard = async (boardUid: string): Promise<void> => {
   try {
-    const token = await AsyncStorage.getItem('accessToken');
-
-    const response = await fetch(`${BASE_URL}/boards/${boardUid}`, {
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/boards/${boardUid}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
     });
 
     if (!response.ok) {
@@ -146,14 +122,8 @@ export const deleteBoard = async (boardUid: string): Promise<void> => {
  */
 export const toggleBoardBookmark = async (boardUid: string, bookmarked?: boolean): Promise<Board> => {
   try {
-    const token = await AsyncStorage.getItem('accessToken');
-
-    const response = await fetch(`${BASE_URL}/boards/${boardUid}/bookmark`, {
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/boards/${boardUid}/bookmark`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
       body: JSON.stringify({ bookmarked: bookmarked ?? true }),
     });
 

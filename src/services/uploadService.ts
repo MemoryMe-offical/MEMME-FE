@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fetchWithAutoLogoutHandler } from '../utils/tokenUtils';
 
 const BASE_URL = 'https://memme.o-r.kr/v1';
 
@@ -36,7 +36,6 @@ export const uploadImages = async (
   fileUris: string[]
 ): Promise<ImageUploadResponse> => {
   try {
-    const token = await AsyncStorage.getItem('accessToken');
     const formData = new FormData();
 
     for (const uri of fileUris) {
@@ -50,11 +49,8 @@ export const uploadImages = async (
       } as any);
     }
 
-    const response = await fetch(`${BASE_URL}/upload/image`, {
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/upload/image`, {
       method: 'POST',
-      headers: {
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
       body: formData,
     });
 
@@ -75,7 +71,6 @@ export const uploadImages = async (
  */
 export const uploadVideo = async (fileUri: string): Promise<VideoUploadResponse> => {
   try {
-    const token = await AsyncStorage.getItem('accessToken');
     const formData = new FormData();
 
     const filename = fileUri.split('/').pop() || 'video.mp4';
@@ -85,11 +80,8 @@ export const uploadVideo = async (fileUri: string): Promise<VideoUploadResponse>
       name: filename,
     } as any);
 
-    const response = await fetch(`${BASE_URL}/upload/video`, {
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/upload/video`, {
       method: 'POST',
-      headers: {
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
       body: formData,
     });
 
@@ -110,7 +102,6 @@ export const uploadVideo = async (fileUri: string): Promise<VideoUploadResponse>
  */
 export const uploadFile = async (fileUri: string): Promise<FileUploadResponse> => {
   try {
-    const token = await AsyncStorage.getItem('accessToken');
     const formData = new FormData();
 
     const filename = fileUri.split('/').pop() || 'file';
@@ -120,11 +111,8 @@ export const uploadFile = async (fileUri: string): Promise<FileUploadResponse> =
       name: filename,
     } as any);
 
-    const response = await fetch(`${BASE_URL}/upload/file`, {
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/upload/file`, {
       method: 'POST',
-      headers: {
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
       body: formData,
     });
 
@@ -145,14 +133,8 @@ export const uploadFile = async (fileUri: string): Promise<FileUploadResponse> =
  */
 export const getUploadObject = async (key: string): Promise<any> => {
   try {
-    const token = await AsyncStorage.getItem('accessToken');
-
-    const response = await fetch(`${BASE_URL}/upload/object?key=${encodeURIComponent(key)}`, {
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/upload/object?key=${encodeURIComponent(key)}`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
     });
 
     if (!response.ok) {

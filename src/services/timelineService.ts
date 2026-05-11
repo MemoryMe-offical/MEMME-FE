@@ -1,5 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { TimelineItem } from '../types';
+import { fetchWithAutoLogoutHandler } from '../utils/tokenUtils';
 
 const BASE_URL = 'https://memme.o-r.kr/v1';
 
@@ -31,8 +31,6 @@ interface TimelineData {
  */
 export const fetchTimeline = async (query?: TimelineQuery): Promise<TimelineItem[]> => {
   try {
-    const token = await AsyncStorage.getItem('accessToken');
-
     const params = new URLSearchParams();
     if (query?.type) params.append('type', query.type);
     if (query?.sort) params.append('sort', query.sort);
@@ -45,12 +43,8 @@ export const fetchTimeline = async (query?: TimelineQuery): Promise<TimelineItem
 
     const url = `${BASE_URL}/timeline${params.toString() ? '?' + params.toString() : ''}`;
 
-    const response = await fetch(url, {
+    const response = await fetchWithAutoLogoutHandler(url, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
     });
 
     if (!response.ok) {

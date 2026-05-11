@@ -1,5 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PendingLink } from '../types';
+import { fetchWithAutoLogoutHandler, getStoredToken } from '../utils/tokenUtils';
 
 const BASE_URL = 'https://memme.o-r.kr/v1';
 
@@ -15,19 +15,13 @@ interface ApiResponse<T> {
  */
 export const addPendingLink = async (link: Omit<PendingLink, 'id'>): Promise<PendingLink> => {
   try {
-    const token = await AsyncStorage.getItem('accessToken');
-
     const payload = {
       url: link.url,
       ...(link.ogData && { ogData: link.ogData }),
     };
 
-    const response = await fetch(`${BASE_URL}/pending-links`, {
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/pending-links`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
       body: JSON.stringify(payload),
     });
 
@@ -52,18 +46,14 @@ export const addPendingLink = async (link: Omit<PendingLink, 'id'>): Promise<Pen
  */
 export const loadPendingLinks = async (): Promise<PendingLink[]> => {
   try {
-    const token = await AsyncStorage.getItem('accessToken');
+    const token = await getStoredToken();
 
     if (!token) {
       return [];
     }
 
-    const response = await fetch(`${BASE_URL}/pending-links`, {
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/pending-links`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
     });
 
     if (!response.ok) {
@@ -86,14 +76,8 @@ export const loadPendingLinks = async (): Promise<PendingLink[]> => {
  */
 export const removePendingLink = async (id: string): Promise<void> => {
   try {
-    const token = await AsyncStorage.getItem('accessToken');
-
-    const response = await fetch(`${BASE_URL}/pending-links/${id}`, {
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/pending-links/${id}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
     });
 
     if (!response.ok) {

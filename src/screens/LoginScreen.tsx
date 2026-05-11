@@ -26,6 +26,7 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { loginStyles as styles } from '../styles/LoginScreen.styles';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KAKAO_REST_API_KEY, KAKAO_REDIRECT_URI } from '@env';
+import { extractUserIdFromJWT } from '../utils/tokenUtils';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -57,23 +58,6 @@ const LoginScreen = () => {
   const validateEmail = (value: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(value);
-  };
-
-  const extractUserIdFromJWT = (token: string): string | null => {
-    try {
-      const parts = token.split('.');
-      if (parts.length !== 3) return null;
-
-      const payload = parts[1];
-      // React Native에서는 atob() 사용
-      const decoded = atob(payload);
-      const json = JSON.parse(decoded);
-      console.log('🔥 JWT 디코딩 성공:', json);
-      return json.sub || null;
-    } catch (error) {
-      console.error('🔥 JWT 디코딩 실패:', error);
-      return null;
-    }
   };
 
   const parseErrorMessage = async (response: Response) => {
@@ -136,12 +120,22 @@ const LoginScreen = () => {
       // AsyncStorage에 저장
       await AsyncStorage.setItem('accessToken', accessToken);
       await AsyncStorage.setItem('userId', userId);
-      await AsyncStorage.setItem(
-        STORAGE_KEYS.AUTO_LOGIN,
-        autoLogin ? 'true' : 'false',
-      );
+      const autoLoginFlag = autoLogin ? 'true' : 'false';
+      await AsyncStorage.setItem(STORAGE_KEYS.AUTO_LOGIN, autoLoginFlag);
 
-      console.log('🔥 userId가 AsyncStorage에 저장되었습니다:', userId);
+      console.log('📌 [Login] 저장 완료:');
+      console.log(`   - accessToken: ${accessToken.substring(0, 20)}...`);
+      console.log(`   - userId: ${userId}`);
+      console.log(`   - AUTO_LOGIN: ${autoLoginFlag}`);
+
+      // 저장 확인
+      const savedToken = await AsyncStorage.getItem('accessToken');
+      const savedUserId = await AsyncStorage.getItem('userId');
+      const savedAutoLogin = await AsyncStorage.getItem(STORAGE_KEYS.AUTO_LOGIN);
+      console.log('✅ [Login] 저장 확인:');
+      console.log(`   - accessToken 저장됨: ${!!savedToken}`);
+      console.log(`   - userId 저장됨: ${savedUserId}`);
+      console.log(`   - AUTO_LOGIN 저장됨: ${savedAutoLogin}`);
 
       navigation.reset({
         index: 0,

@@ -6,9 +6,10 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { splashStyles as styles } from '../styles/SplashScreen.styles';
 import { migrateFromV1 } from '../utils/storage';
+import { isAutoLoginDataValid } from '../utils/tokenUtils';
 
 // 개발 플러그: true면 온보딩 강제로 보여줌, false면 실제 로직대로 동작
-const FORCE_SHOW_ONBOARDING = true;
+const FORCE_SHOW_ONBOARDING = false;
 
 // 스플래시 고정 (개발용) - true면 스플래시 화면에서 멈춤
 const FREEZE_SPLASH = false;
@@ -44,9 +45,21 @@ const SplashScreen = ({ navigation }: Props) => {
         const hasSeenOnboarding = await AsyncStorage.getItem('@hasSeenOnboarding');
 
         if (hasSeenOnboarding === 'true') {
-          // 온보딩을 본 적 있으면 메인으로
-          navigation.replace('Main');
+          console.log('📌 [Splash] 온보딩 완료됨, 자동로그인 검증 중...');
+          // 온보딩을 본 적 있으면 자동로그인 데이터 확인
+          const autoLoginValid = await isAutoLoginDataValid();
+
+          if (autoLoginValid) {
+            // 자동로그인 가능 → 메인으로
+            console.log('✅ [Splash] 자동로그인 성공 → Main으로 이동');
+            navigation.replace('Main');
+          } else {
+            // 자동로그인 불가능 → 로그인으로
+            console.log('⚠️ [Splash] 자동로그인 실패 → Login으로 이동');
+            navigation.replace('Login');
+          }
         } else {
+          console.log('📌 [Splash] 온보딩 미완료 → Onboarding으로 이동');
           // 최초 사용자면 온보딩으로
           navigation.replace('Onboarding');
         }

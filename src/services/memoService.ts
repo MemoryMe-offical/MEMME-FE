@@ -1,5 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Memo } from '../types';
+import { fetchWithAutoLogoutHandler } from '../utils/tokenUtils';
 
 const BASE_URL = 'https://memme.o-r.kr/v1';
 
@@ -15,14 +15,8 @@ interface ApiResponse<T> {
  */
 export const createMemo = async (text: string): Promise<Memo> => {
   try {
-    const token = await AsyncStorage.getItem('accessToken');
-
-    const response = await fetch(`${BASE_URL}/memos`, {
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/memos`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
       body: JSON.stringify({ text }),
     });
 
@@ -51,14 +45,8 @@ export const createMemo = async (text: string): Promise<Memo> => {
  */
 export const deleteMemo = async (memoUid: string): Promise<void> => {
   try {
-    const token = await AsyncStorage.getItem('accessToken');
-
-    const response = await fetch(`${BASE_URL}/memos/${memoUid}`, {
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/memos/${memoUid}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
     });
 
     if (!response.ok && response.status !== 404) {
@@ -75,14 +63,8 @@ export const deleteMemo = async (memoUid: string): Promise<void> => {
  */
 export const toggleMemoBookmark = async (memoUid: string, bookmarked?: boolean): Promise<Memo> => {
   try {
-    const token = await AsyncStorage.getItem('accessToken');
-
-    const response = await fetch(`${BASE_URL}/memos/${memoUid}/bookmark`, {
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/memos/${memoUid}/bookmark`, {
       method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
       body: JSON.stringify({ bookmarked: bookmarked ?? true }),
     });
 

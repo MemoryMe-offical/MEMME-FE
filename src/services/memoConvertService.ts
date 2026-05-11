@@ -1,5 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Board } from '../types';
+import { fetchWithAutoLogoutHandler } from '../utils/tokenUtils';
 
 const BASE_URL = 'https://memme.o-r.kr/v1';
 
@@ -17,8 +17,6 @@ export const convertMemoToNewBoard = async (
   }
 ): Promise<Board> => {
   try {
-    const token = await AsyncStorage.getItem('accessToken');
-
     const requestBody = {
       boardTitle: boardData?.title,
       description: boardData?.description,
@@ -28,12 +26,8 @@ export const convertMemoToNewBoard = async (
     };
     console.log('convertMemoToNewBoard request:', memoUid, JSON.stringify(requestBody, null, 2));
 
-    const response = await fetch(`${BASE_URL}/memos/${memoUid}/convert/new-board`, {
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/memos/${memoUid}/convert/new-board`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
       body: JSON.stringify(requestBody),
     });
 
@@ -87,21 +81,15 @@ export const convertMemoToExistingBoard = async (
   }
 ): Promise<Board> => {
   try {
-    const token = await AsyncStorage.getItem('accessToken');
-
     const requestBody = {
       noteTitle: noteData?.noteTitle,
       content: noteData?.content,
     };
 
-    const response = await fetch(
+    const response = await fetchWithAutoLogoutHandler(
       `${BASE_URL}/memos/${memoUid}/convert/boards/${targetBoardUid}`,
       {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` }),
-        },
         body: JSON.stringify(requestBody),
       }
     );

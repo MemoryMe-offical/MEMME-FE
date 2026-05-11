@@ -1,5 +1,5 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { OgData } from '../types';
+import { fetchWithAutoLogoutHandler } from '../utils/tokenUtils';
 
 const BASE_URL = 'https://memme.o-r.kr/v1';
 
@@ -99,15 +99,10 @@ export const fetchOgData = async (url: string): Promise<OgData> => {
       return directData;
     }
 
-    const token = await AsyncStorage.getItem('accessToken');
     const endpoint = `${BASE_URL}/og?url=${encodeURIComponent(url)}`;
 
-    const response = await fetch(endpoint, {
+    const response = await fetchWithAutoLogoutHandler(endpoint, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
     });
 
     if (response.ok) {

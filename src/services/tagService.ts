@@ -1,4 +1,4 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fetchWithAutoLogoutHandler } from '../utils/tokenUtils';
 
 const BASE_URL = 'https://memme.o-r.kr/v1';
 
@@ -12,14 +12,8 @@ export interface TagData {
  */
 export const fetchTags = async (): Promise<TagData[]> => {
   try {
-    const token = await AsyncStorage.getItem('accessToken');
-
-    const response = await fetch(`${BASE_URL}/tags`, {
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/tags`, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
     });
 
     if (!response.ok) {

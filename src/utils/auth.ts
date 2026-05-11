@@ -102,7 +102,7 @@ export const logout = async (): Promise<void> => {
     }
 
     await deleteDeviceId();
-    await AsyncStorage.multiRemove(['userId', 'accessToken', 'refreshToken']);
+    await AsyncStorage.multiRemove(['userId', 'accessToken', 'refreshToken', 'AUTO_LOGIN']);
 
     console.log('✅ [Auth] 로그아웃 완료');
   } catch (error) {
