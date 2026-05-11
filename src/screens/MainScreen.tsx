@@ -150,15 +150,34 @@ const MainScreen = () => {
       : NativeModules.SharedIntentModule;
 
   const handleSharedUrl = async (url: string) => {
-    if (!userId) return;
-    const ogData = await fetchOgData(url);
-    const link = await pendingLinkService.addPendingLink({
-      userId,
-      url,
-      ogData,
-      receivedAt: new Date().toISOString(),
-    });
-    setPendingLinks(prev => [...prev, link]);
+    console.log('🔥 handleSharedUrl 시작:', { url, userId });
+    if (!userId) {
+      console.warn('🔥 userId가 없어서 공유 링크 처리 불가');
+      return;
+    }
+
+    try {
+      console.log('🔥 OG 데이터 요청 중...');
+      const ogData = await fetchOgData(url);
+      console.log('🔥 fetchOgData 완료:', ogData);
+
+      console.log('🔥 pendingLink 생성 중...');
+      const link = await pendingLinkService.addPendingLink({
+        userId,
+        url,
+        ogData,
+        receivedAt: new Date().toISOString(),
+      });
+      console.log('🔥 pendingLink 생성 완료:', link);
+
+      setPendingLinks(prev => {
+        const updated = [...prev, link];
+        console.log('🔥 pendingLinks 업데이트:', updated);
+        return updated;
+      });
+    } catch (error) {
+      console.error('🔥 공유 링크 처리 실패:', error);
+    }
   };
 
   useEffect(() => {

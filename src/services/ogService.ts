@@ -17,7 +17,10 @@ export const fetchOgData = async (url: string): Promise<OgData> => {
   try {
     const token = await AsyncStorage.getItem('accessToken');
 
-    const response = await fetch(`${BASE_URL}/og?url=${encodeURIComponent(url)}`, {
+    const endpoint = `${BASE_URL}/og?url=${encodeURIComponent(url)}`;
+    console.log('🔥 OG 데이터 요청:', endpoint);
+
+    const response = await fetch(endpoint, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -30,9 +33,13 @@ export const fetchOgData = async (url: string): Promise<OgData> => {
     }
 
     const apiResponse: ApiResponse<OgData> = await response.json();
-    return apiResponse.data || { title: url };
+    console.log('🔥 OG 응답:', apiResponse);
+
+    const ogData = apiResponse.data || { title: url };
+    console.log('🔥 반환된 OG 데이터:', ogData);
+    return ogData;
   } catch (error) {
-    console.error('Failed to fetch OG data:', error);
+    console.error('🔥 OG 데이터 요청 실패:', error);
     return { title: url };
   }
 };

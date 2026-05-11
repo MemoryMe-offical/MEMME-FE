@@ -17,13 +17,20 @@ export const addPendingLink = async (link: Omit<PendingLink, 'id'>): Promise<Pen
   try {
     const token = await AsyncStorage.getItem('accessToken');
 
+    const payload = {
+      url: link.url,
+      ...(link.ogData && { ogData: link.ogData }),
+    };
+
+    console.log('🔥 pendingLink 요청 payload:', payload);
+
     const response = await fetch(`${BASE_URL}/pending-links`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(token && { 'Authorization': `Bearer ${token}` }),
       },
-      body: JSON.stringify({ url: link.url }),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
@@ -31,12 +38,14 @@ export const addPendingLink = async (link: Omit<PendingLink, 'id'>): Promise<Pen
     }
 
     const apiResponse: ApiResponse<{ pendingLink: PendingLink }> = await response.json();
+    console.log('🔥 pendingLink 응답:', apiResponse.data.pendingLink);
+
     return {
       ...apiResponse.data.pendingLink,
       id: apiResponse.data.pendingLink.id || apiResponse.data.pendingLink.uid,
     };
   } catch (error) {
-    console.error('Failed to add pending link:', error);
+    console.error('🔥 pendingLink 추가 실패:', error);
     throw error;
   }
 };
