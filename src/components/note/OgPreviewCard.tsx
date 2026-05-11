@@ -27,8 +27,7 @@ const OgPreviewCard = ({ url, ogData, onRemove }: OgPreviewCardProps) => {
     <TouchableOpacity
       style={styles.container}
       onPress={handlePress}
-      activeOpacity={0.7}
-      disabled={onRemove ? false : true}>
+      activeOpacity={0.7}>
       <View style={styles.content}>
         {ogData.imageUrl ? (
           <Image source={{ uri: ogData.imageUrl }} style={styles.image} resizeMode="cover" />
