@@ -60,7 +60,7 @@ export const fetchTimeline = async (query?: TimelineQuery): Promise<TimelineItem
     const apiResponse: ApiResponse<TimelineData> = await response.json();
     const items = apiResponse.data?.items || [];
 
-    return items.map((item: any) => ({
+    const transformed = items.map((item: any) => ({
       ...item,
       id: item.uid,
       bookMark: item.bookmarked ?? false,
@@ -76,6 +76,9 @@ export const fetchTimeline = async (query?: TimelineQuery): Promise<TimelineItem
         ogData: note.ogData,
       })),
     }));
+
+    // 백엔드가 여전히 desc로 보내므로 역순으로 뒤집음 (오래된 것이 위, 최신이 아래)
+    return transformed.reverse();
   } catch (error) {
     console.error('Failed to fetch timeline:', error);
     throw error;
