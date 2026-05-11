@@ -33,19 +33,24 @@ const OgPreviewCard = ({ url, ogData, onRemove }: OgPreviewCardProps) => {
           <Image source={{ uri: ogData.imageUrl }} style={styles.image} resizeMode="cover" />
         ) : (
           <View style={styles['image-placeholder']}>
-            <LinkIcon color="#AABBCC" size={24} />
+            <LinkIcon color="#AABBCC" size={32} />
           </View>
         )}
         <View style={styles.info}>
           <Text style={styles.domain} numberOfLines={1}>
             {ogData.siteName || displayDomain}
           </Text>
-          <Text style={styles.title} numberOfLines={2}>
-            {ogData.title || url}
+          <Text style={styles.title} numberOfLines={3}>
+            {ogData.title || '링크'}
           </Text>
           {!!ogData.description && (
             <Text style={styles.description} numberOfLines={2}>
               {ogData.description}
+            </Text>
+          )}
+          {!ogData.title && (
+            <Text style={styles.url} numberOfLines={2}>
+              {url}
             </Text>
           )}
         </View>
@@ -82,25 +87,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  info: { flex: 1, padding: 10, gap: 2 },
+  info: { flex: 1, padding: 12, gap: 4 },
   domain: {
-    fontSize: 11,
-    color: '#9DAFC8',
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#588DFF',
     fontFamily: 'PretendardVariable',
   },
   title: {
-    fontSize: 13,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '700',
     color: '#1A1A1A',
+    fontFamily: 'PretendardVariable',
+    lineHeight: 20,
+  },
+  description: {
+    fontSize: 13,
+    color: '#6B7E9A',
     fontFamily: 'PretendardVariable',
     lineHeight: 18,
   },
-  description: {
-    fontSize: 12,
-    color: '#6B7E9A',
+  url: {
+    fontSize: 11,
+    color: '#AABBCC',
     fontFamily: 'PretendardVariable',
     lineHeight: 16,
-    marginTop: 2,
   },
   'remove-btn': { padding: 10 },
 });
