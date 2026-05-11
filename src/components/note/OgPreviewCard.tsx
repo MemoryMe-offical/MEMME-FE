@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import { OgData } from '../../types';
 import { CloseIcon, LinkIcon } from '../common/Icons';
 
@@ -15,34 +15,48 @@ const OgPreviewCard = ({ url, ogData, onRemove }: OgPreviewCardProps) => {
     return match ? match[1] : url;
   })();
 
+  const handlePress = () => {
+    if (url) {
+      Linking.openURL(url).catch(() => {
+        console.error('Failed to open URL:', url);
+      });
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      {ogData.imageUrl ? (
-        <Image source={{ uri: ogData.imageUrl }} style={styles.image} resizeMode="cover" />
-      ) : (
-        <View style={styles['image-placeholder']}>
-          <LinkIcon color="#AABBCC" size={24} />
-        </View>
-      )}
-      <View style={styles.info}>
-        <Text style={styles.domain} numberOfLines={1}>
-          {ogData.siteName || displayDomain}
-        </Text>
-        <Text style={styles.title} numberOfLines={2}>
-          {ogData.title || url}
-        </Text>
-        {!!ogData.description && (
-          <Text style={styles.description} numberOfLines={2}>
-            {ogData.description}
-          </Text>
+    <TouchableOpacity
+      style={styles.container}
+      onPress={handlePress}
+      activeOpacity={0.7}
+      disabled={onRemove ? false : true}>
+      <View style={styles.content}>
+        {ogData.imageUrl ? (
+          <Image source={{ uri: ogData.imageUrl }} style={styles.image} resizeMode="cover" />
+        ) : (
+          <View style={styles['image-placeholder']}>
+            <LinkIcon color="#AABBCC" size={24} />
+          </View>
         )}
+        <View style={styles.info}>
+          <Text style={styles.domain} numberOfLines={1}>
+            {ogData.siteName || displayDomain}
+          </Text>
+          <Text style={styles.title} numberOfLines={2}>
+            {ogData.title || url}
+          </Text>
+          {!!ogData.description && (
+            <Text style={styles.description} numberOfLines={2}>
+              {ogData.description}
+            </Text>
+          )}
+        </View>
       </View>
       {onRemove && (
         <TouchableOpacity onPress={onRemove} style={styles['remove-btn']} hitSlop={8}>
           <CloseIcon color="#9DAFC8" size={18} />
         </TouchableOpacity>
       )}
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -54,6 +68,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E4ECFF',
     overflow: 'hidden',
+    alignItems: 'flex-start',
+  },
+  content: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'flex-start',
   },
   image: { width: 72, height: 72 },
