@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, Linking, StyleSheet, Modal, FlatList, Dimensions, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Linking, StyleSheet, Modal, FlatList, Dimensions, Pressable, ActivityIndicator, useWindowDimensions } from 'react-native';
 import { Note, OgData } from '../../types';
 import { LinkIcon } from '../common/Icons';
 import { fetchOgData } from '../../services/ogService';
@@ -31,6 +31,8 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [imageViewerImages, setImageViewerImages] = useState<string[]>([]);
   const [imageViewerIndex, setImageViewerIndex] = useState(0);
+  const [videoViewerVisible, setVideoViewerVisible] = useState(false);
+  const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
 
   const openImageViewer = (images: string[]) => {
     setImageViewerImages(images);
@@ -117,15 +119,34 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
               <Text style={styles['section-label']}>동영상</Text>
               <View style={styles['videos-preview']}>
                 <>
-                  {note.videoUris!.slice(0, 2).map((videoUrl) => (
-                    <View key={videoUrl} style={styles['video-thumbnail']}>
-                      <Text style={styles['video-icon']}>🎬</Text>
-                    </View>
+                  {note.videos!.slice(0, 2).map((video) => (
+                    <Pressable
+                      key={video.uid}
+                      onPress={() => {
+                        setSelectedVideoUrl(video.url);
+                        setVideoViewerVisible(true);
+                      }}
+                      style={({ pressed }) => [
+                        styles['video-thumbnail'],
+                        pressed && styles['video-thumbnail-pressed'],
+                      ]}>
+                      {video.thumbnailUrl ? (
+                        <Image
+                          source={{ uri: video.thumbnailUrl }}
+                          style={styles['video-thumbnail']}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={styles['video-thumbnail-placeholder']}>
+                          <Text style={styles['video-icon']}>🎬</Text>
+                        </View>
+                      )}
+                    </Pressable>
                   ))}
                 </>
-                {(note.videoUris!.length ?? 0) > 2 && (
+                {(note.videos!.length ?? 0) > 2 && (
                   <Text style={styles['video-more']}>
-                    +{note.videoUris!.length - 2}개
+                    +{note.videos!.length - 2}개
                   </Text>
                 )}
               </View>
@@ -272,6 +293,34 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
           )}
         </View>
       </Modal>
+
+      {/* 동영상 뷰어 모달 */}
+      <Modal
+        visible={videoViewerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setVideoViewerVisible(false)}>
+        <View style={imageViewerStyles.container}>
+          <TouchableOpacity
+            style={imageViewerStyles.closeButton}
+            onPress={() => setVideoViewerVisible(false)}>
+            <Text style={imageViewerStyles.closeText}>✕</Text>
+          </TouchableOpacity>
+
+          {selectedVideoUrl && (
+            <TouchableOpacity
+              style={styles['video-player-container']}
+              onPress={() => {
+                Linking.openURL(selectedVideoUrl).catch(() => {
+                  console.error('Failed to open video:', selectedVideoUrl);
+                });
+              }}>
+              <Text style={styles['video-play-icon']}>▶</Text>
+              <Text style={styles['video-open-text']}>눌러서 재생</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </Modal>
     </>
   );
 };
@@ -365,6 +414,35 @@ const styles = StyleSheet.create({
     color: '#AABBCC',
     fontFamily: 'PretendardVariable',
     paddingHorizontal: 0,
+  },
+  'video-thumbnail-placeholder': {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+    backgroundColor: '#EEF3FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  'video-thumbnail-pressed': {
+    opacity: 0.7,
+  },
+  'video-player-container': {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  'video-play-icon': {
+    fontSize: 48,
+    color: '#FFFFFF',
+  },
+  'video-open-text': {
+    fontSize: 12,
+    color: '#FFFFFF',
+    fontFamily: 'PretendardVariable',
   },
   'link-header': {
     flexDirection: 'row',

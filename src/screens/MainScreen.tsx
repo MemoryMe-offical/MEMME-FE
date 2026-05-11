@@ -113,8 +113,10 @@ const MainScreen = () => {
         (board.notes ?? []).forEach(note => {
           // 이미지 크기 합산 (각 이미지 약 2MB로 추정)
           totalBytes += (note.imageUris?.length ?? 0) * (2 * 1024 * 1024);
-          // 비디오 크기 합산 (각 비디오 약 50MB로 추정)
-          totalBytes += (note.videoUris?.length ?? 0) * (50 * 1024 * 1024);
+          // 비디오 크기 합산 (실제 파일 크기 사용)
+          (note.videos ?? []).forEach(video => {
+            totalBytes += video.size ?? 0;
+          });
           // 파일 크기 합산
           (note.files ?? []).forEach(file => {
             totalBytes += file.size ?? 0;

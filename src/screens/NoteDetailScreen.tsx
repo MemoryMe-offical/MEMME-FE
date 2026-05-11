@@ -13,12 +13,13 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Pressable,
+  Linking,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Note, FileAttachment, OgData } from '../types';
+import { Note, FileAttachment, OgData, MediaAttachment } from '../types';
 import {
   ArrowLeftIcon,
   CloseIcon,
@@ -61,7 +62,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
   const [editTitle, setEditTitle] = useState(note?.title ?? '');
   const [editContent, setEditContent] = useState(note?.content ?? '');
   const [editImageUris, setEditImageUris] = useState<string[]>(note?.imageUris ?? []);
-  const [editVideoUris, setEditVideoUris] = useState<string[]>(note?.videoUris ?? []);
+  const [editVideos, setEditVideos] = useState<MediaAttachment[]>(note?.videos ?? []);
   const [editUrls, setEditUrls] = useState<string[]>(note?.urls ?? (note?.url ? [note.url] : []));
   const [editOgDatas, setEditOgDatas] = useState<OgData[]>(
     note?.ogDatas ?? (note?.ogData ? [note.ogData] : [])
@@ -75,6 +76,8 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
   const [isLoadingOgData, setIsLoadingOgData] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [contentHeight, setContentHeight] = useState(140);
+  const [videoViewerVisible, setVideoViewerVisible] = useState(false);
+  const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
 
   // 저장 버튼으로 인한 goBack()과 일반 뒤로가기를 구분하는 플래그
   const isSavingRef = useRef(false);
@@ -85,7 +88,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       setEditTitle(route.params.note?.title ?? '');
       setEditContent(route.params.note?.content ?? '');
       setEditImageUris(route.params.note?.imageUris ?? []);
-      setEditVideoUris(route.params.note?.videoUris ?? []);
+      setEditVideos(route.params.note?.videos ?? []);
       setEditUrls(route.params.note?.urls ?? (route.params.note?.url ? [route.params.note.url] : []));
       setEditOgDatas(route.params.note?.ogDatas ?? (route.params.note?.ogData ? [route.params.note.ogData] : []));
       setEditFiles(route.params.note?.files ?? []);
@@ -121,7 +124,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         editTitle.trim().length > 0 ||
         editContent.trim().length > 0 ||
         editImageUris.length > 0 ||
-        editVideoUris.length > 0 ||
+        editVideos.length > 0 ||
         editUrls.length > 0 ||
         editFiles.length > 0
       );
@@ -130,11 +133,11 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       editTitle !== (note?.title ?? '') ||
       editContent !== (note?.content ?? '') ||
       JSON.stringify(editImageUris) !== JSON.stringify(note?.imageUris ?? []) ||
-      JSON.stringify(editVideoUris) !== JSON.stringify(note?.videoUris ?? []) ||
+      JSON.stringify(editVideos) !== JSON.stringify(note?.videos ?? []) ||
       JSON.stringify(editUrls) !== JSON.stringify(note?.urls ?? (note?.url ? [note.url] : [])) ||
       JSON.stringify(editFiles) !== JSON.stringify(note?.files ?? [])
     );
-  }, [isNew, editTitle, editContent, editImageUris, editVideoUris, editUrls, editFiles, note]);
+  }, [isNew, editTitle, editContent, editImageUris, editVideos, editUrls, editFiles, note]);
 
   // 뒤로가기 인터셉트 (Android 하드웨어 백 버튼 + iOS 스와이프 공통 처리)
   useEffect(() => {
@@ -171,7 +174,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         title: editTitle.trim(),
         content: editContent.trim() || undefined,
         imageUris: editImageUris.length > 0 ? editImageUris : undefined,
-        videoUris: editVideoUris.length > 0 ? editVideoUris : undefined,
+        videos: editVideos.length > 0 ? editVideos : undefined,
         urls: editUrls.length > 0 ? editUrls : undefined,
         files: editFiles.length > 0 ? editFiles : undefined,
       };
@@ -263,7 +266,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
   };
 
   const handleAddVideo = async () => {
-    if (editVideoUris.length >= 10) {
+    if (editVideos.length >= 10) {
       Alert.alert('알림', '동영상은 최대 10개까지 추가할 수 있습니다.');
       return;
     }
@@ -271,7 +274,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
     try {
       const result = await launchImageLibrary({
         mediaType: 'video',
-        selectionLimit: Math.max(1, 10 - editVideoUris.length),
+        selectionLimit: Math.max(1, 10 - editVideos.length),
       });
       if (result.assets && result.assets.length > 0) {
         // 파일 크기 검증
@@ -300,8 +303,16 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         try {
           const uploadPromises = localUris.map(uri => uploadVideo(uri));
           const responses = await Promise.all(uploadPromises);
-          const videoUrls = responses.map(r => r.url);
-          setEditVideoUris(prev => [...prev, ...videoUrls]);
+          const newVideos: MediaAttachment[] = responses.map((r, idx) => ({
+            uid: `video-${Date.now()}-${idx}`,
+            url: r.url,
+            key: r.key,
+            mimeType: 'video/mp4',
+            size: r.size,
+            thumbnailUrl: r.thumbnailUrl,
+            duration: r.duration,
+          }));
+          setEditVideos(prev => [...prev, ...newVideos]);
         } catch (error) {
           Alert.alert('오류', '동영상 업로드에 실패했습니다.');
           console.error('Video upload error:', error);
@@ -314,8 +325,8 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
     }
   };
 
-  const handleRemoveVideo = (videoUrl: string) => {
-    setEditVideoUris(prev => prev.filter(url => url !== videoUrl));
+  const handleRemoveVideo = (videoUid: string) => {
+    setEditVideos(prev => prev.filter(video => video.uid !== videoUid));
   };
 
   const handleOpenLinkModal = () => {
@@ -581,34 +592,56 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           <View style={styles['subsection-header']}>
             <View>
               <Text style={styles['subsection-label']}>동영상</Text>
-              <Text style={styles['subsection-count']}>{editVideoUris.length}/10</Text>
+              <Text style={styles['subsection-count']}>{editVideos.length}/10</Text>
             </View>
             <TouchableOpacity
               onPress={handleAddVideo}
-              disabled={isUploading || editVideoUris.length >= 10}
+              disabled={isUploading || editVideos.length >= 10}
               hitSlop={8}>
-              <PlusIcon color={isUploading || editVideoUris.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
+              <PlusIcon color={isUploading || editVideos.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
             </TouchableOpacity>
           </View>
           <View style={styles['videos-section']}>
-            {editVideoUris.length > 0 ? (
+            {editVideos.length > 0 ? (
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles['videos-row']}>
                 <>
-                  {editVideoUris.map((videoUrl) => (
-                    <View key={videoUrl} style={styles['video-wrapper']}>
-                      <View style={styles['video-thumbnail']}>
-                        <Text style={styles['video-icon']}>🎬</Text>
-                      </View>
+                  {editVideos.map((video) => (
+                    <Pressable
+                      key={video.uid}
+                      onPress={() => {
+                        setSelectedVideoUrl(video.url);
+                        setVideoViewerVisible(true);
+                      }}
+                      style={({ pressed }) => [
+                        styles['video-wrapper'],
+                        pressed && styles['video-wrapper-pressed'],
+                      ]}>
+                      {video.thumbnailUrl ? (
+                        <Image
+                          source={{ uri: video.thumbnailUrl }}
+                          style={styles['video-thumbnail']}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={styles['video-thumbnail']}>
+                          <Text style={styles['video-icon']}>🎬</Text>
+                        </View>
+                      )}
+                      {video.duration && (
+                        <Text style={styles['video-duration']}>
+                          {Math.floor(video.duration / 60)}:{String(Math.floor(video.duration % 60)).padStart(2, '0')}
+                        </Text>
+                      )}
                       <TouchableOpacity
                         style={styles['video-remove-btn']}
-                        onPress={() => handleRemoveVideo(videoUrl)}
+                        onPress={() => handleRemoveVideo(video.uid)}
                         hitSlop={4}>
                         <CloseIcon color="#FFFFFF" size={12} />
                       </TouchableOpacity>
-                    </View>
+                    </Pressable>
                   ))}
                 </>
               </ScrollView>
@@ -701,6 +734,33 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
+      </Modal>
+
+      {/* 동영상 뷰어 모달 */}
+      <Modal
+        visible={videoViewerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setVideoViewerVisible(false)}>
+        <View style={styles['video-viewer-container']}>
+          <TouchableOpacity
+            style={styles['video-viewer-close']}
+            onPress={() => setVideoViewerVisible(false)}>
+            <Text style={styles['video-viewer-close-text']}>✕</Text>
+          </TouchableOpacity>
+          {selectedVideoUrl && (
+            <TouchableOpacity
+              style={styles['video-player-container']}
+              onPress={() => {
+                Linking.openURL(selectedVideoUrl).catch(() => {
+                  console.error('Failed to open video:', selectedVideoUrl);
+                });
+              }}>
+              <Text style={styles['video-play-icon']}>▶</Text>
+              <Text style={styles['video-open-text']}>눌러서 재생</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -873,6 +933,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   'video-wrapper': { position: 'relative' },
+  'video-wrapper-pressed': {
+    opacity: 0.7,
+  },
   'video-thumbnail': {
     width: 72,
     height: 72,
@@ -883,6 +946,19 @@ const styles = StyleSheet.create({
   },
   'video-icon': {
     fontSize: 28,
+  },
+  'video-duration': {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '600',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 4,
+    fontFamily: 'PretendardVariable',
   },
   'video-remove-btn': {
     position: 'absolute',
@@ -991,6 +1067,42 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'PretendardVariable',
     lineHeight: 24,
+  },
+  'video-viewer-container': {
+    flex: 1,
+    backgroundColor: '#000000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  'video-viewer-close': {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    zIndex: 10,
+    padding: 8,
+  },
+  'video-viewer-close-text': {
+    fontSize: 28,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  'video-player-container': {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  'video-play-icon': {
+    fontSize: 48,
+    color: '#FFFFFF',
+  },
+  'video-open-text': {
+    fontSize: 12,
+    color: '#FFFFFF',
+    fontFamily: 'PretendardVariable',
   },
 });
 
