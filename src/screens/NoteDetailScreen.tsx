@@ -12,6 +12,7 @@ import {
   Modal,
   ActivityIndicator,
   KeyboardAvoidingView,
+  Pressable,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
@@ -36,16 +37,28 @@ type Props = NativeStackScreenProps<RootStackParamList, 'NoteDetail'>;
 
 const ImagePreview = ({ imageKey, onRemove }: { imageKey: string; onRemove: () => void }) => {
   const [imageUrl, setImageUrl] = useState<string>('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     getUploadObjectUrl(imageKey)
-      .then(url => setImageUrl(url))
-      .catch(() => console.log('Failed to load image URL for key:', imageKey));
+      .then(url => {
+        setImageUrl(url);
+        setLoading(false);
+      })
+      .catch(() => {
+        console.log('Failed to load image URL for key:', imageKey);
+        setLoading(false);
+      });
   }, [imageKey]);
 
   return (
     <View style={styles['image-wrapper']}>
-      {imageUrl ? (
+      {loading ? (
+        <View style={[styles.thumbnail, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#EEF3FF' }]}>
+          <ActivityIndicator size="small" color="#588DFF" />
+        </View>
+      ) : imageUrl ? (
         <Image
           source={{ uri: imageUrl }}
           style={styles.thumbnail}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, Linking, StyleSheet, Modal, FlatList, Dimensions, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Linking, StyleSheet, Modal, FlatList, Dimensions, Pressable, ActivityIndicator } from 'react-native';
 import { Note, OgData } from '../../types';
 import { LinkIcon } from '../common/Icons';
 import { fetchOgData } from '../../services/ogService';
@@ -12,11 +12,19 @@ interface NoteCardProps {
 
 const ImageThumbnail = ({ imageKey, onPress }: { imageKey: string; onPress: () => void }) => {
   const [imageUrl, setImageUrl] = useState<string>('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     getUploadObjectUrl(imageKey)
-      .then(url => setImageUrl(url))
-      .catch(() => console.log('Failed to load image URL for key:', imageKey));
+      .then(url => {
+        setImageUrl(url);
+        setLoading(false);
+      })
+      .catch(() => {
+        console.log('Failed to load image URL for key:', imageKey);
+        setLoading(false);
+      });
   }, [imageKey]);
 
   return (
@@ -26,7 +34,11 @@ const ImageThumbnail = ({ imageKey, onPress }: { imageKey: string; onPress: () =
         styles['image-thumbnail'],
         pressed && styles['image-thumbnail-pressed'],
       ]}>
-      {imageUrl ? (
+      {loading ? (
+        <View style={[styles['image-thumbnail'], { justifyContent: 'center', alignItems: 'center', backgroundColor: '#EEF3FF' }]}>
+          <ActivityIndicator size="small" color="#588DFF" />
+        </View>
+      ) : imageUrl ? (
         <Image
           source={{ uri: imageUrl }}
           style={styles['image-thumbnail']}

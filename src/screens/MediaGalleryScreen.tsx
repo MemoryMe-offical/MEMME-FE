@@ -9,6 +9,7 @@ import {
   FlatList,
   Dimensions,
   Linking,
+  ActivityIndicator,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -40,12 +41,28 @@ interface MediaItem {
 
 const GalleryImageThumbnail = ({ imageKey, width, height }: { imageKey: string; width: number; height: number }) => {
   const [imageUrl, setImageUrl] = useState<string>('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     getUploadObjectUrl(imageKey)
-      .then(url => setImageUrl(url))
-      .catch(() => console.log('Failed to load gallery image URL for key:', imageKey));
+      .then(url => {
+        setImageUrl(url);
+        setLoading(false);
+      })
+      .catch(() => {
+        console.log('Failed to load gallery image URL for key:', imageKey);
+        setLoading(false);
+      });
   }, [imageKey]);
+
+  if (loading) {
+    return (
+      <View style={[styles.thumbnail, { width, height, backgroundColor: '#EEF3FF', justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="small" color="#588DFF" />
+      </View>
+    );
+  }
 
   return (
     <Image

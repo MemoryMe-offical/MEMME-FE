@@ -12,18 +12,56 @@ import {
   StatusBar,
   Dimensions,
   Linking,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Board, TimelineItem, Memo, Note, FileAttachment, OgData } from '../../types';
 import { CloseIcon, EditIcon, SettingsIcon, ChevronRightIcon } from './Icons';
 import { SIDE_MENU_WIDTH, sideMenuStyles as styles } from '../../styles/SideMenu.styles';
 import { fetchOgData } from '../../services/ogService';
-import { getUploadObject } from '../../services/uploadService';
+import { getUploadObject, getUploadObjectUrl } from '../../services/uploadService';
 import ImageViewerModal from './ImageViewerModal';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
 const MAX_DISPLAY_ITEMS = 4;
+
+const SideMenuImageThumbnail = ({ imageKey, onPress }: { imageKey: string; onPress: () => void }) => {
+  const [imageUrl, setImageUrl] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    getUploadObjectUrl(imageKey)
+      .then(url => {
+        setImageUrl(url);
+        setLoading(false);
+      })
+      .catch(() => {
+        console.log('Failed to load image URL for key:', imageKey);
+        setLoading(false);
+      });
+  }, [imageKey]);
+
+  return (
+    <TouchableOpacity onPress={onPress}>
+      {loading ? (
+        <View style={[styles['sideMenu-mediaThumbnail'], { justifyContent: 'center', alignItems: 'center', backgroundColor: '#EEF3FF' }]}>
+          <ActivityIndicator size="small" color="#588DFF" />
+        </View>
+      ) : imageUrl ? (
+        <Image
+          source={{ uri: imageUrl }}
+          style={styles['sideMenu-mediaThumbnail']}
+        />
+      ) : (
+        <View style={[styles['sideMenu-mediaThumbnail'], { backgroundColor: '#EEF3FF', justifyContent: 'center', alignItems: 'center' }]}>
+          <Text style={{ color: '#C0CDD8', fontSize: 12 }}>로드 실패</Text>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+};
 
 interface Props {
   visible: boolean;
@@ -334,22 +372,22 @@ const SideMenu = ({ visible, items, onClose, onSettings, onBookmarkPress, isBook
                       horizontal
                       showsHorizontalScrollIndicator={false}
                       contentContainerStyle={styles['sideMenu-mediaRow']}>
-                      {mediaData.images.slice(0, MAX_DISPLAY_ITEMS).map((uri, idx) => (
-                        <TouchableOpacity
+                      {mediaData.images.slice(0, MAX_DISPLAY_ITEMS).map((imageKey, idx) => (
+                        <SideMenuImageThumbnail
                           key={`image-${idx}`}
-                          onPress={() => {
+                          imageKey={imageKey}
+                          onPress={async () => {
+                            // 모든 이미지 키에 대해 presigned URL 조회
+                            const presignedUrls = await Promise.all(
+                              mediaData.images.map(k => getUploadObjectUrl(k).catch(() => ''))
+                            );
                             setImageViewerState({
                               visible: true,
-                              uris: mediaData.images,
+                              uris: presignedUrls.filter(u => !!u),
                               index: idx,
                             });
                           }}
-                        >
-                          <Image
-                            source={{ uri }}
-                            style={styles['sideMenu-mediaThumbnail']}
-                          />
-                        </TouchableOpacity>
+                        />
                       ))}
                     </ScrollView>
                   </>

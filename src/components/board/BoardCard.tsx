@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Image, Linking, Modal, FlatList, Dimensions, StyleSheet, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Linking, Modal, FlatList, Dimensions, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { Board, OgData } from '../../types';
 import { boardCardStyles as styles } from '../../styles/BoardCard.styles';
 import { ChevronDownIcon, ChevronUpIcon, MoreIcon, LinkIcon } from '../common/Icons';
@@ -17,11 +17,19 @@ const formatTime = (isoString: string): string => {
 
 const CardImageThumbnail = ({ imageKey, onPress }: { imageKey: string; onPress: () => void }) => {
   const [imageUrl, setImageUrl] = useState<string>('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    setLoading(true);
     getUploadObjectUrl(imageKey)
-      .then(url => setImageUrl(url))
-      .catch(() => console.log('Failed to load image URL for key:', imageKey));
+      .then(url => {
+        setImageUrl(url);
+        setLoading(false);
+      })
+      .catch(() => {
+        console.log('Failed to load image URL for key:', imageKey);
+        setLoading(false);
+      });
   }, [imageKey]);
 
   return (
@@ -31,7 +39,11 @@ const CardImageThumbnail = ({ imageKey, onPress }: { imageKey: string; onPress: 
         styles['card-image-thumbnail'],
         pressed && styles['card-image-thumbnail-pressed'],
       ]}>
-      {imageUrl ? (
+      {loading ? (
+        <View style={[styles['card-image-thumbnail'], { justifyContent: 'center', alignItems: 'center', backgroundColor: '#EEF3FF' }]}>
+          <ActivityIndicator size="small" color="#588DFF" />
+        </View>
+      ) : imageUrl ? (
         <Image
           source={{ uri: imageUrl }}
           style={styles['card-image-thumbnail']}
