@@ -220,9 +220,9 @@ export const boardCardStyles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
     paddingVertical: 12,
-    marginTop: -16,
+    marginTop: 0,
   },
 
   'card-image-thumbnail': {
@@ -257,9 +257,9 @@ export const boardCardStyles = StyleSheet.create({
     borderColor: '#E4ECFF',
     overflow: 'hidden',
     alignItems: 'flex-start',
-    marginHorizontal: 16,
+    marginHorizontal: 0,
     marginTop: 0,
-    marginBottom: 12,
+    marginBottom: 0,
   },
 
   'card-link-image': {
@@ -306,9 +306,9 @@ export const boardCardStyles = StyleSheet.create({
   // 파일 미리보기
   'card-files-preview': {
     gap: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
     paddingVertical: 12,
-    marginTop: -8,
+    marginTop: 0,
   },
 
   'card-file-item': {

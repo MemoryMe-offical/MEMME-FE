@@ -164,28 +164,28 @@ const BoardCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardCardPro
                                       <View style={styles['card-section-divider']} />
                                       <View style={styles['card-section-row']}>
                                         <Text style={styles['card-section-label']}>이미지</Text>
+                                        <TouchableOpacity
+                                          onPress={() => openImageViewer(note.imageUris!)}
+                                          activeOpacity={0.7}>
+                                          <View style={styles['card-images-preview']}>
+                                            {note.imageUris!.slice(0, 2).map((uri, idx) => (
+                                              <Image
+                                                key={`${note.id}-img-${idx}`}
+                                                source={{ uri }}
+                                                style={styles['card-image-thumbnail']}
+                                                resizeMode="cover"
+                                              />
+                                            ))}
+                                            {(note.imageUris!.length ?? 0) > 2 && (
+                                              <View style={styles['card-image-more']}>
+                                                <Text style={styles['card-image-more-text']}>
+                                                  +{note.imageUris!.length - 2}
+                                                </Text>
+                                              </View>
+                                            )}
+                                          </View>
+                                        </TouchableOpacity>
                                       </View>
-                                      <TouchableOpacity
-                                        onPress={() => openImageViewer(note.imageUris!)}
-                                        activeOpacity={0.7}>
-                                        <View style={styles['card-images-preview']}>
-                                          {note.imageUris!.slice(0, 2).map((uri, idx) => (
-                                            <Image
-                                              key={`${note.id}-img-${idx}`}
-                                              source={{ uri }}
-                                              style={styles['card-image-thumbnail']}
-                                              resizeMode="cover"
-                                            />
-                                          ))}
-                                          {(note.imageUris!.length ?? 0) > 2 && (
-                                            <View style={styles['card-image-more']}>
-                                              <Text style={styles['card-image-more-text']}>
-                                                +{note.imageUris!.length - 2}
-                                              </Text>
-                                            </View>
-                                          )}
-                                        </View>
-                                      </TouchableOpacity>
                                     </>
                                   )}
                                   {note.url && (() => {
@@ -197,40 +197,40 @@ const BoardCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardCardPro
                                         <View style={styles['card-section-divider']} />
                                         <View style={styles['card-section-row']}>
                                           <Text style={styles['card-section-label']}>링크</Text>
-                                        </View>
-                                        <TouchableOpacity
-                                          style={styles['card-link-card']}
-                                          onPress={() => {
-                                            Linking.openURL(note.url!).catch(() => {
-                                              console.error('Failed to open URL:', note.url);
-                                            });
-                                          }}
-                                          activeOpacity={0.7}>
-                                          {ogData?.imageUrl ? (
-                                            <Image
-                                              source={{ uri: ogData.imageUrl }}
-                                              style={styles['card-link-image']}
-                                              resizeMode="cover"
-                                            />
-                                          ) : (
-                                            <View style={styles['card-link-image-placeholder']}>
-                                              <LinkIcon color="#AABBCC" size={20} />
-                                            </View>
-                                          )}
-                                          <View style={styles['card-link-info']}>
-                                            <Text style={styles['card-link-domain']} numberOfLines={1}>
-                                              {ogData?.siteName || displayDomain}
-                                            </Text>
-                                            <Text style={styles['card-link-title']} numberOfLines={2}>
-                                              {ogData?.title || '링크'}
-                                            </Text>
-                                            {!!ogData?.description && (
-                                              <Text style={styles['card-link-desc']} numberOfLines={1}>
-                                                {ogData.description}
-                                              </Text>
+                                          <TouchableOpacity
+                                            style={styles['card-link-card']}
+                                            onPress={() => {
+                                              Linking.openURL(note.url!).catch(() => {
+                                                console.error('Failed to open URL:', note.url);
+                                              });
+                                            }}
+                                            activeOpacity={0.7}>
+                                            {ogData?.imageUrl ? (
+                                              <Image
+                                                source={{ uri: ogData.imageUrl }}
+                                                style={styles['card-link-image']}
+                                                resizeMode="cover"
+                                              />
+                                            ) : (
+                                              <View style={styles['card-link-image-placeholder']}>
+                                                <LinkIcon color="#AABBCC" size={20} />
+                                              </View>
                                             )}
-                                          </View>
-                                        </TouchableOpacity>
+                                            <View style={styles['card-link-info']}>
+                                              <Text style={styles['card-link-domain']} numberOfLines={1}>
+                                                {ogData?.siteName || displayDomain}
+                                              </Text>
+                                              <Text style={styles['card-link-title']} numberOfLines={2}>
+                                                {ogData?.title || '링크'}
+                                              </Text>
+                                              {!!ogData?.description && (
+                                                <Text style={styles['card-link-desc']} numberOfLines={1}>
+                                                  {ogData.description}
+                                                </Text>
+                                              )}
+                                            </View>
+                                          </TouchableOpacity>
+                                        </View>
                                       </>
                                     );
                                   })()}
@@ -239,29 +239,28 @@ const BoardCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardCardPro
                                       <View style={styles['card-section-divider']} />
                                       <View style={styles['card-section-row']}>
                                         <Text style={styles['card-section-label']}>파일</Text>
-                                      </View>
-                                      <View style={styles['card-files-preview']}>
-                                        {note.files!.slice(0, 2).map((file, idx) => (
-                                          <TouchableOpacity
-                                            key={`${note.id}-file-${idx}`}
-                                            style={styles['card-file-item']}
-                                            onPress={() => {
-                                              const fileUrl = typeof file === 'string' ? file : file.url;
-                                              Linking.openURL(fileUrl).catch(() => {
-                                                console.error('Failed to open file:', fileUrl);
-                                              });
-                                            }}
-                                            activeOpacity={0.7}>
-                                            <Text style={styles['card-file-name']} numberOfLines={1}>
-                                              {typeof file === 'string' ? file.split('/').pop() || file : file.name || 'file'}
+                                        <View style={styles['card-files-preview']}>
+                                          {note.files!.slice(0, 2).map((file, idx) => (
+                                            <TouchableOpacity
+                                              key={`${note.id}-file-${idx}`}
+                                              style={styles['card-file-item']}
+                                              onPress={() => {
+                                                Linking.openURL(file.url).catch(() => {
+                                                  console.error('Failed to open file:', file.url);
+                                                });
+                                              }}
+                                              activeOpacity={0.7}>
+                                              <Text style={styles['card-file-name']} numberOfLines={1}>
+                                                {file.name || 'file'}
+                                              </Text>
+                                            </TouchableOpacity>
+                                          ))}
+                                          {(note.files!.length ?? 0) > 2 && (
+                                            <Text style={styles['card-file-more']}>
+                                              +{note.files!.length - 2}개
                                             </Text>
-                                          </TouchableOpacity>
-                                        ))}
-                                        {(note.files!.length ?? 0) > 2 && (
-                                          <Text style={styles['card-file-more']}>
-                                            +{note.files!.length - 2}개
-                                          </Text>
-                                        )}
+                                          )}
+                                        </View>
                                       </View>
                                     </>
                                   )}
