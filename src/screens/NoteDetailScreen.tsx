@@ -34,6 +34,38 @@ import { getUploadObjectUrl } from '../services/uploadService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NoteDetail'>;
 
+const ImagePreview = ({ imageKey, onRemove }: { imageKey: string; onRemove: () => void }) => {
+  const [imageUrl, setImageUrl] = useState<string>('');
+
+  useEffect(() => {
+    getUploadObjectUrl(imageKey)
+      .then(url => setImageUrl(url))
+      .catch(() => console.log('Failed to load image URL for key:', imageKey));
+  }, [imageKey]);
+
+  return (
+    <View style={styles['image-wrapper']}>
+      {imageUrl ? (
+        <Image
+          source={{ uri: imageUrl }}
+          style={styles.thumbnail}
+          resizeMode="cover"
+          onError={(e) => console.log(`Image load error for key: ${imageKey}`, e.nativeEvent.error)}
+          onLoad={() => console.log(`Image loaded for key: ${imageKey}`)}
+        />
+      ) : (
+        <View style={[styles.thumbnail, { backgroundColor: '#EEF3FF' }]} />
+      )}
+      <TouchableOpacity
+        style={styles['image-remove-btn']}
+        onPress={onRemove}
+        hitSlop={4}>
+        <CloseIcon color="#FFFFFF" size={12} />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 const NoteDetailScreen = ({ route, navigation }: Props) => {
   const { note, boardId, boardTitle, isNew } = route.params;
   const insets = useSafeAreaInsets();
@@ -377,22 +409,8 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles['images-row']}>
-                {editImageUris.map((uri, idx) => (
-                  <View key={`${idx}`} style={styles['image-wrapper']}>
-                    <Image
-                      source={{ uri }}
-                      style={styles.thumbnail}
-                      resizeMode="cover"
-                      onError={(e) => console.log(`Image load error [${idx}] for URI: ${uri}`, e.nativeEvent.error)}
-                      onLoad={() => console.log(`Image loaded [${idx}]: ${uri}`)}
-                    />
-                    <TouchableOpacity
-                      style={styles['image-remove-btn']}
-                      onPress={() => handleRemoveImage(idx)}
-                      hitSlop={4}>
-                      <CloseIcon color="#FFFFFF" size={12} />
-                    </TouchableOpacity>
-                  </View>
+                {editImageUris.map((imageKey, idx) => (
+                  <ImagePreview key={`${idx}`} imageKey={imageKey} onRemove={() => handleRemoveImage(idx)} />
                 ))}
               </ScrollView>
             ) : (
