@@ -50,6 +50,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
   const [isFetchingOg, setIsFetchingOg] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoadingOgData, setIsLoadingOgData] = useState(false);
+  const [contentHeight, setContentHeight] = useState(140);
 
   // 저장 버튼으로 인한 goBack()과 일반 뒤로가기를 구분하는 플래그
   const isSavingRef = useRef(false);
@@ -323,13 +324,18 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           {/* 본문 */}
           <Text style={styles['input-label']}>내용</Text>
           <TextInput
-            style={styles['content-input']}
+            style={[styles['content-input'], { height: contentHeight }]}
             value={editContent}
             onChangeText={setEditContent}
+            onContentSizeChange={(e) => {
+              const newHeight = Math.max(140, e.nativeEvent.contentSize.height);
+              setContentHeight(newHeight);
+            }}
             placeholder="내용을 입력하세요..."
             placeholderTextColor="#AABBCC"
             multiline
             textAlignVertical="top"
+            scrollEnabled={false}
           />
 
           {/* 첨부 섹션 */}
@@ -534,7 +540,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
-    minHeight: 140,
     lineHeight: 26,
     paddingVertical: 14,
     paddingHorizontal: 16,
