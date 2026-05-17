@@ -373,6 +373,21 @@ export const boardCardStyles = StyleSheet.create({
     lineHeight: 14,
   },
 
+  // 링크 미리보기
+  'card-links-preview': {
+    gap: 6,
+    paddingHorizontal: 0,
+    marginTop: 0,
+  },
+
+  'card-link-more': {
+    fontSize: 11,
+    color: '#588DFF',
+    fontFamily: 'PretendardVariable',
+    paddingHorizontal: 16,
+    paddingTop: 0,
+  },
+
   // 파일 미리보기
   'card-files-preview': {
     gap: 8,

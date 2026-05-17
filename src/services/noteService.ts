@@ -59,7 +59,14 @@ export const createNote = async (
 
     const data = await response.json();
     const responseNote = data.data;
-    return transformNote(responseNote);
+    const note = transformNote(responseNote);
+
+    // 서버 응답에 urls가 없으면 입력한 urls로 채우기
+    if ((!note.urls || note.urls.length === 0) && noteData.urls && noteData.urls.length > 0) {
+      note.urls = noteData.urls;
+    }
+
+    return note;
   } catch (error) {
     console.error('Failed to create note:', error);
     throw error;
@@ -105,7 +112,14 @@ export const updateNote = async (
 
     const data = await response.json();
     const responseNote = data.data;
-    return transformNote(responseNote);
+    const note = transformNote(responseNote);
+
+    // 서버 응답에 urls가 없으면 입력한 urls로 채우기
+    if ((!note.urls || note.urls.length === 0) && updates.urls && updates.urls.length > 0) {
+      note.urls = updates.urls;
+    }
+
+    return note;
   } catch (error) {
     console.error('Failed to update note:', error);
     throw error;
