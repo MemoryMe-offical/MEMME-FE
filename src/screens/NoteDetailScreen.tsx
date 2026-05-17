@@ -202,8 +202,19 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       {
         text: '삭제',
         style: 'destructive',
-        onPress: () => {
-          navigation.goBack();
+        onPress: async () => {
+          try {
+            setIsSaving(true);
+            if (note) {
+              await noteService.deleteNote(boardId, note.id);
+            }
+            navigation.goBack();
+          } catch (error) {
+            Alert.alert('오류', '노트 삭제에 실패했습니다.');
+            console.error('Failed to delete note:', error);
+          } finally {
+            setIsSaving(false);
+          }
         },
       },
     ]);
