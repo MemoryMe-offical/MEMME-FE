@@ -27,12 +27,18 @@ const ImageThumbnail = ({ imageUrl, onPress }: { imageUrl: string; onPress: () =
 };
 
 const NoteCard = ({ note, onPress }: NoteCardProps) => {
+  const { width: windowWidth } = useWindowDimensions();
   const [ogDataCache, setOgDataCache] = useState<Record<string, OgData>>({});
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [imageViewerImages, setImageViewerImages] = useState<string[]>([]);
   const [imageViewerIndex, setImageViewerIndex] = useState(0);
   const [videoViewerVisible, setVideoViewerVisible] = useState(false);
   const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
+
+  // 화면 너비에 따라 표시 가능한 미디어 개수 계산
+  // 각 아이템(56px) + gap(8px) = 64px
+  // container padding: 16 + 16 = 32px
+  const maxMediaItems = Math.max(2, Math.floor((windowWidth - 32) / 64));
 
   const openImageViewer = (images: string[]) => {
     setImageViewerImages(images);
@@ -83,7 +89,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
               <Text style={styles['section-label']}>이미지</Text>
               <View style={styles['images-preview']}>
                 <>
-                  {note.imageUris!.slice(0, 2).map((imageUrl) => (
+                  {note.imageUris!.slice(0, maxMediaItems).map((imageUrl) => (
                     <ImageThumbnail
                       key={imageUrl}
                       imageUrl={imageUrl}
@@ -93,7 +99,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                     />
                   ))}
                 </>
-                {(note.imageUris!.length ?? 0) > 2 && (
+                {(note.imageUris!.length ?? 0) > maxMediaItems && (
                   <Pressable
                     onPress={() => {
                       openImageViewer(note.imageUris!);
@@ -103,7 +109,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                       pressed && styles['image-more-pressed'],
                     ]}>
                     <Text style={styles['image-more-text']}>
-                      +{note.imageUris!.length - 2}
+                      +{note.imageUris!.length - maxMediaItems}
                     </Text>
                   </Pressable>
                 )}
@@ -119,7 +125,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
               <Text style={styles['section-label']}>동영상</Text>
               <View style={styles['videos-preview']}>
                 <>
-                  {note.videos!.slice(0, 2).map((video) => (
+                  {note.videos!.slice(0, maxMediaItems).map((video) => (
                     <Pressable
                       key={video.uid}
                       onPress={() => {
@@ -144,9 +150,9 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                     </Pressable>
                   ))}
                 </>
-                {(note.videos!.length ?? 0) > 2 && (
+                {(note.videos!.length ?? 0) > maxMediaItems && (
                   <Text style={styles['video-more']}>
-                    +{note.videos!.length - 2}개
+                    +{note.videos!.length - maxMediaItems}개
                   </Text>
                 )}
               </View>
@@ -161,7 +167,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
               <Text style={styles['section-label']}>파일</Text>
               <View style={styles['files-preview']}>
                 <>
-                  {note.files!.slice(0, 2).map((file) => (
+                  {note.files!.slice(0, maxMediaItems).map((file) => (
                     <TouchableOpacity
                       key={file.uid}
                       style={styles['file-item']}
@@ -177,9 +183,9 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                     </TouchableOpacity>
                   ))}
                 </>
-                {(note.files!.length ?? 0) > 2 && (
+                {(note.files!.length ?? 0) > maxMediaItems && (
                   <Text style={styles['file-more']}>
-                    +{note.files!.length - 2}개
+                    +{note.files!.length - maxMediaItems}개
                   </Text>
                 )}
               </View>
