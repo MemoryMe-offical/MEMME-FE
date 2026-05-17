@@ -246,7 +246,7 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                           })}
                                           {((note.videos?.length ?? 0) + (note.videoUris?.length ?? 0)) > 2 && (
                                             <Text style={styles['card-video-more']}>
-                                              +{((note.videos?.length ?? 0) + (note.videoUris?.length ?? 0)) - 2}개
+                                              +{((note.videos?.length ?? 0) + (note.videoUris?.length ?? 0)) - 2}
                                             </Text>
                                           )}
                                         </View>
@@ -276,7 +276,7 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                           ))}
                                           {(note.files!.length ?? 0) > 2 && (
                                             <Text style={styles['card-file-more']}>
-                                              +{note.files!.length - 2}개
+                                              +{note.files!.length - 2}
                                             </Text>
                                           )}
                                         </View>
@@ -328,33 +328,6 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                         </View>
                                       </>
                                     );
-                                  })()}
-                                  {(() => {
-                                    const hasExtraImages = (note.imageUris?.length ?? 0) > 2;
-                                    const hasExtraVideos = (note.videos?.length ?? 0) > 2;
-                                    const hasExtraFiles = (note.files?.length ?? 0) > 2;
-                                    if (hasExtraImages || hasExtraVideos || hasExtraFiles) {
-                                      return (
-                                        <View style={styles['card-more-content-badge']}>
-                                          <Text style={styles['card-more-content-text']}>
-                                            {hasExtraImages && hasExtraVideos && hasExtraFiles
-                                              ? '더 많은 이미지, 동영상, 파일이 있습니다'
-                                              : hasExtraImages && hasExtraVideos
-                                                ? '더 많은 이미지와 동영상이 있습니다'
-                                              : hasExtraImages && hasExtraFiles
-                                                ? '더 많은 이미지와 파일이 있습니다'
-                                              : hasExtraVideos && hasExtraFiles
-                                                ? '더 많은 동영상과 파일이 있습니다'
-                                              : hasExtraImages
-                                                ? '더 많은 이미지가 있습니다'
-                                              : hasExtraVideos
-                                                ? '더 많은 동영상이 있습니다'
-                                                : '더 많은 파일이 있습니다'}
-                                          </Text>
-                                        </View>
-                                      );
-                                    }
-                                    return null;
                                   })()}
                                 </View>
                               </>
