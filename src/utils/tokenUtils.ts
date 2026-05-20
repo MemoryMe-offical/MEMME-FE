@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEYS = {
   ACCESS_TOKEN: 'accessToken',
+  REFRESH_TOKEN: 'refreshToken',
   USER_ID: 'userId',
   AUTO_LOGIN: 'AUTO_LOGIN',
 };
@@ -76,10 +77,17 @@ export const isAutoLoginEnabled = async (): Promise<boolean> => {
 };
 
 /**
- * 저장된 토큰 조회
+ * 저장된 accessToken 조회
  */
 export const getStoredToken = async (): Promise<string | null> => {
   return AsyncStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+};
+
+/**
+ * 저장된 refreshToken 조회
+ */
+export const getStoredRefreshToken = async (): Promise<string | null> => {
+  return AsyncStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
 };
 
 /**

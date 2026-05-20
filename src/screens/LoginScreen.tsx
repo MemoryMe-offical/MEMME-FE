@@ -101,9 +101,9 @@ const LoginScreen = () => {
         throw new Error(await parseErrorMessage(response));
       }
 
-      const data = await response.json();
-      const accessToken = data?.accessToken;
-      console.log('로그인 성공, 받은 토큰:', accessToken);
+      const apiResponse = await response.json();
+      const { accessToken, refreshToken, expiresIn } = apiResponse.data;
+      console.log('로그인 성공, 받은 토큰:', accessToken, 'expiresIn:', expiresIn);
 
       if (!accessToken) {
         throw new Error('토큰이 응답에 없습니다.');
@@ -119,6 +119,9 @@ const LoginScreen = () => {
 
       // AsyncStorage에 저장
       await AsyncStorage.setItem('accessToken', accessToken);
+      if (refreshToken) {
+        await AsyncStorage.setItem('refreshToken', refreshToken);
+      }
       await AsyncStorage.setItem('userId', userId);
       const autoLoginFlag = autoLogin ? 'true' : 'false';
       await AsyncStorage.setItem(STORAGE_KEYS.AUTO_LOGIN, autoLoginFlag);

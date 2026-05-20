@@ -29,6 +29,7 @@ const SettingsScreen = ({ navigation }: Props) => {
             // AsyncStorage에서 인증 정보 삭제
             await AsyncStorage.multiRemove([
               'accessToken',
+              'refreshToken',
               'userId',
               'AUTO_LOGIN',
             ]);
