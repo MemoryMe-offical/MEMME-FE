@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import { OgData } from '../../types';
 import { CloseIcon, LinkIcon } from '../common/Icons';
 
@@ -15,34 +15,52 @@ const OgPreviewCard = ({ url, ogData, onRemove }: OgPreviewCardProps) => {
     return match ? match[1] : url;
   })();
 
+  const handlePress = () => {
+    if (url) {
+      Linking.openURL(url).catch(() => {
+        console.error('Failed to open URL:', url);
+      });
+    }
+  };
+
   return (
-    <View style={styles.container}>
-      {ogData.imageUrl ? (
-        <Image source={{ uri: ogData.imageUrl }} style={styles.image} resizeMode="cover" />
-      ) : (
-        <View style={styles['image-placeholder']}>
-          <LinkIcon color="#AABBCC" size={24} />
-        </View>
-      )}
-      <View style={styles.info}>
-        <Text style={styles.domain} numberOfLines={1}>
-          {ogData.siteName || displayDomain}
-        </Text>
-        <Text style={styles.title} numberOfLines={2}>
-          {ogData.title || url}
-        </Text>
-        {!!ogData.description && (
-          <Text style={styles.description} numberOfLines={2}>
-            {ogData.description}
-          </Text>
+    <TouchableOpacity
+      style={styles.container}
+      onPress={handlePress}
+      activeOpacity={0.7}>
+      <View style={styles.content}>
+        {ogData.imageUrl ? (
+          <Image source={{ uri: ogData.imageUrl }} style={styles.image} resizeMode="cover" />
+        ) : (
+          <View style={styles['image-placeholder']}>
+            <LinkIcon color="#AABBCC" size={32} />
+          </View>
         )}
+        <View style={styles.info}>
+          <Text style={styles.domain} numberOfLines={1}>
+            {ogData.siteName || displayDomain}
+          </Text>
+          <Text style={styles.title} numberOfLines={3}>
+            {ogData.title || '링크'}
+          </Text>
+          {!!ogData.description && (
+            <Text style={styles.description} numberOfLines={2}>
+              {ogData.description}
+            </Text>
+          )}
+          {!ogData.title && (
+            <Text style={styles.url} numberOfLines={2}>
+              {url}
+            </Text>
+          )}
+        </View>
       </View>
       {onRemove && (
         <TouchableOpacity onPress={onRemove} style={styles['remove-btn']} hitSlop={8}>
           <CloseIcon color="#9DAFC8" size={18} />
         </TouchableOpacity>
       )}
-    </View>
+    </TouchableOpacity>
   );
 };
 
@@ -56,35 +74,46 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'flex-start',
   },
-  image: { width: 72, height: 72 },
+  content: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  image: { width: 52, height: 52 },
   'image-placeholder': {
-    width: 72,
-    height: 72,
+    width: 52,
+    height: 52,
     backgroundColor: '#EEF3FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  info: { flex: 1, padding: 10, gap: 2 },
+  info: { flex: 1, padding: 6, gap: 1 },
   domain: {
-    fontSize: 11,
-    color: '#9DAFC8',
+    fontSize: 9,
+    fontWeight: '600',
+    color: '#588DFF',
     fontFamily: 'PretendardVariable',
   },
   title: {
-    fontSize: 13,
+    fontSize: 10,
     fontWeight: '600',
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
-    lineHeight: 18,
+    lineHeight: 16,
   },
   description: {
-    fontSize: 12,
+    fontSize: 9,
     color: '#6B7E9A',
     fontFamily: 'PretendardVariable',
-    lineHeight: 16,
-    marginTop: 2,
+    lineHeight: 14,
   },
-  'remove-btn': { padding: 10 },
+  url: {
+    fontSize: 9,
+    color: '#AABBCC',
+    fontFamily: 'PretendardVariable',
+    lineHeight: 14,
+  },
+  'remove-btn': { padding: 8 },
 });
 
 export default OgPreviewCard;

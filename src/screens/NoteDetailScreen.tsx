@@ -12,43 +12,111 @@ import {
   Modal,
   ActivityIndicator,
   KeyboardAvoidingView,
+  Pressable,
+  Linking,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Note, FileAttachment, OgData } from '../types';
+import { Note, FileAttachment, OgData, MediaAttachment } from '../types';
 import {
   ArrowLeftIcon,
   CloseIcon,
-  ImageIcon,
-  LinkIcon,
   TrashIcon,
   PlusIcon,
 } from '../components/common/Icons';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { pick, types, isErrorWithCode, errorCodes } from '@react-native-documents/picker';
 import { fetchOgData } from '../services/ogService';
+import { uploadImages, uploadFile, uploadVideo, MAX_UPLOAD_SIZE } from '../services/uploadService';
 import OgPreviewCard from '../components/note/OgPreviewCard';
+import * as noteService from '../services/noteService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NoteDetail'>;
 
+const ImagePreview = ({ imageUrl, onRemove }: { imageUrl: string; onRemove: () => void }) => {
+  return (
+    <View style={styles['image-wrapper']}>
+      <Image
+        source={{ uri: imageUrl }}
+        style={styles.thumbnail}
+        resizeMode="cover"
+        onError={(e) => console.log(`Image load error: ${imageUrl}`, e.nativeEvent.error)}
+        onLoad={() => console.log(`Image loaded: ${imageUrl}`)}
+      />
+      <TouchableOpacity
+        style={styles['image-remove-btn']}
+        onPress={onRemove}
+        hitSlop={4}>
+        <CloseIcon color="#FFFFFF" size={12} />
+      </TouchableOpacity>
+    </View>
+  );
+};
+
 const NoteDetailScreen = ({ route, navigation }: Props) => {
-  const { note, boardTitle, isNew, onSave, onDelete } = route.params;
+  const { note, boardId, boardTitle, isNew } = route.params;
   const insets = useSafeAreaInsets();
 
   const [editTitle, setEditTitle] = useState(note?.title ?? '');
   const [editContent, setEditContent] = useState(note?.content ?? '');
   const [editImageUris, setEditImageUris] = useState<string[]>(note?.imageUris ?? []);
-  const [editUrl, setEditUrl] = useState<string | undefined>(note?.url);
-  const [editOgData, setEditOgData] = useState<OgData | undefined>(note?.ogData);
+  const [editVideos, setEditVideos] = useState<MediaAttachment[]>(note?.videos ?? []);
+  const [editUrls, setEditUrls] = useState<string[]>(note?.urls ?? (note?.url ? [note.url] : []));
+  const [editOgDatas, setEditOgDatas] = useState<OgData[]>(
+    note?.ogDatas ?? (note?.ogData ? [note.ogData] : [])
+  );
   const [editFiles, setEditFiles] = useState<FileAttachment[]>(note?.files ?? []);
 
   const [isLinkModalVisible, setIsLinkModalVisible] = useState(false);
   const [linkInput, setLinkInput] = useState('');
   const [isFetchingOg, setIsFetchingOg] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isLoadingOgData, setIsLoadingOgData] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [contentHeight, setContentHeight] = useState(140);
+  const [videoViewerVisible, setVideoViewerVisible] = useState(false);
+  const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
 
   // 저장 버튼으로 인한 goBack()과 일반 뒤로가기를 구분하는 플래그
   const isSavingRef = useRef(false);
+
+  // 화면 포커스 시 note 데이터 초기화
+  useFocusEffect(
+    useCallback(() => {
+      setEditTitle(route.params.note?.title ?? '');
+      setEditContent(route.params.note?.content ?? '');
+      setEditImageUris(route.params.note?.imageUris ?? []);
+      setEditVideos(route.params.note?.videos ?? []);
+      setEditUrls(route.params.note?.urls ?? (route.params.note?.url ? [route.params.note.url] : []));
+      setEditOgDatas(route.params.note?.ogDatas ?? (route.params.note?.ogData ? [route.params.note.ogData] : []));
+      setEditFiles(route.params.note?.files ?? []);
+      setIsLoadingOgData(false);
+    }, [route.params.note])
+  );
+
+  // editUrls이 있는데 editOgDatas가 없으면 자동으로 로드
+  useEffect(() => {
+    const loadOgDataIfNeeded = async () => {
+      if (editUrls.length > 0 && editOgDatas.length < editUrls.length && !isLoadingOgData) {
+        setIsLoadingOgData(true);
+        try {
+          const newOgDatas = [...editOgDatas];
+          for (let i = editOgDatas.length; i < editUrls.length; i++) {
+            const ogData = await fetchOgData(editUrls[i]);
+            newOgDatas.push(ogData);
+          }
+          setEditOgDatas(newOgDatas);
+        } catch (error) {
+          console.error('Failed to load OG data:', error);
+        } finally {
+          setIsLoadingOgData(false);
+        }
+      }
+    };
+    loadOgDataIfNeeded();
+  }, [editUrls]);
 
   const isDirty = useCallback(() => {
     if (isNew) {
@@ -56,7 +124,8 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         editTitle.trim().length > 0 ||
         editContent.trim().length > 0 ||
         editImageUris.length > 0 ||
-        !!editUrl ||
+        editVideos.length > 0 ||
+        editUrls.length > 0 ||
         editFiles.length > 0
       );
     }
@@ -64,10 +133,11 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       editTitle !== (note?.title ?? '') ||
       editContent !== (note?.content ?? '') ||
       JSON.stringify(editImageUris) !== JSON.stringify(note?.imageUris ?? []) ||
-      editUrl !== note?.url ||
+      JSON.stringify(editVideos) !== JSON.stringify(note?.videos ?? []) ||
+      JSON.stringify(editUrls) !== JSON.stringify(note?.urls ?? (note?.url ? [note.url] : [])) ||
       JSON.stringify(editFiles) !== JSON.stringify(note?.files ?? [])
     );
-  }, [isNew, editTitle, editContent, editImageUris, editUrl, editFiles, note]);
+  }, [isNew, editTitle, editContent, editImageUris, editVideos, editUrls, editFiles, note]);
 
   // 뒤로가기 인터셉트 (Android 하드웨어 백 버튼 + iOS 스와이프 공통 처리)
   useEffect(() => {
@@ -90,23 +160,40 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
     return unsubscribe;
   }, [navigation, isDirty]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editTitle.trim()) {
       Alert.alert('알림', '노트 이름을 입력해주세요.');
       return;
     }
-    const noteToSave: Note = {
-      id: note?.id ?? `note_${Date.now()}`,
-      title: editTitle.trim(),
-      content: editContent.trim() || undefined,
-      imageUris: editImageUris.length > 0 ? editImageUris : undefined,
-      url: editUrl,
-      ogData: editOgData,
-      files: editFiles.length > 0 ? editFiles : undefined,
-    };
-    onSave?.(noteToSave);
+
+    setIsSaving(true);
     isSavingRef.current = true;
-    navigation.goBack();
+
+    try {
+      const noteData = {
+        title: editTitle.trim(),
+        content: editContent.trim() || undefined,
+        imageUris: editImageUris.length > 0 ? editImageUris : undefined,
+        videos: editVideos.length > 0 ? editVideos : undefined,
+        urls: editUrls.length > 0 ? editUrls : undefined,
+        files: editFiles.length > 0 ? editFiles : undefined,
+      };
+      console.log('Saving note with data:', noteData);
+
+      if (isNew) {
+        await noteService.createNote(boardId, noteData);
+      } else if (note) {
+        await noteService.updateNote(boardId, note.id, noteData);
+      }
+      console.log('Note saved successfully');
+      navigation.goBack();
+    } catch (error) {
+      console.error('Failed to save note:', error);
+      Alert.alert('오류', '노트 저장에 실패했습니다.');
+      isSavingRef.current = false;
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDelete = () => {
@@ -115,34 +202,149 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       {
         text: '삭제',
         style: 'destructive',
-        onPress: () => {
-          onDelete?.(note!.id);
-          navigation.goBack();
+        onPress: async () => {
+          try {
+            setIsSaving(true);
+            if (note) {
+              await noteService.deleteNote(boardId, note.id);
+            }
+            navigation.goBack();
+          } catch (error) {
+            Alert.alert('오류', '노트 삭제에 실패했습니다.');
+            console.error('Failed to delete note:', error);
+          } finally {
+            setIsSaving(false);
+          }
         },
       },
     ]);
   };
 
   const handleAddImage = async () => {
+    if (editImageUris.length >= 10) {
+      Alert.alert('알림', '이미지는 최대 10개까지 추가할 수 있습니다.');
+      return;
+    }
+
     try {
       const result = await launchImageLibrary({
         mediaType: 'photo',
         selectionLimit: Math.max(1, 10 - editImageUris.length),
       });
       if (result.assets && result.assets.length > 0) {
-        const uris = result.assets.filter(a => !!a.uri).map(a => a.uri!);
-        setEditImageUris(prev => [...prev, ...uris]);
+        // 파일 크기 검증
+        let totalSize = 0;
+        let hasOversized = false;
+
+        for (const asset of result.assets) {
+          if (asset.fileSize) {
+            totalSize += asset.fileSize;
+            if (asset.fileSize > MAX_UPLOAD_SIZE) {
+              hasOversized = true;
+            }
+          }
+        }
+
+        if (hasOversized || totalSize > MAX_UPLOAD_SIZE) {
+          Alert.alert(
+            '용량 초과',
+            `최대 100MB까지 업로드할 수 있습니다.\n현재 선택 크기: ${(totalSize / (1024 * 1024)).toFixed(2)}MB`,
+          );
+          return;
+        }
+
+        const localUris = result.assets.filter(a => !!a.uri).map(a => a.uri!);
+        setIsUploading(true);
+        try {
+          const response = await uploadImages(localUris);
+          console.log('Upload response:', response);
+          // presigned URLs를 저장 (화면 렌더링용)
+          setEditImageUris(prev => [...prev, ...response.urls]);
+        } catch (error) {
+          Alert.alert('오류', '이미지 업로드에 실패했습니다.');
+          console.error('Image upload error:', error);
+        } finally {
+          setIsUploading(false);
+        }
       }
     } catch {
       // 사용자 취소 — 무시
     }
   };
 
-  const handleRemoveImage = (idx: number) => {
-    setEditImageUris(prev => prev.filter((_, i) => i !== idx));
+  const handleRemoveImage = (imageKey: string) => {
+    setEditImageUris(prev => prev.filter(key => key !== imageKey));
+  };
+
+  const handleAddVideo = async () => {
+    if (editVideos.length >= 10) {
+      Alert.alert('알림', '동영상은 최대 10개까지 추가할 수 있습니다.');
+      return;
+    }
+
+    try {
+      const result = await launchImageLibrary({
+        mediaType: 'video',
+        selectionLimit: Math.max(1, 10 - editVideos.length),
+      });
+      if (result.assets && result.assets.length > 0) {
+        // 파일 크기 검증
+        let totalSize = 0;
+        let hasOversized = false;
+
+        for (const asset of result.assets) {
+          if (asset.fileSize) {
+            totalSize += asset.fileSize;
+            if (asset.fileSize > MAX_UPLOAD_SIZE) {
+              hasOversized = true;
+            }
+          }
+        }
+
+        if (hasOversized || totalSize > MAX_UPLOAD_SIZE) {
+          Alert.alert(
+            '용량 초과',
+            `최대 100MB까지 업로드할 수 있습니다.\n현재 선택 크기: ${(totalSize / (1024 * 1024)).toFixed(2)}MB`,
+          );
+          return;
+        }
+
+        const localUris = result.assets.filter(a => !!a.uri).map(a => a.uri!);
+        setIsUploading(true);
+        try {
+          const uploadPromises = localUris.map(uri => uploadVideo(uri));
+          const responses = await Promise.all(uploadPromises);
+          const newVideos: MediaAttachment[] = responses.map((r, idx) => ({
+            uid: `video-${Date.now()}-${idx}`,
+            url: r.url,
+            key: r.key,
+            mimeType: 'video/mp4',
+            size: r.size,
+            thumbnailUrl: r.thumbnailUrl,
+            duration: r.duration,
+          }));
+          setEditVideos(prev => [...prev, ...newVideos]);
+        } catch (error) {
+          Alert.alert('오류', '동영상 업로드에 실패했습니다.');
+          console.error('Video upload error:', error);
+        } finally {
+          setIsUploading(false);
+        }
+      }
+    } catch {
+      // 사용자 취소 — 무시
+    }
+  };
+
+  const handleRemoveVideo = (videoUid: string) => {
+    setEditVideos(prev => prev.filter(video => video.uid !== videoUid));
   };
 
   const handleOpenLinkModal = () => {
+    if (editUrls.length >= 10) {
+      Alert.alert('알림', '링크는 최대 10개까지 추가할 수 있습니다.');
+      return;
+    }
     setLinkInput('');
     setIsLinkModalVisible(true);
   };
@@ -163,8 +365,8 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
     setIsFetchingOg(true);
     try {
       const ogData = await fetchOgData(normalizedUrl);
-      setEditUrl(normalizedUrl);
-      setEditOgData(ogData);
+      setEditUrls(prev => [...prev, normalizedUrl]);
+      setEditOgDatas(prev => [...prev, ogData]);
       setIsLinkModalVisible(false);
       setLinkInput('');
     } catch {
@@ -174,25 +376,76 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
     }
   };
 
-  const handleRemoveLink = () => {
-    setEditUrl(undefined);
-    setEditOgData(undefined);
+  const handleRemoveLink = (index: number) => {
+    setEditUrls(prev => prev.filter((_, i) => i !== index));
+    setEditOgDatas(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleAddFile = async () => {
+    if (editFiles.length >= 10) {
+      Alert.alert('알림', '파일은 최대 10개까지 추가할 수 있습니다.');
+      return;
+    }
+
     try {
       const results = await pick({
         type: [types.allFiles],
         allowMultiSelection: true,
       });
-      const newFiles: FileAttachment[] = results.map(r => ({
-        id: `file_${Date.now()}_${Math.random().toString(36).slice(2)}`,
-        name: r.name ?? 'unknown',
-        url: r.uri,
-        mimeType: r.type ?? 'application/octet-stream',
-        size: r.size ?? 0,
-      }));
-      setEditFiles(prev => [...prev, ...newFiles]);
+
+      // 최대 개수 제한 확인
+      if (editFiles.length + results.length > 10) {
+        const remainingSlots = 10 - editFiles.length;
+        Alert.alert('알림', `파일은 최대 10개까지 추가할 수 있습니다. (${remainingSlots}개 더 추가 가능)`);
+        return;
+      }
+
+      // 파일 크기 검증
+      let totalSize = 0;
+      let hasOversized = false;
+      let oversizedFileName = '';
+
+      for (const result of results) {
+        if (result.size) {
+          totalSize += result.size;
+          if (result.size > MAX_UPLOAD_SIZE) {
+            hasOversized = true;
+            oversizedFileName = result.name || 'Unknown';
+          }
+        }
+      }
+
+      if (hasOversized || totalSize > MAX_UPLOAD_SIZE) {
+        Alert.alert(
+          '용량 초과',
+          hasOversized
+            ? `'${oversizedFileName}' 파일이 100MB를 초과합니다.`
+            : `최대 100MB까지 업로드할 수 있습니다.\n현재 선택 크기: ${(totalSize / (1024 * 1024)).toFixed(2)}MB`,
+        );
+        return;
+      }
+
+      setIsUploading(true);
+      try {
+        const uploadPromises = results.map(async r => {
+          const uploadResponse = await uploadFile(r.uri);
+          return {
+            uid: uploadResponse.uid,
+            name: uploadResponse.name,
+            url: uploadResponse.url,
+            key: uploadResponse.key,
+            mimeType: uploadResponse.mimeType,
+            size: uploadResponse.size,
+          };
+        });
+        const newFiles = await Promise.all(uploadPromises);
+        setEditFiles(prev => [...prev, ...newFiles]);
+      } catch (error) {
+        Alert.alert('오류', '파일 업로드에 실패했습니다.');
+        console.error('File upload error:', error);
+      } finally {
+        setIsUploading(false);
+      }
     } catch (e) {
       if (isErrorWithCode(e) && e.code === errorCodes.OPERATION_CANCELED) {
         // 사용자 취소 — 무시
@@ -202,8 +455,8 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
     }
   };
 
-  const handleRemoveFile = (fileId: string) => {
-    setEditFiles(prev => prev.filter(f => f.id !== fileId));
+  const handleRemoveFile = (fileUid: string) => {
+    setEditFiles(prev => prev.filter(f => f.uid !== fileUid));
   };
 
   const canDelete = !isNew && !!note;
@@ -233,10 +486,10 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           <TouchableOpacity
             onPress={handleSave}
             hitSlop={8}
-            disabled={!editTitle.trim()}
+            disabled={!editTitle.trim() || isUploading || isSaving}
             activeOpacity={0.6}>
-            <Text style={[styles['save-text'], !editTitle.trim() && styles['save-text-disabled']]}>
-              저장
+            <Text style={[styles['save-text'], (!editTitle.trim() || isUploading || isSaving) && styles['save-text-disabled']]}>
+              {isUploading ? '업로드 중...' : isSaving ? '저장 중...' : '저장'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -252,6 +505,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           keyboardShouldPersistTaps="handled">
 
           {/* 노트 제목 */}
+          <Text style={styles['input-label']}>제목</Text>
           <TextInput
             style={styles['title-input']}
             value={editTitle}
@@ -264,84 +518,179 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           <View style={styles.divider} />
 
           {/* 본문 */}
+          <Text style={styles['input-label']}>내용</Text>
           <TextInput
-            style={styles['content-input']}
+            style={[styles['content-input'], { height: contentHeight }]}
             value={editContent}
             onChangeText={setEditContent}
+            onContentSizeChange={(e) => {
+              const newHeight = Math.max(140, e.nativeEvent.contentSize.height);
+              setContentHeight(newHeight);
+            }}
             placeholder="내용을 입력하세요..."
             placeholderTextColor="#AABBCC"
             multiline
             textAlignVertical="top"
+            scrollEnabled={false}
           />
 
           {/* 첨부 섹션 */}
           <View style={styles['section-divider']} />
-          <Text style={styles['section-label']}>첨부</Text>
 
-          {/* 이미지 */}
-          <View style={styles['images-section']}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles['images-row']}>
-              {editImageUris.map((uri, idx) => (
-                <View key={`${idx}`} style={styles['image-wrapper']}>
-                  <Image source={{ uri }} style={styles.thumbnail} resizeMode="cover" />
-                  <TouchableOpacity
-                    style={styles['image-remove-btn']}
-                    onPress={() => handleRemoveImage(idx)}
-                    hitSlop={4}>
-                    <CloseIcon color="#FFFFFF" size={12} />
-                  </TouchableOpacity>
-                </View>
-              ))}
-              <TouchableOpacity
-                style={styles['add-image-btn']}
-                onPress={handleAddImage}
-                activeOpacity={0.7}>
-                <ImageIcon color="#588DFF" size={20} />
-                <Text style={styles['add-btn-text']}>추가</Text>
-              </TouchableOpacity>
-            </ScrollView>
+          <View style={styles['attachments-container']}>
+            {/* 이미지 */}
+            <View style={styles['subsection-header']}>
+            <View>
+              <Text style={styles['subsection-label']}>이미지</Text>
+              <Text style={styles['subsection-count']}>{editImageUris.length}/10</Text>
+            </View>
+            <TouchableOpacity
+              onPress={handleAddImage}
+              disabled={isUploading || editImageUris.length >= 10}
+              hitSlop={8}>
+              <PlusIcon color={isUploading || editImageUris.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
+            </TouchableOpacity>
           </View>
-
-          {/* 링크 */}
-          <View style={styles['link-section']}>
-            {editUrl && editOgData ? (
-              <OgPreviewCard
-                url={editUrl}
-                ogData={editOgData}
-                onRemove={handleRemoveLink}
-              />
+          <View style={styles['images-section']}>
+            {editImageUris.length > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles['images-row']}>
+                <>
+                  {editImageUris.map((imageUrl) => (
+                    <ImagePreview key={imageUrl} imageUrl={imageUrl} onRemove={() => handleRemoveImage(imageUrl)} />
+                  ))}
+                </>
+              </ScrollView>
             ) : (
-              <TouchableOpacity
-                style={styles['add-attach-btn']}
-                onPress={handleOpenLinkModal}
-                activeOpacity={0.7}>
-                <LinkIcon color="#588DFF" size={16} />
-                <Text style={styles['add-attach-btn-text']}>링크 추가</Text>
-              </TouchableOpacity>
+              <Text style={styles['empty-section-text']}>첨부된 이미지가 없습니다</Text>
             )}
           </View>
 
           {/* 파일 */}
-          <View style={styles['files-section']}>
-            {editFiles.map(file => (
-              <View key={file.id} style={styles['file-row']}>
-                <Text style={styles['file-icon']}>📄</Text>
-                <Text style={styles['file-name']} numberOfLines={1}>{file.name}</Text>
-                <TouchableOpacity onPress={() => handleRemoveFile(file.id)} hitSlop={8}>
-                  <CloseIcon color="#9DAFC8" size={16} />
-                </TouchableOpacity>
-              </View>
-            ))}
+          <View style={styles['subsection-header']}>
+            <View>
+              <Text style={styles['subsection-label']}>파일</Text>
+              <Text style={styles['subsection-count']}>{editFiles.length}/10</Text>
+            </View>
             <TouchableOpacity
-              style={styles['add-attach-btn']}
               onPress={handleAddFile}
-              activeOpacity={0.7}>
-              <PlusIcon color="#588DFF" size={16} />
-              <Text style={styles['add-attach-btn-text']}>파일 추가</Text>
+              disabled={isUploading || editFiles.length >= 10}
+              hitSlop={8}>
+              <PlusIcon color={isUploading || editFiles.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
             </TouchableOpacity>
+          </View>
+          <View style={styles['files-section']}>
+            {editFiles.length > 0 ? (
+              <>
+                {editFiles.map(file => (
+                  <View key={file.uid} style={styles['file-row']}>
+                    <Text style={styles['file-icon']}>📄</Text>
+                    <Text style={styles['file-name']} numberOfLines={1}>{file.name}</Text>
+                    <TouchableOpacity onPress={() => handleRemoveFile(file.uid)} hitSlop={8}>
+                      <CloseIcon color="#9DAFC8" size={16} />
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </>
+            ) : (
+              <Text style={styles['empty-section-text']}>첨부된 파일이 없습니다</Text>
+            )}
+          </View>
+
+          {/* 동영상 */}
+          <View style={styles['subsection-header']}>
+            <View>
+              <Text style={styles['subsection-label']}>동영상</Text>
+              <Text style={styles['subsection-count']}>{editVideos.length}/10</Text>
+            </View>
+            <TouchableOpacity
+              onPress={handleAddVideo}
+              disabled={isUploading || editVideos.length >= 10}
+              hitSlop={8}>
+              <PlusIcon color={isUploading || editVideos.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
+            </TouchableOpacity>
+          </View>
+          <View style={styles['videos-section']}>
+            {editVideos.length > 0 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles['videos-row']}>
+                <>
+                  {editVideos.map((video) => (
+                    <Pressable
+                      key={video.uid}
+                      onPress={() => {
+                        setSelectedVideoUrl(video.url);
+                        setVideoViewerVisible(true);
+                      }}
+                      style={({ pressed }) => [
+                        styles['video-wrapper'],
+                        pressed && styles['video-wrapper-pressed'],
+                      ]}>
+                      {video.thumbnailUrl ? (
+                        <Image
+                          source={{ uri: video.thumbnailUrl }}
+                          style={styles['video-thumbnail']}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={styles['video-thumbnail']}>
+                          <Text style={styles['video-icon']}>🎬</Text>
+                        </View>
+                      )}
+                      {video.duration && (
+                        <Text style={styles['video-duration']}>
+                          {Math.floor(video.duration / 60)}:{String(Math.floor(video.duration % 60)).padStart(2, '0')}
+                        </Text>
+                      )}
+                      <TouchableOpacity
+                        style={styles['video-remove-btn']}
+                        onPress={() => handleRemoveVideo(video.uid)}
+                        hitSlop={4}>
+                        <CloseIcon color="#FFFFFF" size={12} />
+                      </TouchableOpacity>
+                    </Pressable>
+                  ))}
+                </>
+              </ScrollView>
+            ) : (
+              <Text style={styles['empty-section-text']}>첨부된 동영상이 없습니다</Text>
+            )}
+          </View>
+
+          {/* 링크 */}
+          <View style={styles['subsection-header']}>
+            <View>
+              <Text style={styles['subsection-label']}>링크</Text>
+              <Text style={styles['subsection-count']}>{editUrls.length}/10</Text>
+            </View>
+            <TouchableOpacity
+              onPress={handleOpenLinkModal}
+              disabled={editUrls.length >= 10}
+              hitSlop={8}>
+              <PlusIcon color={editUrls.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
+            </TouchableOpacity>
+          </View>
+            <View style={styles['link-section']}>
+              {editUrls.length > 0 ? (
+                <>
+                  {editUrls.map((url, index) => (
+                    <View key={index} style={styles['link-item-wrapper']}>
+                      <OgPreviewCard
+                        url={url}
+                        ogData={editOgDatas[index] || { title: url }}
+                        onRemove={() => handleRemoveLink(index)}
+                      />
+                    </View>
+                  ))}
+                </>
+              ) : (
+                <Text style={styles['empty-section-text']}>첨부된 링크가 없습니다</Text>
+              )}
+            </View>
           </View>
 
           <View style={{ height: 32 }} />
@@ -397,6 +746,33 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* 동영상 뷰어 모달 */}
+      <Modal
+        visible={videoViewerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setVideoViewerVisible(false)}>
+        <View style={styles['video-viewer-container']}>
+          <TouchableOpacity
+            style={styles['video-viewer-close']}
+            onPress={() => setVideoViewerVisible(false)}>
+            <Text style={styles['video-viewer-close-text']}>✕</Text>
+          </TouchableOpacity>
+          {selectedVideoUrl && (
+            <TouchableOpacity
+              style={styles['video-player-container']}
+              onPress={() => {
+                Linking.openURL(selectedVideoUrl).catch(() => {
+                  console.error('Failed to open video:', selectedVideoUrl);
+                });
+              }}>
+              <Text style={styles['video-play-icon']}>▶</Text>
+              <Text style={styles['video-open-text']}>눌러서 재생</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -440,34 +816,85 @@ const styles = StyleSheet.create({
   },
   'save-text-disabled': { color: '#C0CDD8' },
   body: { flex: 1 },
-  'body-content': { padding: 20 },
+  'body-content': { padding: 20, paddingBottom: 40 },
   'title-input': {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
-    paddingVertical: 8,
+    lineHeight: 28,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E4ECFF',
   },
-  divider: { height: 1, backgroundColor: '#E8EEF8', marginVertical: 4 },
+  divider: { height: 1, backgroundColor: '#D5DFED', marginVertical: 16 },
   'content-input': {
-    fontSize: 15,
+    fontSize: 13,
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
-    minHeight: 120,
-    lineHeight: 24,
-    paddingVertical: 12,
+    lineHeight: 26,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     textAlignVertical: 'top',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E4ECFF',
   },
-  'section-divider': { height: 1, backgroundColor: '#E8EEF8', marginTop: 16, marginBottom: 16 },
+  'section-divider': { height: 1.2, backgroundColor: '#D5DFED', marginTop: 20, marginBottom: 16 },
   'section-label': {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    fontFamily: 'PretendardVariable',
+    letterSpacing: 0.3,
+    marginBottom: 14,
+  },
+  'attachments-container': {
+    backgroundColor: '#F7FAFF',
+    borderRadius: 12,
+    padding: 16,
+    gap: 16,
+  },
+  'subsection-header': {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  'subsection-label': {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#588DFF',
+    fontFamily: 'PretendardVariable',
+    letterSpacing: 0.2,
+  },
+  'subsection-count': {
+    fontSize: 11,
+    fontWeight: '500',
     color: '#9DAFC8',
     fontFamily: 'PretendardVariable',
-    letterSpacing: 0.5,
-    marginBottom: 12,
+    marginTop: 2,
   },
-  'images-section': { marginBottom: 12 },
+  'input-label': {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#588DFF',
+    fontFamily: 'PretendardVariable',
+    letterSpacing: 0.2,
+    marginBottom: 10,
+  },
+  'images-section': { marginBottom: 0 },
+  'empty-section-text': {
+    fontSize: 13,
+    color: '#AABBCC',
+    fontFamily: 'PretendardVariable',
+    textAlign: 'center',
+    paddingVertical: 12,
+  },
   'images-row': {
     flexDirection: 'row',
     gap: 8,
@@ -507,43 +934,96 @@ const styles = StyleSheet.create({
     color: '#588DFF',
     fontFamily: 'PretendardVariable',
   },
-  'link-section': { marginBottom: 12 },
-  'files-section': { gap: 8 },
+  'add-image-btn-disabled': {
+    opacity: 0.6,
+  },
+  'videos-section': { marginBottom: 0 },
+  'videos-row': {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+  },
+  'video-wrapper': { position: 'relative' },
+  'video-wrapper-pressed': {
+    opacity: 0.7,
+  },
+  'video-thumbnail': {
+    width: 72,
+    height: 72,
+    borderRadius: 10,
+    backgroundColor: '#E8EEF8',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  'video-icon': {
+    fontSize: 28,
+  },
+  'video-duration': {
+    position: 'absolute',
+    bottom: 4,
+    right: 4,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '600',
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRadius: 4,
+    fontFamily: 'PretendardVariable',
+  },
+  'video-remove-btn': {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  'link-section': { gap: 10, marginBottom: 0 },
+  'link-item-wrapper': { marginBottom: 10 },
+  'files-section': { gap: 10, marginBottom: 0 },
   'file-row': {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    padding: 12,
+    padding: 14,
     borderWidth: 1,
     borderColor: '#E4ECFF',
-    gap: 8,
+    gap: 10,
   },
-  'file-icon': { fontSize: 16 },
+  'file-icon': { fontSize: 14 },
   'file-name': {
     flex: 1,
-    fontSize: 14,
+    fontSize: 12,
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
+    lineHeight: 20,
   },
   'add-attach-btn': {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     backgroundColor: '#F0F5FF',
     borderRadius: 10,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#C0D0F0',
     borderStyle: 'dashed',
     alignSelf: 'flex-start',
   },
   'add-attach-btn-text': {
-    fontSize: 13,
+    fontSize: 14,
     color: '#588DFF',
     fontFamily: 'PretendardVariable',
-    fontWeight: '500',
+    fontWeight: '600',
+  },
+  'add-attach-btn-disabled': {
+    opacity: 0.6,
   },
   'modal-overlay': {
     flex: 1,
@@ -554,45 +1034,84 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingTop: 12,
+    paddingTop: 16,
     paddingHorizontal: 20,
-    gap: 16,
+    gap: 18,
   },
   'modal-handle': {
     width: 40,
-    height: 4,
+    height: 5,
     backgroundColor: '#E0E8F8',
-    borderRadius: 2,
+    borderRadius: 2.5,
     alignSelf: 'center',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   'modal-title': {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
+    lineHeight: 26,
   },
   'modal-input': {
     fontSize: 15,
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
+    lineHeight: 22,
     borderWidth: 1,
     borderColor: '#E4ECFF',
     borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: Platform.OS === 'ios' ? 12 : 8,
+    paddingHorizontal: 16,
+    paddingVertical: Platform.OS === 'ios' ? 14 : 10,
     backgroundColor: '#FAFCFF',
   },
   'modal-confirm-btn': {
     backgroundColor: '#588DFF',
     borderRadius: 12,
-    paddingVertical: 14,
+    paddingVertical: 16,
     alignItems: 'center',
   },
   'modal-confirm-btn-disabled': { backgroundColor: '#C0CDD8' },
   'modal-confirm-btn-text': {
     fontSize: 16,
     fontWeight: '700',
+    color: '#FFFFFF',
+    fontFamily: 'PretendardVariable',
+    lineHeight: 24,
+  },
+  'video-viewer-container': {
+    flex: 1,
+    backgroundColor: '#000000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  'video-viewer-close': {
+    position: 'absolute',
+    top: 40,
+    right: 20,
+    zIndex: 10,
+    padding: 8,
+  },
+  'video-viewer-close-text': {
+    fontSize: 28,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  'video-player-container': {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 8,
+  },
+  'video-play-icon': {
+    fontSize: 48,
+    color: '#FFFFFF',
+  },
+  'video-open-text': {
+    fontSize: 12,
     color: '#FFFFFF',
     fontFamily: 'PretendardVariable',
   },

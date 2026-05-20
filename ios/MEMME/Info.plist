@@ -109,6 +109,7 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>kakao9f7ba7701bf11e81786c5122493634f8</string>
+				<string>memme</string>
 			</array>
 		</dict>
 	</array>

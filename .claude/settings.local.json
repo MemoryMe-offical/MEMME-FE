@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(npm install react-native-vector-icons)",
-      "Bash(npm install --save-dev @types/react-native-vector-icons)"
+      "Bash(npm install --save-dev @types/react-native-vector-icons)",
+      "Bash(git checkout *)",
+      "Bash(git stash *)",
+      "Bash(git merge *)"
     ]
   }
 }

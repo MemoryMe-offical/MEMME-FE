@@ -8,11 +8,14 @@ import {
   Alert,
   Modal,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Board, Memo, Note } from '../../types';
+import { Board, Memo } from '../../types';
 import TagInput from '../common/TagInput';
 import { ArrowLeftIcon, CloseIcon, SearchIcon, PlusCircleIcon } from '../common/Icons';
+import * as memoConvertService from '../../services/memoConvertService';
+import * as memoService from '../../services/memoService';
 
 type Step = 'list' | 'new-board' | 'add-to-board';
 
@@ -51,6 +54,7 @@ const MemoConvertSheet = ({
   const [step, setStep] = useState<Step>('list');
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Step 2-A 폼 상태
   const [boardTitle, setBoardTitle] = useState('');
@@ -107,7 +111,7 @@ const MemoConvertSheet = ({
     setSelectedBoard(null);
   };
 
-  const handleCreateNewBoard = () => {
+  const handleCreateNewBoard = async () => {
     if (!boardTitle.trim()) {
       Alert.alert('알림', '보드 제목을 입력해주세요.');
       return;
@@ -116,50 +120,67 @@ const MemoConvertSheet = ({
       Alert.alert('알림', '노트 이름을 입력해주세요.');
       return;
     }
+
+    setIsLoading(true);
     try {
-      const newBoard: Board = {
-        id: Date.now().toString(),
-        userId: memo.userId,
-        type: 'board',
+      // 1. 새 보드 생성
+      const newBoard = await memoConvertService.convertMemoToNewBoard(memo.id, {
         title: boardTitle.trim(),
         description: boardDescription.trim() || undefined,
         tags: boardTags.length > 0 ? boardTags : undefined,
-        notes: [
-          {
-            id: `note_${Date.now()}`,
-            title: newNoteTitle.trim(),
-            content: '',
-          } as Note,
-        ],
-        bookMark: false,
-        createdAt: new Date().toISOString(),
-      };
+        noteTitle: newNoteTitle.trim() || undefined,
+      });
+
+      // 2. 메모 삭제 (백엔드에서 자동 삭제될 수 있으므로 에러 무시)
+      try {
+        await memoService.deleteMemo(memo.id);
+      } catch {
+        console.log('Memo already deleted by backend');
+      }
+
       onSuccess(memo.id, newBoard);
-    } catch {
+      handleClose();
+    } catch (error) {
+      console.error('Failed to convert memo to new board:', error);
       Alert.alert('오류', '변환 중 문제가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleAddToBoard = () => {
+  const handleAddToBoard = async () => {
     if (!selectedBoard) return;
     if (!addNoteTitle.trim()) {
       Alert.alert('알림', '노트 이름을 입력해주세요.');
       return;
     }
+
+    setIsLoading(true);
     try {
-      const newNote: Note = {
-        id: `note_${Date.now()}`,
-        title: addNoteTitle.trim(),
-        content: addNoteContent.trim() || undefined,
-      };
-      const updatedBoard: Board = {
-        ...selectedBoard,
-        notes: [...(selectedBoard.notes ?? []), newNote],
-        updatedAt: new Date().toISOString(),
-      };
+      // 1. 메모를 기존 보드로 변환 (노트 추가)
+      const updatedBoard = await memoConvertService.convertMemoToExistingBoard(
+        memo.id,
+        selectedBoard.id,
+        {
+          noteTitle: addNoteTitle.trim(),
+          content: addNoteContent.trim() || undefined,
+        }
+      );
+
+      // 2. 메모 삭제 (백엔드에서 자동 삭제될 수 있으므로 에러 무시)
+      try {
+        await memoService.deleteMemo(memo.id);
+      } catch {
+        console.log('Memo already deleted by backend');
+      }
+
       onSuccess(memo.id, updatedBoard);
-    } catch {
+      handleClose();
+    } catch (error) {
+      console.error('Failed to convert memo to existing board:', error);
       Alert.alert('오류', '추가 중 문제가 발생했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -302,13 +323,17 @@ const MemoConvertSheet = ({
                 <TouchableOpacity
                   style={[
                     styles['confirm-btn'],
-                    (!boardTitle.trim() || !newNoteTitle.trim()) &&
+                    (!boardTitle.trim() || !newNoteTitle.trim() || isLoading) &&
                       styles['confirm-btn-disabled'],
                   ]}
                   onPress={handleCreateNewBoard}
-                  disabled={!boardTitle.trim() || !newNoteTitle.trim()}
+                  disabled={!boardTitle.trim() || !newNoteTitle.trim() || isLoading}
                   activeOpacity={0.8}>
-                  <Text style={styles['confirm-btn-text']}>보드 만들기</Text>
+                  {isLoading ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <Text style={styles['confirm-btn-text']}>보드 만들기</Text>
+                  )}
                 </TouchableOpacity>
                 <View style={{ height: 8 }} />
               </ScrollView>
@@ -360,12 +385,16 @@ const MemoConvertSheet = ({
                 <TouchableOpacity
                   style={[
                     styles['confirm-btn'],
-                    !addNoteTitle.trim() && styles['confirm-btn-disabled'],
+                    (!addNoteTitle.trim() || isLoading) && styles['confirm-btn-disabled'],
                   ]}
                   onPress={handleAddToBoard}
-                  disabled={!addNoteTitle.trim()}
+                  disabled={!addNoteTitle.trim() || isLoading}
                   activeOpacity={0.8}>
-                  <Text style={styles['confirm-btn-text']}>추가</Text>
+                  {isLoading ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <Text style={styles['confirm-btn-text']}>추가</Text>
+                  )}
                 </TouchableOpacity>
                 <View style={{ height: 8 }} />
               </ScrollView>

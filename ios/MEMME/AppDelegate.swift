@@ -31,6 +31,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     return true
   }
+
+  func application(
+    _ application: UIApplication,
+    open url: URL,
+    options: [UIApplication.OpenURLOptionsKey: Any] = [:]
+  ) -> Bool {
+    if url.scheme == "memme" || url.host == "share" {
+      let sharedDefaults = UserDefaults(suiteName: "group.com.memme.share")
+      sharedDefaults?.set(url.absoluteString, forKey: "sharedURL")
+      print("🔥 iOS에서 받은 URL:", url.absoluteString)
+      return true
+    }
+    return false
+  }
 }
 
 class ReactNativeDelegate: RCTDefaultReactNativeFactoryDelegate {

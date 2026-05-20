@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   FlatList,
@@ -13,9 +13,12 @@ import {
   NativeModules,
   StatusBar,
   Keyboard,
+  Modal,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Board, Memo, PendingLink, TimelineItem } from '../types';
 import ChatMessageItem from '../components/chat/ChatMessageItem';
@@ -28,126 +31,41 @@ import MemoConvertSheet from '../components/memo/MemoConvertSheet';
 import PendingLinksBottomSheet from '../components/pendingLinks/PendingLinksBottomSheet';
 import { mainStyles as styles } from '../styles/MainScreen.styles';
 import type { RootStackParamList } from '../navigation/RootNavigator';
-import { loadItems, saveItems } from '../utils/storage';
 import { fetchOgData } from '../services/ogService';
 import * as pendingLinkService from '../services/pendingLinkService';
-
-const TEMP_USER_ID = '24';
-
-const initItems: TimelineItem[] = [
-  {
-    id: '1',
-    userId: TEMP_USER_ID,
-    type: 'memo',
-    bookMark: false,
-    text: '코딩 공부하기',
-    createdAt: new Date(2026, 1, 25, 9, 15, 0).toISOString(),
-  },
-  {
-    id: '2',
-    userId: TEMP_USER_ID,
-    type: 'board',
-    bookMark: true,
-    title: '수학교육 과동아리',
-    notes: [
-      { id: '2-1', title: '여름 MT', content: '🏕 MT 추가요금 공지\nMT 정산 과정에서 비용 변동으로 1인당 추가요금 4,115원이 발생했습니다.\n번거롭겠지만 아래 계좌로 추가 입금 부탁드립니다...' },
-      { id: '2-2', title: '수학 모임', content: '이번 주 수학 모임은 화요일 오후 6시 도서관 2층에서 진행됩니다.' },
-      { id: '2-3', title: '잼얘즈', content: '잼있는 얘기들 공유하는 채널입니다. 자유롭게 올려주세요!' },
-    ],
-    createdAt: new Date(2026, 1, 25, 10, 0, 0).toISOString(),
-  },
-  {
-    id: '3',
-    userId: TEMP_USER_ID,
-    type: 'memo',
-    bookMark: false,
-    text: '리액트 네이티브 강의 수강하기!',
-    createdAt: new Date(2026, 1, 25, 11, 30, 0).toISOString(),
-  },
-  {
-    id: '4',
-    userId: TEMP_USER_ID,
-    type: 'memo',
-    bookMark: false,
-    text: '결혼식 2월 31일 오후 12시',
-    createdAt: new Date(2026, 1, 25, 12, 47, 0).toISOString(),
-  },
-  {
-    id: '5',
-    userId: TEMP_USER_ID,
-    type: 'board',
-    bookMark: false,
-    title: '운동 루틴 메모',
-    description: '월·수·금: 헬스장 하체 위주\n화·목: 홈트 30분 + 스트레칭\n주말: 한강 자전거 or 등산',
-    createdAt: new Date(2026, 1, 25, 14, 20, 0).toISOString(),
-  },
-  {
-    id: '6',
-    userId: TEMP_USER_ID,
-    type: 'memo',
-    bookMark: false,
-    text: '엄마 생신 선물 사기',
-    createdAt: new Date(2026, 1, 25, 16, 5, 0).toISOString(),
-  },
-  {
-    id: '7',
-    userId: TEMP_USER_ID,
-    type: 'memo',
-    bookMark: true,
-    text: '치과 예약: 3월 2일 오후 2시',
-    createdAt: new Date(2026, 1, 25, 17, 30, 0).toISOString(),
-  },
-  {
-    id: '8',
-    userId: TEMP_USER_ID,
-    type: 'board',
-    bookMark: false,
-    title: '독서 목록',
-    tags: ['독서', '자기계발'],
-    notes: [
-      { id: '8-1', title: '원씽', content: '한 가지에 집중하는 삶에 대한 이야기' },
-      { id: '8-2', title: '아주 작은 습관의 힘', content: '1% 향상의 복리 효과' },
-      { id: '8-3', title: '도둑맞은 집중력', content: '현대 사회에서 집중력을 되찾는 방법' },
-    ],
-    createdAt: new Date(2026, 1, 25, 18, 45, 0).toISOString(),
-  },
-  {
-    id: '9',
-    userId: TEMP_USER_ID,
-    type: 'memo',
-    bookMark: false,
-    text: '주말에 친구랑 영화 보기 약속!',
-    createdAt: new Date(2026, 1, 26, 9, 0, 0).toISOString(),
-  },
-  {
-    id: '10',
-    userId: TEMP_USER_ID,
-    type: 'board',
-    bookMark: false,
-    title: '스터디 그룹',
-    tags: ['스터디'],
-    notes: [
-      { id: '10-1', title: '스터디 일정', content: '매주 수요일 오후 7시 카페에서 진행합니다.' },
-      { id: '10-2', title: '회비 납부 안내', content: '3월 회비 납부 기한은 이번 주 금요일까지입니다. 계좌번호는 채팅으로 별도 안내드립니다.' },
-      { id: '10-3', title: '신입 부원 모집', content: '4월 신입 부원 모집을 시작합니다. 관심 있는 친구들에게 홍보 부탁드려요!' },
-      { id: '10-4', title: '종강 파티 투표', content: '종강 파티 날짜 투표 링크를 공유합니다. 24일까지 참여해 주세요.' },
-    ],
-    createdAt: new Date(2026, 1, 26, 15, 0, 0).toISOString(),
-  },
-];
+import * as timelineService from '../services/timelineService';
+import * as memoService from '../services/memoService';
+import * as boardService from '../services/boardService';
+import * as noteService from '../services/noteService';
 
 const MainScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Main'>>();
+  const route = useRoute();
+  const [userId, setUserId] = useState<string>('');
   const [items, setItems] = useState<TimelineItem[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [inputText, setInputText] = useState('');
+  const [expandedMemoId, setExpandedMemoId] = useState<string | null>(null);
   const [contextMenuItem, setContextMenuItem] = useState<TimelineItem | null>(null);
   const [sideMenuVisible, setSideMenuVisible] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [androidKeyboardHeight, setAndroidKeyboardHeight] = useState(0);
   const flatListRef = useRef<FlatList<TimelineItem>>(null);
   const shouldScrollToEnd = useRef(false);
+
+  // 로그인한 사용자 ID 로드
+  useEffect(() => {
+    const loadUserId = async () => {
+      try {
+        const id = await AsyncStorage.getItem('userId');
+        setUserId(id || '');
+      } catch (error) {
+        console.error('Failed to load userId:', error);
+      }
+    };
+    loadUserId();
+  }, []);
 
   // 인박스 (공유된 링크 임시 저장)
   const [pendingLinks, setPendingLinks] = useState<PendingLink[]>([]);
@@ -157,63 +75,202 @@ const MainScreen = () => {
   const [convertSheetVisible, setConvertSheetVisible] = useState(false); // TODO(P2): MemoConvertSheet 연결
   const [convertTargetMemo, setConvertTargetMemo] = useState<Memo | null>(null);
 
-  // TODO(P3): GET /api/timeline?type=board&sort=updatedAt 로 교체
-  const recentBoards = useMemo(
-    () =>
-      (items.filter(i => i.type === 'board') as Board[]).sort((a, b) => {
-        const aTime = a.updatedAt ?? a.createdAt;
-        const bTime = b.updatedAt ?? b.createdAt;
-        return bTime.localeCompare(aTime);
-      }),
-    [items],
-  );
+  // 검색 & 필터
+  const [isSearchMode, setIsSearchMode] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [filterType, setFilterType] = useState<'all' | 'memo' | 'board'>('all');
+  const [filterBookmarkOnly, setFilterBookmarkOnly] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [isTagFilterVisible, setIsTagFilterVisible] = useState(false);
+
+  const [recentBoards, setRecentBoards] = useState<Board[]>([]);
+
+  useEffect(() => {
+    const loadRecentBoards = async () => {
+      try {
+        const response = await timelineService.fetchTimeline({
+          type: 'board',
+          sort: 'updatedAt',
+          limit: 5,
+        });
+        setRecentBoards(response.items as Board[]);
+      } catch (error) {
+        console.error('Failed to load recent boards:', error);
+        setRecentBoards((items.filter(i => i.type === 'board') as Board[]).slice(0, 5));
+      }
+    };
+
+    loadRecentBoards();
+  }, []);
+
+  // 저장소 사용량 계산 (GB 단위)
+  const storageUsed = useMemo(() => {
+    let totalBytes = 0;
+
+    items.forEach(item => {
+      if (item.type === 'board') {
+        const board = item as Board;
+        (board.notes ?? []).forEach(note => {
+          // 이미지 크기 합산 (각 이미지 약 2MB로 추정)
+          totalBytes += (note.imageUris?.length ?? 0) * (2 * 1024 * 1024);
+          // 비디오 크기 합산 (실제 파일 크기 사용)
+          (note.videos ?? []).forEach(video => {
+            totalBytes += video.size ?? 0;
+          });
+          // 파일 크기 합산
+          (note.files ?? []).forEach(file => {
+            totalBytes += file.size ?? 0;
+          });
+        });
+      }
+    });
+
+    return totalBytes / (1024 * 1024 * 1024); // GB로 변환
+  }, [items]);
+
+  const filteredItems = useMemo(() => {
+    let result = items;
+
+    // 타입 필터
+    if (filterType === 'memo') {
+      result = result.filter(i => i.type === 'memo');
+    } else if (filterType === 'board') {
+      result = result.filter(i => i.type === 'board');
+    }
+
+    // 북마크 필터
+    if (filterBookmarkOnly) {
+      result = result.filter(i => i.bookmarked);
+    }
+
+    // 태그 필터 (보드만)
+    if (selectedTags.length > 0) {
+      result = result.filter(i => {
+        if (i.type === 'board') {
+          const board = i as Board;
+          return selectedTags.some(tag => board.tags?.includes(tag));
+        }
+        return true;
+      });
+    }
+
+    // 검색 텍스트 필터
+    if (searchText.trim()) {
+      const query = searchText.toLowerCase();
+      result = result.filter(i => {
+        if (i.type === 'memo') {
+          return (i as Memo).text.toLowerCase().includes(query);
+        } else {
+          return (i as Board).title.toLowerCase().includes(query);
+        }
+      });
+    }
+
+    return result;
+  }, [items, filterType, filterBookmarkOnly, searchText, selectedTags]);
 
   const nativeShareModule =
     Platform.OS === 'ios'
       ? NativeModules.SharedDefaultsModule
       : NativeModules.SharedIntentModule;
 
-  // TODO(P3): addPendingLink를 pendingLinkService + API 호출로 교체
   const handleSharedUrl = async (url: string) => {
-    const ogData = await fetchOgData(url);
-    const link = await pendingLinkService.addPendingLink({
-      userId: TEMP_USER_ID,
-      url,
-      ogData,
-      receivedAt: new Date().toISOString(),
-    });
-    setPendingLinks(prev => [...prev, link]);
+    if (!userId) return;
+
+    try {
+      const ogData = await fetchOgData(url);
+      const link = await pendingLinkService.addPendingLink({
+        userId,
+        url,
+        ogData,
+        receivedAt: new Date().toISOString(),
+      });
+
+      const linkWithOgData = { ...link, ogData };
+      setPendingLinks(prev => [...prev, linkWithOgData]);
+    } catch (error) {
+      console.error('Failed to handle shared URL:', error);
+    }
   };
 
-  useEffect(() => {
-    loadItems().then(stored => {
-      setItems(stored ?? initItems);
+  const loadTimeline = useCallback(async () => {
+    try {
+      const response = await timelineService.fetchTimeline({
+        sort: 'createdAt',
+        limit: 50,
+      });
+      setItems(response.items);
+    } catch (error) {
+      console.error('Failed to load timeline:', error);
+      setItems([]);
+    } finally {
       setLoaded(true);
-    });
-    pendingLinkService.loadPendingLinks().then(setPendingLinks);
+    }
   }, []);
 
   useEffect(() => {
-    if (loaded) saveItems(items);
-  }, [items, loaded]);
+    loadTimeline();
+
+    // 기존 pending links 로드 + OG 데이터 미리 fetch
+    pendingLinkService.loadPendingLinks().then(async (links) => {
+      const linksWithOgData = await Promise.all(
+        links.map(async (link) => {
+          if (link.ogData) return link;
+          try {
+            const ogData = await fetchOgData(link.url);
+            return { ...link, ogData };
+          } catch (error) {
+            console.error('Failed to load OG data:', link.url, error);
+            return link;
+          }
+        })
+      );
+      setPendingLinks(linksWithOgData);
+    });
+  }, [loadTimeline]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadTimeline();
+    }, [loadTimeline])
+  );
+
+  useEffect(() => {
+    if (route.params?.scrollToItemId) {
+      const index = items.findIndex(i => i.id === route.params.scrollToItemId);
+      if (index !== -1) {
+        flatListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
+      }
+    }
+  }, [route.params?.scrollToItemId, items]);
 
   useEffect(() => {
     const getShared = async () => {
-      const url = await nativeShareModule?.getSharedURL();
-      if (typeof url === 'string' && url.startsWith('http')) {
-        await handleSharedUrl(url);
-        await nativeShareModule?.clearSharedURL();
+      try {
+        if (!nativeShareModule) return;
+
+        const url = await nativeShareModule.getSharedURL();
+        if (typeof url === 'string' && url.trim() && url.startsWith('http')) {
+          await handleSharedUrl(url);
+          await nativeShareModule.clearSharedURL();
+        }
+      } catch (error) {
+        console.error('Failed to handle shared URL:', error);
       }
     };
 
-    getShared();
+    if (userId) {
+      getShared();
+    }
 
     const sub = AppState.addEventListener('change', state => {
-      if (state === 'active') getShared();
+      if (state === 'active' && userId) {
+        getShared();
+      }
     });
 
     return () => sub.remove();
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -246,15 +303,30 @@ const MainScreen = () => {
     Alert.alert('복사됨', text);
   };
 
-  const handleContextBookmark = () => {
+  const handleContextBookmark = async () => {
     if (!contextMenuItem) return;
-    setItems(prev =>
-      prev.map(item =>
-        item.id === contextMenuItem.id
-          ? { ...item, bookMark: !item.bookMark }
-          : item,
-      ),
-    );
+    const item = contextMenuItem;
+
+    try {
+      if (item.type === 'memo') {
+        const updated = await memoService.toggleMemoBookmark(item.id);
+        setItems(prev =>
+          prev.map(i =>
+            i.id === item.id ? updated : i,
+          ),
+        );
+      } else {
+        const updated = await boardService.toggleBoardBookmark(item.id);
+        setItems(prev =>
+          prev.map(i =>
+            i.id === item.id ? updated : i,
+          ),
+        );
+      }
+    } catch (error) {
+      console.error('Failed to toggle bookmark:', error);
+      Alert.alert('오류', '북마크 설정에 실패했습니다.');
+    }
   };
 
   const handleContextConvert = () => {
@@ -284,7 +356,7 @@ const MainScreen = () => {
               id: board.id,
               userId: board.userId,
               type: 'memo',
-              bookMark: board.bookMark,
+              bookmarked: board.bookmarked,
               text: board.title,
               createdAt: board.createdAt,
             };
@@ -319,12 +391,27 @@ const MainScreen = () => {
   const handleContextDelete = () => {
     if (!contextMenuItem) return;
     const id = contextMenuItem.id;
+    const item = contextMenuItem;
+
     Alert.alert('삭제', '정말 삭제하시겠습니까?', [
       { text: '취소', style: 'cancel' },
       {
         text: '삭제',
         style: 'destructive',
-        onPress: () => setItems(prev => prev.filter(item => item.id !== id)),
+        onPress: async () => {
+          try {
+            if (item.type === 'memo') {
+              await memoService.deleteMemo(id);
+            } else {
+              await boardService.deleteBoard(id);
+            }
+            setItems(prev => prev.filter(i => i.id !== id));
+            handleCloseContextMenu();
+          } catch (error) {
+            console.error('Failed to delete item:', error);
+            Alert.alert('오류', '삭제에 실패했습니다.');
+          }
+        },
       },
     ]);
   };
@@ -333,9 +420,6 @@ const MainScreen = () => {
     navigation.navigate('BoardDetail', {
       board,
       noteId,
-      onSave: (updated: Board) => {
-        setItems(prev => prev.map(item => item.id === updated.id ? updated : item));
-      },
     });
   };
 
@@ -343,9 +427,6 @@ const MainScreen = () => {
     if (item.type === 'board') {
       navigation.navigate('BoardDetail', {
         board: item as Board,
-        onSave: (updated: Board) => {
-          setItems(prev => prev.map(i => i.id === updated.id ? updated : i));
-        },
       });
     } else {
       const index = items.findIndex(i => i.id === item.id);
@@ -355,36 +436,42 @@ const MainScreen = () => {
     }
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputText.trim()) return;
-    const newItem: Memo = {
-      id: Date.now().toString(),
-      userId: TEMP_USER_ID,
-      type: 'memo',
-      bookMark: false,
-      text: inputText.trim(),
-      createdAt: new Date().toISOString(),
-    };
-    shouldScrollToEnd.current = true;
-    setItems(prev => [...prev, newItem]);
+    const text = inputText.trim();
     setInputText('');
+
+    try {
+      const newMemo = await memoService.createMemo(text);
+      shouldScrollToEnd.current = true;
+      setItems(prev => [...prev, newMemo]);
+    } catch (error) {
+      console.error('Failed to create memo:', error);
+      Alert.alert('오류', '메모 저장에 실패했습니다.');
+      setInputText(text);
+    }
   };
 
-  const handlePendingLinkAddToBoard = (link: PendingLink, board: Board) => {
-    const newNote = {
-      id: `note_${Date.now()}`,
-      title: link.ogData?.title || link.url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || link.url,
-      url: link.url,
-      ogData: link.ogData,
-    };
-    const updatedBoard: Board = {
-      ...board,
-      notes: [...(board.notes ?? []), newNote],
-      updatedAt: new Date().toISOString(),
-    };
-    setItems(prev => prev.map(i => i.id === board.id ? updatedBoard : i));
-    pendingLinkService.removePendingLink(link.id);
-    setPendingLinks(prev => prev.filter(l => l.id !== link.id));
+  const handlePendingLinkAddToBoard = async (link: PendingLink, board: Board) => {
+    try {
+      const createdNote = await noteService.createNote(board.id, {
+        title: link.ogData?.title || link.url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || link.url,
+        url: link.url,
+      });
+
+      const updatedBoard: Board = {
+        ...board,
+        notes: [...(board.notes ?? []), createdNote],
+        updatedAt: new Date().toISOString(),
+      };
+      setItems(prev => prev.map(i => i.id === board.id ? updatedBoard : i));
+
+      await pendingLinkService.removePendingLink(link.id);
+      setPendingLinks(prev => prev.filter(l => l.id !== link.id));
+    } catch (error) {
+      console.error('Failed to add note to board:', error);
+      Alert.alert('오류', '노트 추가에 실패했습니다.');
+    }
   };
 
   const handlePendingLinkDismiss = (linkId: string) => {
@@ -397,34 +484,62 @@ const MainScreen = () => {
       <StatusBar barStyle="dark-content" backgroundColor="#EEF3FF" />
 
       <View style={styles['main-header']}>
-        <TouchableOpacity style={styles['main-header-profileButton']}>
-          <Image
-            source={require('../assets/imgs/mainart.png')}
-            style={styles['main-header-profileButton-image']}
-          />
-        </TouchableOpacity>
+        {isSearchMode ? (
+          <>
+            <TouchableOpacity onPress={() => { setIsSearchMode(false); setSearchText(''); }} style={styles['main-header-profileButton']}>
+              <Text style={{ fontSize: 20, color: '#588DFF' }}>←</Text>
+            </TouchableOpacity>
+            <TextInput
+              style={[styles['main-inputBar-input'], { marginHorizontal: 8, flex: 1 }]}
+              value={searchText}
+              onChangeText={setSearchText}
+              placeholder="메모, 보드 검색..."
+              placeholderTextColor="#AABBCC"
+              autoFocus
+            />
+          </>
+        ) : (
+          <>
+            <TouchableOpacity style={styles['main-header-profileButton']}>
+              <Image
+                source={require('../assets/imgs/mainart.png')}
+                style={styles['main-header-profileButton-image']}
+              />
+            </TouchableOpacity>
 
-        <Text style={styles['main-header-title']}>나와의 채팅</Text>
+            <Text style={styles['main-header-title']}>나와의 채팅</Text>
 
-        <View style={styles['main-header-rightButtons']}>
-          <TouchableOpacity style={styles['main-header-iconButton']}>
-            <SearchIcon color="#1A1A1A" size={20} />
-          </TouchableOpacity>
+            <View style={styles['main-header-rightButtons']}>
+              <TouchableOpacity
+                style={styles['main-header-iconButton']}
+                onPress={() => setIsSearchMode(true)}>
+                <SearchIcon color="#1A1A1A" size={20} />
+              </TouchableOpacity>
 
-          {/* 인박스 아이콘 */}
-          <TouchableOpacity
-            style={styles['main-header-iconButton']}
-            onPress={() => setPendingSheetVisible(true)}>
-            <PlusIcon color="#1A1A1A" size={20} />
-            <Badge count={pendingLinks.length} />
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles['main-header-iconButton'], selectedTags.length > 0 && { backgroundColor: '#E8EEFF' }]}
+                onPress={() => setIsTagFilterVisible(true)}>
+                <Text style={[{ fontSize: 12, fontWeight: '600', color: selectedTags.length > 0 ? '#588DFF' : '#1A1A1A' }]}>
+                  필터
+                </Text>
+              </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles['main-header-iconButton']}
-            onPress={() => setSideMenuVisible(true)}>
-            <HamburgerIcon color="#1A1A1A" size={20} />
-          </TouchableOpacity>
-        </View>
+              {/* 인박스 아이콘 */}
+              <TouchableOpacity
+                style={styles['main-header-iconButton']}
+                onPress={() => setPendingSheetVisible(true)}>
+                <PlusIcon color="#1A1A1A" size={20} />
+                <Badge count={pendingLinks.length} />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles['main-header-iconButton']}
+                onPress={() => setSideMenuVisible(true)}>
+                <HamburgerIcon color="#1A1A1A" size={20} />
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
       </View>
 
       <KeyboardAvoidingView
@@ -442,7 +557,7 @@ const MainScreen = () => {
 
           <FlatList<TimelineItem>
             ref={flatListRef}
-            data={items}
+            data={filteredItems}
             keyExtractor={item => item.id}
             contentContainerStyle={styles['main-listContent']}
             keyboardDismissMode="interactive"
@@ -455,9 +570,12 @@ const MainScreen = () => {
             }}
             renderItem={({ item }) => {
               if (item.type === 'memo') {
+                const memo = item as Memo;
                 return (
                   <ChatMessageItem
-                    item={item as Memo}
+                    item={memo}
+                    expanded={expandedMemoId === memo.id}
+                    onToggleExpand={(m) => setExpandedMemoId(expandedMemoId === m.id ? null : m.id)}
                     onLongPress={handleContextMenu}
                   />
                 );
@@ -503,18 +621,131 @@ const MainScreen = () => {
         </View>
       </KeyboardAvoidingView>
 
+      {/* 태그 필터 모달 */}
+      <Modal
+        visible={isTagFilterVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setIsTagFilterVisible(false)}>
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
+          activeOpacity={1}
+          onPress={() => setIsTagFilterVisible(false)}>
+          <View
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              paddingTop: 16,
+              paddingHorizontal: 20,
+              paddingBottom: Math.max(insets.bottom, 20),
+              marginTop: 'auto',
+              maxHeight: '70%',
+            }}
+            onStartShouldSetResponder={() => true}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A', fontFamily: 'PretendardVariable' }}>
+                태그 필터
+              </Text>
+              <TouchableOpacity onPress={() => setIsTagFilterVisible(false)}>
+                <Text style={{ fontSize: 24, color: '#9DAFC8' }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={{ marginBottom: 16 }}>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+                {/* 모든 태그 */}
+                {Array.from(new Set(
+                  items
+                    .filter(i => i.type === 'board')
+                    .flatMap(i => (i as Board).tags ?? [])
+                )).map(tag => (
+                  <TouchableOpacity
+                    key={tag}
+                    onPress={() => {
+                      setSelectedTags(prev =>
+                        prev.includes(tag)
+                          ? prev.filter(t => t !== tag)
+                          : [...prev, tag]
+                      );
+                    }}
+                    style={{
+                      paddingHorizontal: 14,
+                      paddingVertical: 8,
+                      borderRadius: 20,
+                      backgroundColor: selectedTags.includes(tag) ? '#588DFF' : '#F0F4FF',
+                      borderWidth: selectedTags.includes(tag) ? 0 : 1,
+                      borderColor: '#C0CDD8',
+                    }}>
+                    <Text style={{
+                      fontSize: 13,
+                      fontWeight: '500',
+                      color: selectedTags.includes(tag) ? '#FFFFFF' : '#588DFF',
+                      fontFamily: 'PretendardVariable',
+                    }}>
+                      #{tag}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {Array.from(new Set(
+                items
+                  .filter(i => i.type === 'board')
+                  .flatMap(i => (i as Board).tags ?? [])
+              )).length === 0 && (
+                <Text style={{ fontSize: 14, color: '#AABBCC', fontFamily: 'PretendardVariable', textAlign: 'center', paddingVertical: 20 }}>
+                  사용 가능한 태그가 없습니다
+                </Text>
+              )}
+            </ScrollView>
+
+            {selectedTags.length > 0 && (
+              <TouchableOpacity
+                onPress={() => setSelectedTags([])}
+                style={{
+                  paddingVertical: 10,
+                  alignItems: 'center',
+                  borderTopWidth: 1,
+                  borderTopColor: '#E8EEF8',
+                }}>
+                <Text style={{ fontSize: 14, color: '#9DAFC8', fontWeight: '600', fontFamily: 'PretendardVariable' }}>
+                  필터 초기화
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
       <SideMenu
         visible={sideMenuVisible}
         items={items}
+        storageUsed={storageUsed}
         onClose={() => setSideMenuVisible(false)}
-        onSettings={() => {}}
+        onSettings={() => {
+          navigation.navigate('Settings');
+          setSideMenuVisible(false);
+        }}
         onBookmarkPress={handleBookmarkPress}
+        isBookmarkFilterActive={filterBookmarkOnly}
+        onBookmarkFilterToggle={(active) => {
+          setFilterBookmarkOnly(active);
+          setIsSearchMode(false);
+        }}
+        onMediaGalleryPress={(galleryType) => {
+          navigation.navigate('MediaGallery', {
+            items,
+            galleryType,
+          });
+          setSideMenuVisible(false);
+        }}
       />
 
       <ContextMenu
         visible={contextMenuItem !== null}
         itemType={contextMenuItem?.type ?? 'memo'}
-        isBookmarked={contextMenuItem?.bookMark ?? false}
+        isBookmarked={contextMenuItem?.bookmarked ?? false}
         onCopy={handleContextCopy}
         onBookmark={handleContextBookmark}
         onConvert={handleContextConvert}

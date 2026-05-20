@@ -11,12 +11,12 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Board } from '../../types';
 import { CloseIcon, SearchIcon } from './Icons';
+import * as timelineService from '../../services/timelineService';
 
-// TODO(P3): boards props 대신 내부에서 GET /api/timeline?type=board&sort=updatedAt 호출로 교체 가능
 interface BoardPickerBottomSheetProps {
   visible: boolean;
   title: string;
-  boards: Board[];
+  boards?: Board[];
   excludeBoardId?: string;
   onSelect: (board: Board) => void;
   onClose: () => void;
@@ -40,19 +40,34 @@ const formatRelativeTime = (iso: string): string => {
 const BoardPickerBottomSheet = ({
   visible,
   title,
-  boards,
+  boards: initialBoards = [],
   excludeBoardId,
   onSelect,
   onClose,
 }: BoardPickerBottomSheetProps) => {
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
+  const [boards, setBoards] = useState<Board[]>(initialBoards);
 
   useEffect(() => {
     if (visible) {
       setSearchQuery('');
+      loadBoards();
     }
   }, [visible]);
+
+  const loadBoards = async () => {
+    try {
+      const data = await timelineService.fetchTimeline({
+        type: 'board',
+        sort: 'updatedAt',
+        order: 'desc',
+      });
+      setBoards((data as Board[]) || initialBoards);
+    } catch (error) {
+      setBoards(initialBoards);
+    }
+  };
 
   const filteredBoards = boards
     .filter(b => b.id !== excludeBoardId)

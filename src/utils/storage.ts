@@ -39,7 +39,7 @@ export const migrateFromV1 = async (): Promise<void> => {
         userId: item.userId,
         type: 'memo' as const,
         text: item.text,
-        bookMark: item.bookMark,
+        bookmarked: item.bookmarked ?? item.bookMark,
         createdAt: item.createdAt,
       };
     }
