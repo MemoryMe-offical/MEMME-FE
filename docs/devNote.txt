@@ -7,6 +7,14 @@
 [릴리즈 빌드] Metro 불필요 (PC 연결 없이 독립 실행 가능)
   npm run android:release
 
+[캐시 지운 후 시작]
+Metro 캐시 (JavaScript):
+  npx react-native start --reset-cache
+
+Gradle 캐시 (Android 빌드):
+  rmdir /s /q android\.gradle
+  rmdir /s /q android\app\build
+
 -----
 <참고: Android 16 이슈>
 
