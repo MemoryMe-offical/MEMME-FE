@@ -724,6 +724,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={true}
+                  persistentScrollbar={true}
                   contentContainerStyle={styles['images-row']}>
                   <>
                     {editImageUris.map((imageUrl) => (
@@ -785,6 +786,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={true}
+                  persistentScrollbar={true}
                   contentContainerStyle={styles['videos-row']}>
                   <>
                     {editVideos.map((video) => (

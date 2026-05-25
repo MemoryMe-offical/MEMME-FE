@@ -92,7 +92,8 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
             <Text style={styles['section-label']}>이미지</Text>
               <ScrollView
                 horizontal
-                showsHorizontalScrollIndicator={false}
+                showsHorizontalScrollIndicator={true}
+                persistentScrollbar={true}
                 scrollEventThrottle={16}
                 contentContainerStyle={styles['images-preview']}>
                 <>
@@ -129,7 +130,8 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
             <Text style={styles['section-label']}>동영상</Text>
               <ScrollView
                 horizontal
-                showsHorizontalScrollIndicator={false}
+                showsHorizontalScrollIndicator={true}
+                persistentScrollbar={true}
                 scrollEventThrottle={16}
                 contentContainerStyle={styles['videos-preview']}>
                 <>
@@ -410,8 +412,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   'image-thumbnail': {
-    width: 64,
-    height: 64,
+    width: 72,
+    height: 72,
     borderRadius: 8,
     backgroundColor: '#EEF3FF',
   },
@@ -419,8 +421,8 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   'image-more': {
-    width: 64,
-    height: 64,
+    width: 72,
+    height: 72,
     borderRadius: 8,
     backgroundColor: '#F0F4FF',
     alignItems: 'center',
@@ -442,8 +444,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   'video-thumbnail': {
-    width: 56,
-    height: 56,
+    width: 72,
+    height: 72,
     borderRadius: 8,
     backgroundColor: '#EEF3FF',
     alignItems: 'center',
@@ -459,8 +461,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   'video-thumbnail-placeholder': {
-    width: 56,
-    height: 56,
+    width: 72,
+    height: 72,
     borderRadius: 8,
     backgroundColor: '#EEF3FF',
     alignItems: 'center',
