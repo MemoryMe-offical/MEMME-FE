@@ -14,20 +14,28 @@ const transformBoard = (data: any): Board => {
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
     bookmarked: data.bookmarked ?? false,
-    notes: data.notes?.map((note: any) => ({
-      id: note.uid,
-      title: note.title,
-      content: note.content,
-      imageUris: note.imageUris,
-      videoUris: note.videoUris,
-      imageKeys: note.imageKeys,
-      videoKeys: note.videoKeys,
-      images: note.images,
-      videos: note.videos,
-      files: note.files,
-      url: note.url,
-      ogData: note.ogData,
-    })),
+    notes: data.notes?.map((note: any) => {
+      // urls가 없지만 url이 있으면 urls 배열 생성 (하위호환성)
+      const urls = note.urls || (note.url ? [note.url] : []);
+      const ogDatas = note.ogDatas || (note.ogData ? [note.ogData] : []);
+
+      return {
+        id: note.uid,
+        title: note.title,
+        content: note.content,
+        imageUris: note.imageUris,
+        videoUris: note.videoUris,
+        imageKeys: note.imageKeys,
+        videoKeys: note.videoKeys,
+        images: note.images,
+        videos: note.videos,
+        files: note.files,
+        urls: urls,
+        ogDatas: ogDatas,
+        url: note.url,
+        ogData: note.ogData,
+      };
+    }),
   };
 };
 
