@@ -407,7 +407,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
   'image-thumbnail': {
     width: 64,
@@ -439,7 +438,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
-    justifyContent: 'space-between',
   },
   'video-thumbnail': {
     width: 56,
