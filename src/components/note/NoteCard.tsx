@@ -49,21 +49,25 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
   // OG 데이터 로드
   useEffect(() => {
     const loadOgData = async () => {
-      if (!note.url || note.ogData || ogDataCache[note.url]) return;
+      const urlsToLoad = note.urls || (note.url ? [note.url] : []);
 
-      try {
-        const ogData = await fetchOgData(note.url);
-        setOgDataCache(prev => ({
-          ...prev,
-          [note.url!]: ogData,
-        }));
-      } catch (error) {
-        console.error('Failed to load OG data for note:', note.url, error);
+      for (const url of urlsToLoad) {
+        if (!url || ogDataCache[url]) continue;
+
+        try {
+          const ogData = await fetchOgData(url);
+          setOgDataCache(prev => ({
+            ...prev,
+            [url]: ogData,
+          }));
+        } catch (error) {
+          console.error('Failed to load OG data for URL:', url, error);
+        }
       }
     };
 
     loadOgData();
-  }, [note.url, note.ogData, ogDataCache]);
+  }, [note.urls, note.url, note.ogData, ogDataCache]);
 
   const hasImages = (note.imageUris?.length ?? 0) > 0;
   const hasVideos = (note.videos?.length ?? 0) > 0;
@@ -167,7 +171,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
               <Text style={styles['section-label']}>파일</Text>
               <View style={styles['files-preview']}>
                 <>
-                  {note.files!.slice(0, maxMediaItems).map((file) => (
+                  {note.files!.slice(0, 5).map((file) => (
                     <TouchableOpacity
                       key={file.uid}
                       style={styles['file-item']}
@@ -183,9 +187,9 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                     </TouchableOpacity>
                   ))}
                 </>
-                {(note.files!.length ?? 0) > maxMediaItems && (
+                {(note.files!.length ?? 0) > 5 && (
                   <Text style={styles['file-more']}>
-                    +{note.files!.length - maxMediaItems}개
+                    +{note.files!.length - 5}개
                   </Text>
                 )}
               </View>
@@ -195,7 +199,13 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
 
         {hasLinks && (() => {
           const urlsToShow = note.urls && note.urls.length > 0 ? note.urls : (note.url ? [note.url] : []);
-          const ogDatasToShow = note.ogDatas && note.ogDatas.length > 0 ? note.ogDatas : (note.ogData ? [note.ogData] : []);
+          const maxLinksToShow = 3;
+          const linksToDisplay = urlsToShow.slice(0, maxLinksToShow);
+
+          const getOgDataForUrl = (url: string, urlIndex: number) => {
+            return ogDataCache[url] || note.ogDatas?.[urlIndex] ||
+                   (urlIndex === 0 ? note.ogData : undefined);
+          };
 
           return (
             <>
@@ -203,43 +213,51 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
               <View style={styles['section-row']}>
                 <View style={styles['link-header']}>
                   <Text style={styles['section-label']}>링크</Text>
-                  {urlsToShow.length > 2 && (
-                    <Text style={styles['link-count']}>+{urlsToShow.length - 1}</Text>
+                  {urlsToShow.length > maxLinksToShow && (
+                    <Text style={styles['link-count']}>+{urlsToShow.length - maxLinksToShow}</Text>
                   )}
                 </View>
-                <TouchableOpacity
-                  style={styles['link-card']}
-                  onPress={() => {
-                    Linking.openURL(urlsToShow[0]).catch(() => {
-                      console.error('Failed to open URL:', urlsToShow[0]);
-                    });
-                  }}
-                  activeOpacity={0.7}>
-                  {ogDatasToShow[0]?.imageUrl ? (
-                    <Image
-                      source={{ uri: ogDatasToShow[0].imageUrl }}
-                      style={styles['link-image']}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View style={styles['link-image-placeholder']}>
-                      <LinkIcon color="#AABBCC" size={20} />
-                    </View>
-                  )}
-                  <View style={styles['link-info']}>
-                    <Text style={styles['link-domain']} numberOfLines={1}>
-                      {ogDatasToShow[0]?.siteName || (urlsToShow[0].match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || urlsToShow[0])}
-                    </Text>
-                    <Text style={styles['link-title']} numberOfLines={2}>
-                      {ogDatasToShow[0]?.title || '링크'}
-                    </Text>
-                    {!!ogDatasToShow[0]?.description && (
-                      <Text style={styles['link-desc']} numberOfLines={1}>
-                        {ogDatasToShow[0].description}
-                      </Text>
-                    )}
-                  </View>
-                </TouchableOpacity>
+                <View style={styles['links-container']}>
+                  {linksToDisplay.map((url, displayIndex) => {
+                    const ogData = getOgDataForUrl(url, displayIndex);
+                    return (
+                      <TouchableOpacity
+                        key={url}
+                        style={styles['link-card']}
+                        onPress={() => {
+                          Linking.openURL(url).catch(() => {
+                            console.error('Failed to open URL:', url);
+                          });
+                        }}
+                        activeOpacity={0.7}>
+                        {ogData?.imageUrl ? (
+                          <Image
+                            source={{ uri: ogData.imageUrl }}
+                            style={styles['link-image']}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <View style={styles['link-image-placeholder']}>
+                            <LinkIcon color="#AABBCC" size={20} />
+                          </View>
+                        )}
+                        <View style={styles['link-info']}>
+                          <Text style={styles['link-domain']} numberOfLines={1}>
+                            {ogData?.siteName || (url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || url)}
+                          </Text>
+                          <Text style={styles['link-title']} numberOfLines={2}>
+                            {ogData?.title || '링크'}
+                          </Text>
+                          {!!ogData?.description && (
+                            <Text style={styles['link-desc']} numberOfLines={1}>
+                              {ogData.description}
+                            </Text>
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
             </>
           );
@@ -474,6 +492,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#AABBCC',
     fontFamily: 'PretendardVariable',
+  },
+  'links-container': {
+    gap: 8,
   },
   'link-card': {
     flexDirection: 'row',
