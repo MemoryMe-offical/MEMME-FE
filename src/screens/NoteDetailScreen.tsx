@@ -1091,8 +1091,8 @@ const styles = StyleSheet.create({
   },
   'image-wrapper': { position: 'relative' },
   thumbnail: {
-    width: 72,
-    height: 72,
+    width: 64,
+    height: 64,
     borderRadius: 10,
   },
   'image-remove-btn': {
@@ -1107,8 +1107,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   'add-image-btn': {
-    width: 72,
-    height: 72,
+    width: 64,
+    height: 64,
     borderRadius: 10,
     borderWidth: 1.5,
     borderColor: '#C0D0F0',
@@ -1137,8 +1137,8 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   'video-thumbnail': {
-    width: 72,
-    height: 72,
+    width: 64,
+    height: 64,
     borderRadius: 10,
     backgroundColor: '#E8EEF8',
     alignItems: 'center',
