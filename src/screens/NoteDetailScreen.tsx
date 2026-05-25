@@ -485,7 +485,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       if (Platform.OS === 'android') {
         ToastAndroid.show('요약이 내용에 추가되었습니다', ToastAndroid.SHORT);
       } else {
-        Alert.alert('', '요약이 내용에 추가되었습니다', [{ text: '확인', onPress: () => {} }]);
+        Alert.alert('', '요약이 내용에 추가되었습니다', [{ text: '확인', onPress: () => { } }]);
       }
 
       // 3초 후에 버튼으로 복구
@@ -694,7 +694,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
             value={editContent}
             onChangeText={setEditContent}
             onContentSizeChange={(e) => {
-              const newHeight = Math.max(300, e.nativeEvent.contentSize.height);
+              const newHeight = Math.max(140, e.nativeEvent.contentSize.height);
               setContentHeight(newHeight);
             }}
             placeholder="내용을 입력하세요..."
@@ -710,140 +710,140 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           <View style={styles['attachments-container']}>
             {/* 이미지 */}
             <View style={styles['subsection-header']}>
-            <View>
-              <Text style={styles['subsection-label']}>이미지</Text>
-              <Text style={styles['subsection-count']}>{editImageUris.length}/10</Text>
+              <View>
+                <Text style={styles['subsection-label']}>이미지</Text>
+                <Text style={styles['subsection-count']}>{editImageUris.length}/10</Text>
+              </View>
+              <TouchableOpacity
+                onPress={handleAddImage}
+                disabled={isUploading || editImageUris.length >= 10}
+                hitSlop={8}>
+                <PlusIcon color={isUploading || editImageUris.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              onPress={handleAddImage}
-              disabled={isUploading || editImageUris.length >= 10}
-              hitSlop={8}>
-              <PlusIcon color={isUploading || editImageUris.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
-            </TouchableOpacity>
-          </View>
-          <View style={styles['images-section']}>
-            {editImageUris.length > 0 ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles['images-row']}>
-                <>
-                  {editImageUris.map((imageUrl) => (
-                    <ImagePreview key={imageUrl} imageUrl={imageUrl} onRemove={() => handleRemoveImage(imageUrl)} />
-                  ))}
-                </>
-              </ScrollView>
-            ) : (
-              <Text style={styles['empty-section-text']}>첨부된 이미지가 없습니다</Text>
-            )}
-          </View>
+            <View style={styles['images-section']}>
+              {editImageUris.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles['images-row']}>
+                  <>
+                    {editImageUris.map((imageUrl) => (
+                      <ImagePreview key={imageUrl} imageUrl={imageUrl} onRemove={() => handleRemoveImage(imageUrl)} />
+                    ))}
+                  </>
+                </ScrollView>
+              ) : (
+                <Text style={styles['empty-section-text']}>첨부된 이미지가 없습니다</Text>
+              )}
+            </View>
 
-          {/* 파일 */}
-          <View style={styles['subsection-header']}>
-            <View>
-              <Text style={styles['subsection-label']}>파일</Text>
-              <Text style={styles['subsection-count']}>{editFiles.length}/10</Text>
+            {/* 파일 */}
+            <View style={styles['subsection-header']}>
+              <View>
+                <Text style={styles['subsection-label']}>파일</Text>
+                <Text style={styles['subsection-count']}>{editFiles.length}/10</Text>
+              </View>
+              <TouchableOpacity
+                onPress={handleAddFile}
+                disabled={isUploading || editFiles.length >= 10}
+                hitSlop={8}>
+                <PlusIcon color={isUploading || editFiles.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              onPress={handleAddFile}
-              disabled={isUploading || editFiles.length >= 10}
-              hitSlop={8}>
-              <PlusIcon color={isUploading || editFiles.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
-            </TouchableOpacity>
-          </View>
-          <View style={styles['files-section']}>
-            {editFiles.length > 0 ? (
-              <>
-                {editFiles.map(file => (
-                  <View key={file.uid} style={styles['file-row']}>
-                    <Text style={styles['file-icon']}>📄</Text>
-                    <Text style={styles['file-name']} numberOfLines={1}>{file.name}</Text>
-                    <TouchableOpacity onPress={() => handleRemoveFile(file.uid)} hitSlop={8}>
-                      <CloseIcon color="#9DAFC8" size={16} />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </>
-            ) : (
-              <Text style={styles['empty-section-text']}>첨부된 파일이 없습니다</Text>
-            )}
-          </View>
-
-          {/* 동영상 */}
-          <View style={styles['subsection-header']}>
-            <View>
-              <Text style={styles['subsection-label']}>동영상</Text>
-              <Text style={styles['subsection-count']}>{editVideos.length}/10</Text>
-            </View>
-            <TouchableOpacity
-              onPress={handleAddVideo}
-              disabled={isUploading || editVideos.length >= 10}
-              hitSlop={8}>
-              <PlusIcon color={isUploading || editVideos.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
-            </TouchableOpacity>
-          </View>
-          <View style={styles['videos-section']}>
-            {editVideos.length > 0 ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles['videos-row']}>
+            <View style={styles['files-section']}>
+              {editFiles.length > 0 ? (
                 <>
-                  {editVideos.map((video) => (
-                    <Pressable
-                      key={video.uid}
-                      onPress={() => {
-                        setSelectedVideoUrl(video.url);
-                        setVideoViewerVisible(true);
-                      }}
-                      style={({ pressed }) => [
-                        styles['video-wrapper'],
-                        pressed && styles['video-wrapper-pressed'],
-                      ]}>
-                      {video.thumbnailUrl ? (
-                        <Image
-                          source={{ uri: video.thumbnailUrl }}
-                          style={styles['video-thumbnail']}
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <View style={styles['video-thumbnail']}>
-                          <Text style={styles['video-icon']}>🎬</Text>
-                        </View>
-                      )}
-                      {video.duration && (
-                        <Text style={styles['video-duration']}>
-                          {Math.floor(video.duration / 60)}:{String(Math.floor(video.duration % 60)).padStart(2, '0')}
-                        </Text>
-                      )}
-                      <TouchableOpacity
-                        style={styles['video-remove-btn']}
-                        onPress={() => handleRemoveVideo(video.uid)}
-                        hitSlop={4}>
-                        <CloseIcon color="#FFFFFF" size={12} />
+                  {editFiles.map(file => (
+                    <View key={file.uid} style={styles['file-row']}>
+                      <Text style={styles['file-icon']}>📄</Text>
+                      <Text style={styles['file-name']} numberOfLines={1}>{file.name}</Text>
+                      <TouchableOpacity onPress={() => handleRemoveFile(file.uid)} hitSlop={8}>
+                        <CloseIcon color="#9DAFC8" size={16} />
                       </TouchableOpacity>
-                    </Pressable>
+                    </View>
                   ))}
                 </>
-              </ScrollView>
-            ) : (
-              <Text style={styles['empty-section-text']}>첨부된 동영상이 없습니다</Text>
-            )}
-          </View>
-
-          {/* 링크 */}
-          <View style={styles['subsection-header']}>
-            <View>
-              <Text style={styles['subsection-label']}>링크</Text>
-              <Text style={styles['subsection-count']}>{editUrls.length}/10</Text>
+              ) : (
+                <Text style={styles['empty-section-text']}>첨부된 파일이 없습니다</Text>
+              )}
             </View>
-            <TouchableOpacity
-              onPress={handleOpenLinkModal}
-              disabled={editUrls.length >= 10}
-              hitSlop={8}>
-              <PlusIcon color={editUrls.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
-            </TouchableOpacity>
-          </View>
+
+            {/* 동영상 */}
+            <View style={styles['subsection-header']}>
+              <View>
+                <Text style={styles['subsection-label']}>동영상</Text>
+                <Text style={styles['subsection-count']}>{editVideos.length}/10</Text>
+              </View>
+              <TouchableOpacity
+                onPress={handleAddVideo}
+                disabled={isUploading || editVideos.length >= 10}
+                hitSlop={8}>
+                <PlusIcon color={isUploading || editVideos.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles['videos-section']}>
+              {editVideos.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles['videos-row']}>
+                  <>
+                    {editVideos.map((video) => (
+                      <Pressable
+                        key={video.uid}
+                        onPress={() => {
+                          setSelectedVideoUrl(video.url);
+                          setVideoViewerVisible(true);
+                        }}
+                        style={({ pressed }) => [
+                          styles['video-wrapper'],
+                          pressed && styles['video-wrapper-pressed'],
+                        ]}>
+                        {video.thumbnailUrl ? (
+                          <Image
+                            source={{ uri: video.thumbnailUrl }}
+                            style={styles['video-thumbnail']}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <View style={styles['video-thumbnail']}>
+                            <Text style={styles['video-icon']}>🎬</Text>
+                          </View>
+                        )}
+                        {video.duration && (
+                          <Text style={styles['video-duration']}>
+                            {Math.floor(video.duration / 60)}:{String(Math.floor(video.duration % 60)).padStart(2, '0')}
+                          </Text>
+                        )}
+                        <TouchableOpacity
+                          style={styles['video-remove-btn']}
+                          onPress={() => handleRemoveVideo(video.uid)}
+                          hitSlop={4}>
+                          <CloseIcon color="#FFFFFF" size={12} />
+                        </TouchableOpacity>
+                      </Pressable>
+                    ))}
+                  </>
+                </ScrollView>
+              ) : (
+                <Text style={styles['empty-section-text']}>첨부된 동영상이 없습니다</Text>
+              )}
+            </View>
+
+            {/* 링크 */}
+            <View style={styles['subsection-header']}>
+              <View>
+                <Text style={styles['subsection-label']}>링크</Text>
+                <Text style={styles['subsection-count']}>{editUrls.length}/10</Text>
+              </View>
+              <TouchableOpacity
+                onPress={handleOpenLinkModal}
+                disabled={editUrls.length >= 10}
+                hitSlop={8}>
+                <PlusIcon color={editUrls.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
+              </TouchableOpacity>
+            </View>
             <View style={styles['link-section']}>
               {editUrls.length > 0 ? (
                 <>
@@ -996,8 +996,8 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
     lineHeight: 28,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
     borderWidth: 1,
@@ -1017,7 +1017,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E4ECFF',
   },
-  'section-divider': { height: 1.2, backgroundColor: '#D5DFED', marginTop: 20, marginBottom: 16 },
+  'section-divider': {
+    height: 1.2,
+    backgroundColor: '#D5DFED',
+    marginTop: 20,
+    marginBottom: 10
+  },
   'section-label': {
     fontSize: 13,
     fontWeight: '700',
@@ -1029,17 +1034,15 @@ const styles = StyleSheet.create({
   'attachments-container': {
     backgroundColor: '#F7FAFF',
     borderRadius: 12,
-    padding: 16,
     gap: 16,
   },
   'subsection-header': {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
   },
   'subsection-label': {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
     color: '#588DFF',
     fontFamily: 'PretendardVariable',
@@ -1053,7 +1056,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   'input-label': {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
     color: '#588DFF',
     fontFamily: 'PretendardVariable',
@@ -1163,7 +1166,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    padding: 14,
+    padding: 10,
     borderWidth: 1,
     borderColor: '#E4ECFF',
     gap: 10,
@@ -1171,7 +1174,7 @@ const styles = StyleSheet.create({
   'file-icon': { fontSize: 14 },
   'file-name': {
     flex: 1,
-    fontSize: 12,
+    fontSize: 10,
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
     lineHeight: 20,

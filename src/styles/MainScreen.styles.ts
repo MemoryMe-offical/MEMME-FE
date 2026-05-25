@@ -41,7 +41,7 @@ export const mainStyles = StyleSheet.create({
 
   // 메인 - 헤더 - 타이틀
   'main-header-title': {
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: '600',
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
@@ -121,15 +121,15 @@ export const mainStyles = StyleSheet.create({
   flex: 1,
   backgroundColor: '#F0F4FF',
   borderRadius: 22,
-  paddingHorizontal: 16,
-  paddingTop: 12,
-  paddingBottom: 12,
-  fontSize: 15,
-  lineHeight: 18,
+  paddingHorizontal: 14,
+  paddingTop: 10,
+  paddingBottom: 10,
+  fontSize: 13,
+  lineHeight: 16,
   color: '#1A1A1A',
   fontFamily: 'PretendardVariable',
   maxHeight: 100,
-  minHeight: 44,
+  minHeight: 40,
   textAlignVertical: 'top',
 },
 

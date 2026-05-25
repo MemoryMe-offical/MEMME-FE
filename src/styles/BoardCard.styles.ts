@@ -37,8 +37,8 @@ export const boardCardStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#588DFF',
-    paddingHorizontal: 16,
-    paddingVertical: 13,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
   },
 
   // 헤더 제목 터치 영역
@@ -49,7 +49,7 @@ export const boardCardStyles = StyleSheet.create({
 
   // 헤더 제목 텍스트
   'card-header-title': {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
     color: '#FFFFFF',
     fontFamily: 'PretendardVariable',
@@ -64,7 +64,7 @@ export const boardCardStyles = StyleSheet.create({
 
   // 내부 흰색 카드
   'card-inner-card': {
-    margin: 12,
+    margin: 10,
     borderRadius: 12,
     backgroundColor: '#cfdfff',
     overflow: 'hidden',
@@ -74,46 +74,46 @@ export const boardCardStyles = StyleSheet.create({
   'card-section-divider': {
     height: 1,
     backgroundColor: '#E4ECFF',
-    marginHorizontal: 16,
+    marginHorizontal: 14,
   },
 
   // 섹션 행
   'card-section-row': {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     minHeight: 'auto',
   },
 
   // 섹션 레이블
   'card-section-label': {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '700',
     color: '#588DFF',
     fontFamily: 'PretendardVariable',
-    marginBottom: 8,
+    marginBottom: 6,
     letterSpacing: 0.5,
   },
 
   // 본문 텍스트
   'card-content-text': {
-    fontSize: 13,
+    fontSize: 11,
     color: '#333333',
     fontFamily: 'PretendardVariable',
-    lineHeight: 20,
+    lineHeight: 18,
   },
 
   // 접힌 상태 노트 제목 행
   'card-collapsed-subtitle-row': {
-    marginHorizontal: 12,
-    marginBottom: 12,
+    marginHorizontal: 10,
+    marginBottom: 10,
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
   },
 
   'card-collapsed-subtitle-text': {
-    fontSize: 15,
+    fontSize: 13,
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
     fontWeight: '600',
@@ -134,8 +134,8 @@ export const boardCardStyles = StyleSheet.create({
   'sub-accordion-header': {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     backgroundColor: '#F7FAFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E4ECFF',
@@ -143,7 +143,7 @@ export const boardCardStyles = StyleSheet.create({
 
   'sub-accordion-title': {
     flex: 1,
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '700',
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
@@ -157,12 +157,12 @@ export const boardCardStyles = StyleSheet.create({
 
   // 빈 노트 상태
   'card-empty-notes': {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
 
   'card-empty-notes-text': {
-    fontSize: 13,
+    fontSize: 11,
     color: '#AABBCC',
     fontFamily: 'PretendardVariable',
     fontStyle: 'italic',
@@ -173,9 +173,9 @@ export const boardCardStyles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 4,
+    paddingHorizontal: 14,
+    paddingTop: 8,
+    paddingBottom: 2,
   },
 
   'card-tag-chip': {
@@ -186,7 +186,7 @@ export const boardCardStyles = StyleSheet.create({
   },
 
   'card-tag-text': {
-    fontSize: 12,
+    fontSize: 10,
     color: '#588DFF',
     fontFamily: 'PretendardVariable',
     fontWeight: '500',
@@ -194,15 +194,15 @@ export const boardCardStyles = StyleSheet.create({
 
   // 더보기 버튼
   'more-notes-button': {
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     alignItems: 'center',
     backgroundColor: '#ffffff',
     borderRadius: 12,
   },
 
   'more-notes-text': {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
     color: '#588DFF',
     fontFamily: 'PretendardVariable',
@@ -249,7 +249,7 @@ export const boardCardStyles = StyleSheet.create({
   },
 
   'card-image-more-text': {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '600',
     color: '#588DFF',
     fontFamily: 'PretendardVariable',
@@ -416,8 +416,8 @@ export const boardCardStyles = StyleSheet.create({
   'card-file-item': {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     backgroundColor: '#F0F4FF',
     borderRadius: 6,
     borderWidth: 0,
@@ -425,7 +425,7 @@ export const boardCardStyles = StyleSheet.create({
 
   'card-file-name': {
     flex: 1,
-    fontSize: 12,
+    fontSize: 10,
     color: '#4A5568',
     fontFamily: 'PretendardVariable',
   },
@@ -452,7 +452,7 @@ export const boardCardStyles = StyleSheet.create({
   },
 
   'card-more-content-text': {
-    fontSize: 11,
+    fontSize: 9,
     color: '#FF9500',
     fontFamily: 'PretendardVariable',
     fontWeight: '500',
