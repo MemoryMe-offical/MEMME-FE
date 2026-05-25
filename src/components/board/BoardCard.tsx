@@ -165,7 +165,8 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                         {isNoteExpanded && (
                           <TouchableOpacity
                             onPress={() => onDetailPress(item, note.id)}
-                            activeOpacity={0.7}>
+                            activeOpacity={0.7}
+                            style={{ paddingVertical: 8 }}>
                             {!!note.content && (
                               <View style={styles['card-section-row']}>
                                 <Text style={styles['card-section-label']}>내용</Text>
@@ -254,7 +255,9 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                   {(note.files?.length ?? 0) > 0 && (
                                     <>
                                       <View style={styles['card-section-row']}>
-                                        <Text style={styles['card-section-label']}>파일</Text>
+                                        <View style={styles['card-file-header']}>
+                                          <Text style={styles['card-section-label']}>파일</Text>
+                                        </View>
                                         <View style={styles['card-files-preview']}>
                                           {note.files!.slice(0, 2).map((file, idx) => (
                                             <TouchableOpacity
@@ -266,17 +269,18 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                                 });
                                               }}
                                               activeOpacity={0.7}>
+                                              <Text style={styles['card-file-icon']}>📄</Text>
                                               <Text style={styles['card-file-name']} numberOfLines={1}>
                                                 {file.name || 'file'}
                                               </Text>
                                             </TouchableOpacity>
                                           ))}
-                                          {(note.files!.length ?? 0) > 2 && (
-                                            <Text style={styles['card-file-more']}>
-                                              +{note.files!.length - 2}
-                                            </Text>
-                                          )}
                                         </View>
+                                        {(note.files!.length ?? 0) > 2 && (
+                                          <Text style={[styles['card-file-more'], { alignSelf: 'center', marginTop: 4 }]}>
+                                            +{note.files!.length - 2}
+                                          </Text>
+                                        )}
                                       </View>
                                     </>
                                   )}
@@ -295,9 +299,6 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                         <View style={styles['card-section-row']}>
                                           <View style={styles['card-link-header']}>
                                             <Text style={styles['card-section-label']}>링크</Text>
-                                            {urlsToShow.length > maxLinksToShow && (
-                                              <Text style={styles['card-link-count']}>+{urlsToShow.length - maxLinksToShow}</Text>
-                                            )}
                                           </View>
                                           <View style={styles['card-links-container']}>
                                             {linksToDisplay.map((url, displayIndex) => {
@@ -329,7 +330,7 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                                     <Text style={styles['card-link-domain']} numberOfLines={1}>
                                                       {ogData?.siteName || displayDomain}
                                                     </Text>
-                                                    <Text style={styles['card-link-title']} numberOfLines={2}>
+                                                    <Text style={styles['card-link-title']} numberOfLines={1}>
                                                       {ogData?.title || '링크'}
                                                     </Text>
                                                     {!!ogData?.description && (
@@ -342,6 +343,9 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                               );
                                             })}
                                           </View>
+                                          {urlsToShow.length > maxLinksToShow && (
+                                            <Text style={[styles['card-link-count'], { alignSelf: 'center', marginTop: 4 }]}>+{urlsToShow.length - maxLinksToShow}</Text>
+                                          )}
                                         </View>
                                       </>
                                     ) : null;

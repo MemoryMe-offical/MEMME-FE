@@ -80,14 +80,14 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
         <Text style={styles.title} numberOfLines={2}>{note.title}</Text>
 
         {!!note.content && (
-          <View style={styles['section-row']}>
+          <View style={[styles['section-row'], { marginTop: 16, ...((!hasImages && !hasVideos && !hasFiles && !hasLinks) && { marginBottom: 16 }) }]}>
             <Text style={styles['section-label']}>내용</Text>
             <Text style={styles['content-text']}>{note.content}</Text>
           </View>
         )}
 
         {hasImages && (
-          <View style={styles['section-row']}>
+          <View style={[styles['section-row'], { marginTop: 16, ...(!hasVideos && !hasFiles && !hasLinks && { marginBottom: 16 }) }]}>
             <Text style={styles['section-label']}>이미지</Text>
               <View style={styles['images-preview']}>
                 <>
@@ -120,7 +120,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
         )}
 
         {hasVideos && (
-          <View style={styles['section-row']}>
+          <View style={[styles['section-row'], { marginTop: 16, ...(!hasFiles && !hasLinks && { marginBottom: 16 }) }]}>
             <Text style={styles['section-label']}>동영상</Text>
               <View style={styles['videos-preview']}>
                 <>
@@ -159,7 +159,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
         )}
 
         {hasFiles && (
-          <View style={styles['section-row']}>
+          <View style={[styles['section-row'], { marginTop: 16, ...(!hasLinks && { marginBottom: 16 }) }]}>
             <Text style={styles['section-label']}>파일</Text>
               <View style={styles['files-preview']}>
                 <>
@@ -173,6 +173,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                         });
                       }}
                       activeOpacity={0.7}>
+                      <Text style={styles['file-icon']}>📄</Text>
                       <Text style={styles['file-name']} numberOfLines={1}>
                         {file.name || 'file'}
                       </Text>
@@ -199,7 +200,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
           };
 
           return (
-            <View style={styles['section-row']}>
+            <View style={[styles['section-row'], { marginTop: 16, marginBottom: 16 }]}>
               <View style={styles['link-header']}>
                 <Text style={styles['section-label']}>링크</Text>
                   {urlsToShow.length > maxLinksToShow && (
@@ -234,7 +235,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                           <Text style={styles['link-domain']} numberOfLines={1}>
                             {ogData?.siteName || (url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || url)}
                           </Text>
-                          <Text style={styles['link-title']} numberOfLines={2}>
+                          <Text style={styles['link-title']} numberOfLines={1}>
                             {ogData?.title || '링크'}
                           </Text>
                           {!!ogData?.description && (
@@ -356,7 +357,9 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 14,
+    paddingHorizontal: 14,
+    paddingTop: 6,
+    paddingBottom: 0,
     borderWidth: 1,
     borderColor: '#E4ECFF',
     gap: 10,
@@ -367,6 +370,8 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
     lineHeight: 22,
+    marginTop: 10,
+    marginBottom: 0,
   },
   'section-row': {
     gap: 6,
@@ -480,6 +485,7 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: '#AABBCC',
     fontFamily: 'PretendardVariable',
+    lineHeight: 16,
   },
   'links-container': {
     gap: 8,
@@ -491,6 +497,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E4ECFF',
     overflow: 'hidden',
+    height: 68,
     alignItems: 'flex-start',
   },
   'link-image': {
@@ -540,6 +547,10 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     backgroundColor: '#F0F4FF',
     borderRadius: 6,
+    gap: 8,
+  },
+  'file-icon': {
+    fontSize: 14,
   },
   'file-name': {
     flex: 1,

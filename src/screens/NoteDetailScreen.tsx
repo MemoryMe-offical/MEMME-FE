@@ -27,6 +27,7 @@ import {
   CloseIcon,
   TrashIcon,
   PlusIcon,
+  AiIcon,
 } from '../components/common/Icons';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { pick, types, isErrorWithCode, errorCodes } from '@react-native-documents/picker';
@@ -80,7 +81,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isLoadingOgData, setIsLoadingOgData] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [contentHeight, setContentHeight] = useState(300);
+  const [contentHeight, setContentHeight] = useState(140);
   const [videoViewerVisible, setVideoViewerVisible] = useState(false);
   const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
 
@@ -91,8 +92,8 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
   useEffect(() => {
     const lineCount = editContent.split('\n').length;
     const lineHeight = 26;
-    const paddingVertical = 28;
-    const newHeight = Math.max(300, lineCount * lineHeight + paddingVertical);
+    const paddingVertical = 14;
+    const newHeight = Math.max(140, lineCount * lineHeight + paddingVertical);
     setContentHeight(newHeight);
   }, [editContent]);
 
@@ -687,7 +688,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           />
 
           {/* 본문 */}
-          <Text style={styles['input-label']}>내용</Text>
+          <Text style={[styles['input-label'], { marginTop: 14 }]}>내용</Text>
           <TextInput
             style={[styles['content-input'], { height: contentHeight }]}
             value={editContent}
@@ -850,10 +851,20 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                         url={url}
                         ogData={editOgDatas[index] || { title: url }}
                         onRemove={() => handleRemoveLink(index)}
-                        onRequestAndAddSummary={() => handleRequestAndAddSummary(index)}
-                        isSummaryLoading={loadingSummaryIndexes.has(index)}
-                        summaryAdded={addedSummaryIndexes.has(index)}
                       />
+                      {loadingSummaryIndexes.has(index) ? (
+                        <ActivityIndicator size={10} color="#588DFF" style={{ alignSelf: 'center', marginTop: 8 }} />
+                      ) : addedSummaryIndexes.has(index) ? (
+                        <Text style={[styles['summary-added-text'], { alignSelf: 'center' }]}>✓ 추가됨</Text>
+                      ) : (
+                        <TouchableOpacity
+                          style={styles['summary-button']}
+                          onPress={() => handleRequestAndAddSummary(index)}
+                          activeOpacity={0.7}>
+                          <AiIcon color="#588DFF" size={12} />
+                          <Text style={styles['summary-button-text']}>내용에 AI 요약 추가</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   ))}
                 </>
@@ -863,7 +874,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
             </View>
           </View>
 
-          <View style={{ height: 32 }} />
+          <View style={{ height: 0 }} />
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -986,7 +997,7 @@ const styles = StyleSheet.create({
   },
   'save-text-disabled': { color: '#C0CDD8' },
   body: { flex: 1 },
-  'body-content': { padding: 20, paddingBottom: 40 },
+  'body-content': { padding: 20 },
   'title-input': {
     fontSize: 14,
     fontWeight: '700',
@@ -1033,6 +1044,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     gap: 16,
     marginTop: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   'subsection-header': {
     flexDirection: 'row',
@@ -1061,7 +1074,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
     marginBottom: 10,
   },
-  'images-section': { marginBottom: 0 },
+  'images-section': { paddingVertical: 12, marginBottom: 0 },
   'empty-section-text': {
     fontSize: 13,
     color: '#AABBCC',
@@ -1111,7 +1124,7 @@ const styles = StyleSheet.create({
   'add-image-btn-disabled': {
     opacity: 0.6,
   },
-  'videos-section': { marginBottom: 0 },
+  'videos-section': { paddingVertical: 12, marginBottom: 0 },
   'videos-row': {
     flexDirection: 'row',
     gap: 8,
@@ -1156,9 +1169,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  'link-section': { gap: 10, marginBottom: 0 },
-  'link-item-wrapper': { marginBottom: 10 },
-  'files-section': { gap: 10, marginBottom: 0 },
+  'link-section': { gap: 10, paddingVertical: 12, marginBottom: 0 },
+  'link-item-wrapper': { marginBottom: 6, flexDirection: 'column', gap: 8 },
+  'summary-button': {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    alignSelf: 'center',
+    borderRadius: 8,
+    backgroundColor: '#EEF3FF',
+  },
+  'summary-button-text': {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#588DFF',
+    fontFamily: 'PretendardVariable',
+  },
+  'summary-added-text': {
+    fontSize: 11,
+    color: '#AABBCC',
+    fontFamily: 'PretendardVariable',
+  },
+  'files-section': { gap: 10, paddingVertical: 12, marginBottom: 0 },
   'file-row': {
     flexDirection: 'row',
     alignItems: 'center',

@@ -1,19 +1,15 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, Image, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import { OgData } from '../../types';
-import { CloseIcon, LinkIcon, AiIcon } from '../common/Icons';
+import { CloseIcon, LinkIcon } from '../common/Icons';
 
 interface OgPreviewCardProps {
   url: string;
   ogData: OgData;
   onRemove?: () => void;
-  onRequestSummary?: () => void;
-  isSummaryLoading?: boolean;
-  summaryAdded?: boolean;
-  onRequestAndAddSummary?: () => void;
 }
 
-const OgPreviewCard = ({ url, ogData, onRemove, onRequestSummary, isSummaryLoading, summaryAdded, onRequestAndAddSummary }: OgPreviewCardProps) => {
+const OgPreviewCard = ({ url, ogData, onRemove }: OgPreviewCardProps) => {
   const displayDomain = (() => {
     const match = url.match(/^(?:https?:\/\/)?([^/?#]+)/);
     return match ? match[1] : url;
@@ -44,11 +40,11 @@ const OgPreviewCard = ({ url, ogData, onRemove, onRequestSummary, isSummaryLoadi
           <Text style={styles.domain} numberOfLines={1}>
             {ogData.siteName || displayDomain}
           </Text>
-          <Text style={styles.title} numberOfLines={3}>
+          <Text style={styles.title} numberOfLines={1}>
             {ogData.title || '링크'}
           </Text>
           {!!ogData.description && (
-            <Text style={styles.description} numberOfLines={2}>
+            <Text style={styles.description} numberOfLines={1}>
               {ogData.description}
             </Text>
           )}
@@ -57,33 +53,6 @@ const OgPreviewCard = ({ url, ogData, onRemove, onRequestSummary, isSummaryLoadi
               {url}
             </Text>
           )}
-          {onRequestAndAddSummary ? (
-            isSummaryLoading ? (
-              <ActivityIndicator size={10} color="#588DFF" style={{ marginTop: 4, alignSelf: 'flex-start' }} />
-            ) : summaryAdded ? (
-              <Text style={styles['added-text']}>✓ 추가됨</Text>
-            ) : (
-              <TouchableOpacity
-                style={styles['summary-btn']}
-                onPress={onRequestAndAddSummary}
-                hitSlop={4}>
-                <AiIcon color="#588DFF" size={10} />
-                <Text style={styles['summary-btn-text']}>내용에 AI 요약 추가</Text>
-              </TouchableOpacity>
-            )
-          ) : onRequestSummary ? (
-            isSummaryLoading ? (
-              <ActivityIndicator size={10} color="#588DFF" style={{ marginTop: 4, alignSelf: 'flex-start' }} />
-            ) : (
-              <TouchableOpacity
-                style={styles['summary-btn']}
-                onPress={onRequestSummary}
-                hitSlop={4}>
-                <AiIcon color="#588DFF" size={10} />
-                <Text style={styles['summary-btn-text']}>AI 요약</Text>
-              </TouchableOpacity>
-            )
-          ) : null}
         </View>
       </View>
       {onRemove && (
@@ -109,6 +78,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'flex-start',
+    gap: 0,
   },
   image: { width: 68, height: 68 },
   'image-placeholder': {
@@ -118,7 +88,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  info: { flex: 1, padding: 8, gap: 2 },
+  info: { flex: 1, gap: 2, padding: 8 },
   domain: {
     fontSize: 10,
     fontWeight: '700',

@@ -92,6 +92,7 @@ export const boardCardStyles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
     marginBottom: 6,
     letterSpacing: 0.5,
+    lineHeight: 14,
   },
 
   // 본문 텍스트
@@ -326,10 +327,11 @@ export const boardCardStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E4ECFF',
     overflow: 'hidden',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     marginHorizontal: 0,
     marginTop: 0,
     marginBottom: 0,
+    height: 52,
   },
 
   'card-link-image': {
@@ -384,6 +386,8 @@ export const boardCardStyles = StyleSheet.create({
     fontSize: 11,
     color: '#AABBCC',
     fontFamily: 'PretendardVariable',
+    lineHeight: 11,
+    padding: 4
   },
 
   // 링크 컨테이너
@@ -421,6 +425,11 @@ export const boardCardStyles = StyleSheet.create({
     backgroundColor: '#F0F4FF',
     borderRadius: 6,
     borderWidth: 0,
+    gap: 6,
+  },
+
+  'card-file-icon': {
+    fontSize: 12,
   },
 
   'card-file-name': {
