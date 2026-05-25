@@ -292,7 +292,6 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
 
                                     return urlsToShow.length > 0 ? (
                                       <>
-                                        <View style={styles['card-section-divider']} />
                                         <View style={styles['card-section-row']}>
                                           <View style={styles['card-link-header']}>
                                             <Text style={styles['card-section-label']}>링크</Text>

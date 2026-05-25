@@ -1032,6 +1032,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F7FAFF',
     borderRadius: 12,
     gap: 16,
+    marginTop: 16,
   },
   'subsection-header': {
     flexDirection: 'row',
