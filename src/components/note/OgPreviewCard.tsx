@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import { OgData } from '../../types';
 import { CloseIcon, LinkIcon } from '../common/Icons';
+import LoadingImage from '../common/LoadingImage';
 
 interface OgPreviewCardProps {
   url: string;
@@ -30,7 +31,7 @@ const OgPreviewCard = ({ url, ogData, onRemove }: OgPreviewCardProps) => {
       activeOpacity={0.7}>
       <View style={styles.content}>
         {ogData.imageUrl ? (
-          <Image source={{ uri: ogData.imageUrl }} style={styles.image} resizeMode="cover" />
+          <LoadingImage source={{ uri: ogData.imageUrl }} style={styles.image} resizeMode="cover" />
         ) : (
           <View style={styles['image-placeholder']}>
             <LinkIcon color="#AABBCC" size={32} />

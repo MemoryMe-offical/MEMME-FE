@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, Image, Linking, StyleSheet, Modal, FlatLi
 import { Note, OgData } from '../../types';
 import { LinkIcon } from '../common/Icons';
 import { fetchOgData } from '../../services/ogService';
+import LoadingImage from '../common/LoadingImage';
 
 interface NoteCardProps {
   note: Note;
@@ -17,7 +18,7 @@ const ImageThumbnail = ({ imageUrl, onPress }: { imageUrl: string; onPress: () =
         styles['image-thumbnail'],
         pressed && styles['image-thumbnail-pressed'],
       ]}>
-      <Image
+      <LoadingImage
         source={{ uri: imageUrl }}
         style={styles['image-thumbnail']}
         resizeMode="cover"
@@ -136,7 +137,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                         pressed && styles['video-thumbnail-pressed'],
                       ]}>
                       {video.thumbnailUrl ? (
-                        <Image
+                        <LoadingImage
                           source={{ uri: video.thumbnailUrl }}
                           style={styles['video-thumbnail']}
                           resizeMode="cover"
@@ -221,7 +222,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                         }}
                         activeOpacity={0.7}>
                         {ogData?.imageUrl ? (
-                          <Image
+                          <LoadingImage
                             source={{ uri: ogData.imageUrl }}
                             style={styles['link-image']}
                             resizeMode="cover"

@@ -4,6 +4,7 @@ import { Board, OgData } from '../../types';
 import { boardCardStyles as styles } from '../../styles/BoardCard.styles';
 import { ChevronDownIcon, ChevronUpIcon, MoreIcon, LinkIcon } from '../common/Icons';
 import { fetchOgData } from '../../services/ogService';
+import LoadingImage from '../common/LoadingImage';
 
 const formatTime = (isoString: string): string => {
   const date = new Date(isoString);
@@ -22,7 +23,7 @@ const CardImageThumbnail = ({ imageUrl, onPress }: { imageUrl: string; onPress: 
         styles['card-image-thumbnail'],
         pressed && styles['card-image-thumbnail-pressed'],
       ]}>
-      <Image
+      <LoadingImage
         source={{ uri: imageUrl }}
         style={styles['card-image-thumbnail']}
         resizeMode="cover"
@@ -230,7 +231,7 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                                   pressed && styles['card-video-thumbnail-pressed'],
                                                 ]}>
                                                 {thumbnailUrl ? (
-                                                  <Image
+                                                  <LoadingImage
                                                     source={{ uri: thumbnailUrl }}
                                                     style={styles['card-video-thumbnail']}
                                                     resizeMode="cover"
@@ -316,7 +317,7 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                                   }}
                                                   activeOpacity={0.7}>
                                                   {ogData?.imageUrl ? (
-                                                    <Image
+                                                    <LoadingImage
                                                       source={{ uri: ogData.imageUrl }}
                                                       style={styles['card-link-image']}
                                                       resizeMode="cover"

@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  Image,
   StyleSheet,
   Platform,
   Modal,
@@ -34,6 +33,7 @@ import { pick, types, isErrorWithCode, errorCodes } from '@react-native-document
 import { fetchOgData, fetchOgSummary, OgSummaryError } from '../services/ogService';
 import { uploadImages, uploadFile, uploadVideo, MAX_UPLOAD_SIZE } from '../services/uploadService';
 import OgPreviewCard from '../components/note/OgPreviewCard';
+import LoadingImage from '../components/common/LoadingImage';
 import * as noteService from '../services/noteService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NoteDetail'>;
@@ -41,7 +41,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'NoteDetail'>;
 const ImagePreview = ({ imageUrl, onRemove }: { imageUrl: string; onRemove: () => void }) => {
   return (
     <View style={styles['image-wrapper']}>
-      <Image
+      <LoadingImage
         source={{ uri: imageUrl }}
         style={styles.thumbnail}
         resizeMode="cover"
@@ -799,7 +799,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                           pressed && styles['video-wrapper-pressed'],
                         ]}>
                         {video.thumbnailUrl ? (
-                          <Image
+                          <LoadingImage
                             source={{ uri: video.thumbnailUrl }}
                             style={styles['video-thumbnail']}
                             resizeMode="cover"

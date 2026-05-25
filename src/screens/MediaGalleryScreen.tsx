@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Image,
   FlatList,
   Dimensions,
   Linking,
@@ -17,6 +16,7 @@ import { Board, Note, FileAttachment, Memo } from '../types';
 import { ArrowLeftIcon } from '../components/common/Icons';
 import { fetchOgData } from '../services/ogService';
 import ImageViewerModal from '../components/common/ImageViewerModal';
+import LoadingImage from '../components/common/LoadingImage';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MediaGallery'>;
@@ -39,7 +39,7 @@ interface MediaItem {
 
 const GalleryImageThumbnail = ({ imageUrl, width, height }: { imageUrl: string; width: number; height: number }) => {
   return (
-    <Image
+    <LoadingImage
       source={{ uri: imageUrl }}
       style={[styles.thumbnail, { width, height, backgroundColor: '#EEF3FF' }]}
       onError={() => console.log('Failed to render gallery image')}
