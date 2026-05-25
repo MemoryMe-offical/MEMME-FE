@@ -82,7 +82,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
         {!!note.content && (
           <View style={styles['section-row']}>
             <Text style={styles['section-label']}>내용</Text>
-            <Text style={styles['content-text']} numberOfLines={3}>{note.content}</Text>
+            <Text style={styles['content-text']}>{note.content}</Text>
           </View>
         )}
 
