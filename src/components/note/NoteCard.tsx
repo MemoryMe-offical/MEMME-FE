@@ -399,10 +399,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   'image-thumbnail': {
-    width: 56,
-    height: 56,
+    width: 64,
+    height: 64,
     borderRadius: 8,
     backgroundColor: '#EEF3FF',
   },
@@ -410,8 +411,8 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   'image-more': {
-    width: 56,
-    height: 56,
+    width: 64,
+    height: 64,
     borderRadius: 8,
     backgroundColor: '#F0F4FF',
     alignItems: 'center',
@@ -430,6 +431,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   'video-thumbnail': {
     width: 56,
