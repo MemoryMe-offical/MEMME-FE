@@ -99,3 +99,7 @@ export const PlusCircleIcon = ({ color = '#588DFF', size = 20, style }: IconProp
 export const ImageIcon = ({ color = '#1A1A1A', size = 18, style }: IconProps) => (
   <MCI name="image-plus" color={color} size={size} style={style} />
 );
+
+export const AiIcon = ({ color = '#588DFF', size = 12, style }: IconProps) => (
+  <MCI name="auto-fix" color={color} size={size} style={style} />
+);

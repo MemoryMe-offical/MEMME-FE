@@ -27,6 +27,7 @@ export interface OgData {
   description?: string;
   imageUrl?: string;
   siteName?: string;
+  summary?: string;
 }
 
 export interface BoardPost extends BaseItem {

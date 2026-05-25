@@ -14,7 +14,9 @@ import {
   KeyboardAvoidingView,
   Pressable,
   Linking,
+  ToastAndroid,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -28,7 +30,7 @@ import {
 } from '../components/common/Icons';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { pick, types, isErrorWithCode, errorCodes } from '@react-native-documents/picker';
-import { fetchOgData } from '../services/ogService';
+import { fetchOgData, fetchOgSummary, OgSummaryError } from '../services/ogService';
 import { uploadImages, uploadFile, uploadVideo, MAX_UPLOAD_SIZE } from '../services/uploadService';
 import OgPreviewCard from '../components/note/OgPreviewCard';
 import * as noteService from '../services/noteService';
@@ -69,30 +71,88 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
   );
   const [editFiles, setEditFiles] = useState<FileAttachment[]>(note?.files ?? []);
 
+  const [loadingSummaryIndexes, setLoadingSummaryIndexes] = useState<Set<number>>(new Set());
+  const [addedSummaryIndexes, setAddedSummaryIndexes] = useState<Set<number>>(new Set());
+
   const [isLinkModalVisible, setIsLinkModalVisible] = useState(false);
   const [linkInput, setLinkInput] = useState('');
   const [isFetchingOg, setIsFetchingOg] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoadingOgData, setIsLoadingOgData] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [contentHeight, setContentHeight] = useState(140);
+  const [contentHeight, setContentHeight] = useState(300);
   const [videoViewerVisible, setVideoViewerVisible] = useState(false);
   const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
 
   // 저장 버튼으로 인한 goBack()과 일반 뒤로가기를 구분하는 플래그
   const isSavingRef = useRef(false);
 
-  // 화면 포커스 시 note 데이터 초기화
+  // editContent 변경 시 높이 자동 업데이트
+  useEffect(() => {
+    const lineCount = editContent.split('\n').length;
+    const lineHeight = 26;
+    const paddingVertical = 28;
+    const newHeight = Math.max(300, lineCount * lineHeight + paddingVertical);
+    setContentHeight(newHeight);
+  }, [editContent]);
+
+  // AsyncStorage에 요약 저장
+  useEffect(() => {
+    const saveSummaries = async () => {
+      if (!note?.id) return;
+      try {
+        const summaryMap: Record<string, string> = {};
+        editOgDatas.forEach((ogData, index) => {
+          if (ogData.summary && editUrls[index]) {
+            summaryMap[editUrls[index]] = ogData.summary;
+          }
+        });
+        await AsyncStorage.setItem(`note_summaries_${note.id}`, JSON.stringify(summaryMap));
+      } catch (error) {
+        console.error('Failed to save summaries:', error);
+      }
+    };
+    saveSummaries();
+  }, [editOgDatas, editUrls, note?.id]);
+
+  // 화면 포커스 시 note 데이터 초기화 + 저장된 요약 로드
   useFocusEffect(
     useCallback(() => {
-      setEditTitle(route.params.note?.title ?? '');
-      setEditContent(route.params.note?.content ?? '');
-      setEditImageUris(route.params.note?.imageUris ?? []);
-      setEditVideos(route.params.note?.videos ?? []);
-      setEditUrls(route.params.note?.urls ?? (route.params.note?.url ? [route.params.note.url] : []));
-      setEditOgDatas(route.params.note?.ogDatas ?? (route.params.note?.ogData ? [route.params.note.ogData] : []));
-      setEditFiles(route.params.note?.files ?? []);
-      setIsLoadingOgData(false);
+      const loadDataWithSummaries = async () => {
+        setEditTitle(route.params.note?.title ?? '');
+        setEditContent(route.params.note?.content ?? '');
+        setEditImageUris(route.params.note?.imageUris ?? []);
+        setEditVideos(route.params.note?.videos ?? []);
+        setEditUrls(route.params.note?.urls ?? (route.params.note?.url ? [route.params.note.url] : []));
+
+        let ogDatas = route.params.note?.ogDatas ?? (route.params.note?.ogData ? [route.params.note.ogData] : []);
+
+        // AsyncStorage에서 저장된 요약 로드
+        if (route.params.note?.id) {
+          try {
+            const summaryJson = await AsyncStorage.getItem(`note_summaries_${route.params.note.id}`);
+            if (summaryJson) {
+              const summaryMap = JSON.parse(summaryJson);
+              const urls = route.params.note?.urls ?? (route.params.note?.url ? [route.params.note.url] : []);
+
+              // 각 URL에 해당하는 요약 병합
+              ogDatas = ogDatas.map((ogData, index) => {
+                const url = urls[index];
+                const savedSummary = url ? summaryMap[url] : undefined;
+                return savedSummary ? { ...ogData, summary: savedSummary } : ogData;
+              });
+            }
+          } catch (error) {
+            console.error('Failed to load summaries:', error);
+          }
+        }
+
+        setEditOgDatas(ogDatas);
+        setEditFiles(route.params.note?.files ?? []);
+        setIsLoadingOgData(false);
+      };
+
+      loadDataWithSummaries();
     }, [route.params.note])
   );
 
@@ -177,6 +237,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         videos: editVideos.length > 0 ? editVideos : undefined,
         urls: editUrls.length > 0 ? editUrls : undefined,
         files: editFiles.length > 0 ? editFiles : undefined,
+        ogDatas: editOgDatas.length > 0 ? editOgDatas : undefined,
       };
       console.log('Saving note with data:', noteData);
 
@@ -381,6 +442,115 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
     setEditOgDatas(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleRequestSummary = async (index: number) => {
+    const url = editUrls[index];
+    if (!url) return;
+    setLoadingSummaryIndexes(prev => new Set(prev).add(index));
+    try {
+      const summary = await fetchOgSummary(url);
+      setEditOgDatas(prev => {
+        const updated = [...prev];
+        updated[index] = { ...updated[index], summary };
+        return updated;
+      });
+    } catch (error) {
+      if (error instanceof OgSummaryError) {
+        Alert.alert('AI 요약 실패', 'AI 요약을 생성할 수 없습니다. 잠시 후 다시 시도해주세요.');
+      } else {
+        Alert.alert('오류', 'AI 요약 요청 중 문제가 발생했습니다.');
+      }
+    } finally {
+      setLoadingSummaryIndexes(prev => {
+        const next = new Set(prev);
+        next.delete(index);
+        return next;
+      });
+    }
+  };
+
+  const handleRequestAndAddSummary = async (index: number) => {
+    const url = editUrls[index];
+    const ogData = editOgDatas[index];
+    if (!url) return;
+
+    const addToNoteAndShowToast = (summary: string) => {
+      const linkTitle = ogData?.title || url || '링크';
+      const cleanedSummary = summary.split('\n')[0].slice(0, 500);
+      const summaryBlock = `🔗 [${linkTitle}](${url})\n\nAI 요약:\n${cleanedSummary}`;
+
+      setEditContent(prev => prev.trim() ? `${prev}\n\n---\n\n${summaryBlock}` : summaryBlock);
+      setAddedSummaryIndexes(prev => new Set(prev).add(index));
+
+      // 토스트 메시지 표시
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('요약이 내용에 추가되었습니다', ToastAndroid.SHORT);
+      } else {
+        Alert.alert('', '요약이 내용에 추가되었습니다', [{ text: '확인', onPress: () => {} }]);
+      }
+
+      // 3초 후에 버튼으로 복구
+      setTimeout(() => {
+        setAddedSummaryIndexes(prev => {
+          const next = new Set(prev);
+          next.delete(index);
+          return next;
+        });
+      }, 3000);
+    };
+
+    // 요약이 이미 있으면 바로 추가
+    const existingSummary = editOgDatas[index]?.summary;
+    if (existingSummary) {
+      addToNoteAndShowToast(existingSummary);
+      return;
+    }
+
+    // 요약이 없으면 생성 후 추가
+    setLoadingSummaryIndexes(prev => new Set(prev).add(index));
+    try {
+      const summary = await fetchOgSummary(url);
+
+      // ogDatas 업데이트
+      setEditOgDatas(prev => {
+        const updated = [...prev];
+        updated[index] = { ...updated[index], summary };
+        return updated;
+      });
+
+      addToNoteAndShowToast(summary);
+    } catch (error) {
+      if (error instanceof OgSummaryError) {
+        Alert.alert('AI 요약 실패', 'AI 요약을 생성할 수 없습니다. 잠시 후 다시 시도해주세요.');
+      } else {
+        Alert.alert('오류', 'AI 요약 요청 중 문제가 발생했습니다.');
+      }
+    } finally {
+      setLoadingSummaryIndexes(prev => {
+        const next = new Set(prev);
+        next.delete(index);
+        return next;
+      });
+    }
+  };
+
+  const handleAddSummaryToNote = (index: number) => {
+    const summary = editOgDatas[index]?.summary;
+    const url = editUrls[index];
+    const ogData = editOgDatas[index];
+    if (!summary) return;
+
+    const linkTitle = ogData?.title || url || '링크';
+
+    // 요약 정리: 첫 번째 문장 또는 500자까지만
+    const cleanedSummary = summary.split('\n')[0].slice(0, 500);
+
+    const summaryBlock = `🔗 [${linkTitle}](${url})\n\nAI 요약:\n${cleanedSummary}`;
+
+    // 기존 내용이 있으면 뒤에 이어서 추가
+    setEditContent(prev => prev.trim() ? `${prev}\n\n---\n\n${summaryBlock}` : summaryBlock);
+    setAddedSummaryIndexes(prev => new Set(prev).add(index));
+  };
+
   const handleAddFile = async () => {
     if (editFiles.length >= 10) {
       Alert.alert('알림', '파일은 최대 10개까지 추가할 수 있습니다.');
@@ -524,7 +694,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
             value={editContent}
             onChangeText={setEditContent}
             onContentSizeChange={(e) => {
-              const newHeight = Math.max(140, e.nativeEvent.contentSize.height);
+              const newHeight = Math.max(300, e.nativeEvent.contentSize.height);
               setContentHeight(newHeight);
             }}
             placeholder="내용을 입력하세요..."
@@ -683,6 +853,9 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                         url={url}
                         ogData={editOgDatas[index] || { title: url }}
                         onRemove={() => handleRemoveLink(index)}
+                        onRequestAndAddSummary={() => handleRequestAndAddSummary(index)}
+                        isSummaryLoading={loadingSummaryIndexes.has(index)}
+                        summaryAdded={addedSummaryIndexes.has(index)}
                       />
                     </View>
                   ))}
@@ -818,12 +991,12 @@ const styles = StyleSheet.create({
   body: { flex: 1 },
   'body-content': { padding: 20, paddingBottom: 40 },
   'title-input': {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
     lineHeight: 28,
-    paddingVertical: 14,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
@@ -832,7 +1005,7 @@ const styles = StyleSheet.create({
   },
   divider: { height: 1, backgroundColor: '#D5DFED', marginVertical: 16 },
   'content-input': {
-    fontSize: 13,
+    fontSize: 11,
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
     lineHeight: 26,

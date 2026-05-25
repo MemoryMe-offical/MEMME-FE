@@ -1,4 +1,4 @@
-import { Note, MediaAttachment, FileAttachment } from '../types';
+import { Note, MediaAttachment, FileAttachment, OgData } from '../types';
 import { fetchWithAutoLogoutHandler } from '../utils/tokenUtils';
 
 const BASE_URL = 'https://memme.o-r.kr/v1';
@@ -32,6 +32,7 @@ export const createNote = async (
     videos?: MediaAttachment[];
     files?: FileAttachment[];
     urls?: string[];
+    ogDatas?: OgData[];
   }
 ): Promise<Note> => {
   try {
@@ -43,6 +44,7 @@ export const createNote = async (
       videoUris: noteData.videos?.map(v => v.url),
       files: noteData.files,
       urls: noteData.urls,
+      ogDatas: noteData.ogDatas,
     };
 
     console.log('Creating note with data:', JSON.stringify(bodyData, null, 2));
@@ -86,6 +88,7 @@ export const updateNote = async (
     videos?: MediaAttachment[];
     files?: FileAttachment[];
     urls?: string[];
+    ogDatas?: OgData[];
   }
 ): Promise<Note> => {
   try {
@@ -97,6 +100,7 @@ export const updateNote = async (
     if (updates.videos !== undefined) bodyData.videoUris = updates.videos.map(v => v.url);
     if (updates.files !== undefined) bodyData.files = updates.files;
     if (updates.urls !== undefined) bodyData.urls = updates.urls;
+    if (updates.ogDatas !== undefined) bodyData.ogDatas = updates.ogDatas;
 
     console.log('Updating note with data:', JSON.stringify(bodyData, null, 2));
     const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/boards/${boardUid}/notes/${noteUid}`, {
