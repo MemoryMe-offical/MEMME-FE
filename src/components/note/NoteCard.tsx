@@ -95,6 +95,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                 showsHorizontalScrollIndicator={true}
                 persistentScrollbar={true}
                 scrollEventThrottle={16}
+                scrollIndicatorInsets={{ bottom: 4 }}
                 contentContainerStyle={styles['images-preview']}>
                 <>
                   {note.imageUris!.slice(0, maxMediaItems).map((imageUrl) => (
@@ -133,6 +134,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                 showsHorizontalScrollIndicator={true}
                 persistentScrollbar={true}
                 scrollEventThrottle={16}
+                scrollIndicatorInsets={{ bottom: 4 }}
                 contentContainerStyle={styles['videos-preview']}>
                 <>
                   {note.videos!.slice(0, maxMediaItems).map((video) => (
@@ -410,6 +412,7 @@ const styles = StyleSheet.create({
     gap: 8,
     alignItems: 'center',
     paddingHorizontal: 0,
+    paddingBottom: 12,
   },
   'image-thumbnail': {
     width: 64,
@@ -442,6 +445,7 @@ const styles = StyleSheet.create({
     gap: 8,
     alignItems: 'center',
     paddingHorizontal: 0,
+    paddingBottom: 12,
   },
   'video-thumbnail': {
     width: 64,

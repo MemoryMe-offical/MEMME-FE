@@ -725,6 +725,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                   horizontal
                   showsHorizontalScrollIndicator={true}
                   persistentScrollbar={true}
+                  scrollIndicatorInsets={{ bottom: 4 }}
                   contentContainerStyle={styles['images-row']}>
                   <>
                     {editImageUris.map((imageUrl) => (
@@ -787,6 +788,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                   horizontal
                   showsHorizontalScrollIndicator={true}
                   persistentScrollbar={true}
+                  scrollIndicatorInsets={{ bottom: 4 }}
                   contentContainerStyle={styles['videos-row']}>
                   <>
                     {editVideos.map((video) => (
@@ -1088,6 +1090,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
+    paddingBottom: 12,
   },
   'image-wrapper': { position: 'relative' },
   thumbnail: {
@@ -1131,6 +1134,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
+    paddingBottom: 12,
   },
   'video-wrapper': { position: 'relative' },
   'video-wrapper-pressed': {
