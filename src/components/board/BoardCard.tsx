@@ -67,21 +67,21 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
     const loadOgData = async () => {
       if (!hasNotes) return;
 
-      const notesNeedingOgData = item.notes!.filter(
-        note => note.url && !note.ogData && !ogDataCache[note.url]
-      );
+      for (const note of item.notes!) {
+        const urlsToCheck = note.urls && note.urls.length > 0 ? note.urls : (note.url ? [note.url] : []);
 
-      if (notesNeedingOgData.length === 0) return;
+        for (const url of urlsToCheck) {
+          if (!url || ogDataCache[url]) continue;
 
-      for (const note of notesNeedingOgData) {
-        try {
-          const ogData = await fetchOgData(note.url!);
-          setOgDataCache(prev => ({
-            ...prev,
-            [note.url!]: ogData,
-          }));
-        } catch (error) {
-          console.error('Failed to load OG data for note:', note.url, error);
+          try {
+            const ogData = await fetchOgData(url);
+            setOgDataCache(prev => ({
+              ...prev,
+              [url]: ogData,
+            }));
+          } catch (error) {
+            console.error('Failed to load OG data for URL:', url, error);
+          }
         }
       }
     };
@@ -283,51 +283,72 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                       </View>
                                     </>
                                   )}
-                                  {note.url && (() => {
-                                    const ogData = note.ogData ?? ogDataCache[note.url];
-                                    const displayDomain = note.url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || note.url;
+                                  {(() => {
+                                    const urlsToShow = note.urls && note.urls.length > 0 ? note.urls : (note.url ? [note.url] : []);
+                                    const maxLinksToShow = 2;
+                                    const linksToDisplay = urlsToShow.slice(0, maxLinksToShow);
 
-                                    return (
+                                    const getOgDataForUrl = (url: string, urlIndex: number) => {
+                                      return ogDataCache[url] || note.ogDatas?.[urlIndex] ||
+                                             (urlIndex === 0 ? note.ogData : undefined);
+                                    };
+
+                                    return urlsToShow.length > 0 ? (
                                       <>
                                         <View style={styles['card-section-divider']} />
                                         <View style={styles['card-section-row']}>
-                                          <Text style={styles['card-section-label']}>링크</Text>
-                                          <TouchableOpacity
-                                            style={styles['card-link-card']}
-                                            onPress={() => {
-                                              Linking.openURL(note.url!).catch(() => {
-                                                console.error('Failed to open URL:', note.url);
-                                              });
-                                            }}
-                                            activeOpacity={0.7}>
-                                            {ogData?.imageUrl ? (
-                                              <Image
-                                                source={{ uri: ogData.imageUrl }}
-                                                style={styles['card-link-image']}
-                                                resizeMode="cover"
-                                              />
-                                            ) : (
-                                              <View style={styles['card-link-image-placeholder']}>
-                                                <LinkIcon color="#AABBCC" size={20} />
-                                              </View>
+                                          <View style={styles['card-link-header']}>
+                                            <Text style={styles['card-section-label']}>링크</Text>
+                                            {urlsToShow.length > maxLinksToShow && (
+                                              <Text style={styles['card-link-count']}>+{urlsToShow.length - maxLinksToShow}</Text>
                                             )}
-                                            <View style={styles['card-link-info']}>
-                                              <Text style={styles['card-link-domain']} numberOfLines={1}>
-                                                {ogData?.siteName || displayDomain}
-                                              </Text>
-                                              <Text style={styles['card-link-title']} numberOfLines={2}>
-                                                {ogData?.title || '링크'}
-                                              </Text>
-                                              {!!ogData?.description && (
-                                                <Text style={styles['card-link-desc']} numberOfLines={1}>
-                                                  {ogData.description}
-                                                </Text>
-                                              )}
-                                            </View>
-                                          </TouchableOpacity>
+                                          </View>
+                                          <View style={styles['card-links-container']}>
+                                            {linksToDisplay.map((url, displayIndex) => {
+                                              const ogData = getOgDataForUrl(url, displayIndex);
+                                              const displayDomain = url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || url;
+
+                                              return (
+                                                <TouchableOpacity
+                                                  key={url}
+                                                  style={styles['card-link-card']}
+                                                  onPress={() => {
+                                                    Linking.openURL(url).catch(() => {
+                                                      console.error('Failed to open URL:', url);
+                                                    });
+                                                  }}
+                                                  activeOpacity={0.7}>
+                                                  {ogData?.imageUrl ? (
+                                                    <Image
+                                                      source={{ uri: ogData.imageUrl }}
+                                                      style={styles['card-link-image']}
+                                                      resizeMode="cover"
+                                                    />
+                                                  ) : (
+                                                    <View style={styles['card-link-image-placeholder']}>
+                                                      <LinkIcon color="#AABBCC" size={20} />
+                                                    </View>
+                                                  )}
+                                                  <View style={styles['card-link-info']}>
+                                                    <Text style={styles['card-link-domain']} numberOfLines={1}>
+                                                      {ogData?.siteName || displayDomain}
+                                                    </Text>
+                                                    <Text style={styles['card-link-title']} numberOfLines={2}>
+                                                      {ogData?.title || '링크'}
+                                                    </Text>
+                                                    {!!ogData?.description && (
+                                                      <Text style={styles['card-link-desc']} numberOfLines={1}>
+                                                        {ogData.description}
+                                                      </Text>
+                                                    )}
+                                                  </View>
+                                                </TouchableOpacity>
+                                              );
+                                            })}
+                                          </View>
                                         </View>
                                       </>
-                                    );
+                                    ) : null;
                                   })()}
                                 </View>
                               </>
