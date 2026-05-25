@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, Linking, StyleSheet, Modal, FlatList, Dimensions, Pressable, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Linking, StyleSheet, Modal, FlatList, Dimensions, Pressable, ActivityIndicator, useWindowDimensions, ScrollView } from 'react-native';
 import { Note, OgData } from '../../types';
 import { LinkIcon } from '../common/Icons';
 import { fetchOgData } from '../../services/ogService';
@@ -90,7 +90,11 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
         {hasImages && (
           <View style={[styles['section-row'], { marginTop: 16, ...(!hasVideos && !hasFiles && !hasLinks && { marginBottom: 16 }) }]}>
             <Text style={styles['section-label']}>이미지</Text>
-              <View style={styles['images-preview']}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                scrollEventThrottle={16}
+                style={styles['images-preview']}>
                 <>
                   {note.imageUris!.slice(0, maxMediaItems).map((imageUrl) => (
                     <ImageThumbnail
@@ -116,14 +120,18 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                     </Text>
                   </Pressable>
                 )}
-              </View>
+              </ScrollView>
             </View>
         )}
 
         {hasVideos && (
           <View style={[styles['section-row'], { marginTop: 16, ...(!hasFiles && !hasLinks && { marginBottom: 16 }) }]}>
             <Text style={styles['section-label']}>동영상</Text>
-              <View style={styles['videos-preview']}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                scrollEventThrottle={16}
+                style={styles['videos-preview']}>
                 <>
                   {note.videos!.slice(0, maxMediaItems).map((video) => (
                     <Pressable
@@ -155,7 +163,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                     +{note.videos!.length - maxMediaItems}개
                   </Text>
                 )}
-              </View>
+              </ScrollView>
             </View>
         )}
 
