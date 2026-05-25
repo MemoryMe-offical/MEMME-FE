@@ -170,7 +170,7 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                             {!!note.content && (
                               <View style={styles['card-section-row']}>
                                 <Text style={styles['card-section-label']}>내용</Text>
-                                <Text style={styles['card-content-text']} numberOfLines={3}>
+                                <Text style={styles['card-content-text']} numberOfLines={10}>
                                   {note.content}
                                 </Text>
                               </View>

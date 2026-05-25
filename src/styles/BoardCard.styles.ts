@@ -1,4 +1,7 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const CARD_WIDTH = (SCREEN_WIDTH - 48) / 1.3; // 화면 너비의 절반
 
 export const boardCardStyles = StyleSheet.create({
   // 행 컨테이너
@@ -20,8 +23,7 @@ export const boardCardStyles = StyleSheet.create({
 
   // 카드 전체 래퍼
   'card-wrapper': {
-    maxWidth: '85%',
-    minWidth: 220,
+    width: CARD_WIDTH,
     borderRadius: 16,
     backgroundColor: '#cfdfff',
     shadowColor: '#3A6FCC',
