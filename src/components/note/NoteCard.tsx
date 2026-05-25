@@ -87,10 +87,8 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
         )}
 
         {hasImages && (
-          <>
-            <View style={styles['section-divider']} />
-            <View style={styles['section-row']}>
-              <Text style={styles['section-label']}>이미지</Text>
+          <View style={styles['section-row']}>
+            <Text style={styles['section-label']}>이미지</Text>
               <View style={styles['images-preview']}>
                 <>
                   {note.imageUris!.slice(0, maxMediaItems).map((imageUrl) => (
@@ -119,14 +117,11 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                 )}
               </View>
             </View>
-          </>
         )}
 
         {hasVideos && (
-          <>
-            <View style={styles['section-divider']} />
-            <View style={styles['section-row']}>
-              <Text style={styles['section-label']}>동영상</Text>
+          <View style={styles['section-row']}>
+            <Text style={styles['section-label']}>동영상</Text>
               <View style={styles['videos-preview']}>
                 <>
                   {note.videos!.slice(0, maxMediaItems).map((video) => (
@@ -161,14 +156,11 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                 )}
               </View>
             </View>
-          </>
         )}
 
         {hasFiles && (
-          <>
-            <View style={styles['section-divider']} />
-            <View style={styles['section-row']}>
-              <Text style={styles['section-label']}>파일</Text>
+          <View style={styles['section-row']}>
+            <Text style={styles['section-label']}>파일</Text>
               <View style={styles['files-preview']}>
                 <>
                   {note.files!.slice(0, 5).map((file) => (
@@ -194,7 +186,6 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                 )}
               </View>
             </View>
-          </>
         )}
 
         {hasLinks && (() => {
@@ -208,11 +199,9 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
           };
 
           return (
-            <>
-              <View style={styles['section-divider']} />
-              <View style={styles['section-row']}>
-                <View style={styles['link-header']}>
-                  <Text style={styles['section-label']}>링크</Text>
+            <View style={styles['section-row']}>
+              <View style={styles['link-header']}>
+                <Text style={styles['section-label']}>링크</Text>
                   {urlsToShow.length > maxLinksToShow && (
                     <Text style={styles['link-count']}>+{urlsToShow.length - maxLinksToShow}</Text>
                   )}
@@ -259,8 +248,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                   })}
                 </View>
               </View>
-            </>
-          );
+            );
         })()}
       </TouchableOpacity>
 
