@@ -184,7 +184,7 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                       <View style={styles['card-section-row']}>
                                         <Text style={styles['card-section-label']}>이미지</Text>
                                         <View style={styles['card-images-preview']}>
-                                          {note.imageUris!.slice(0, 2).map((imageUrl, idx) => (
+                                          {note.imageUris!.slice(0, 3).map((imageUrl, idx) => (
                                             <CardImageThumbnail
                                               key={`${note.id}-img-${idx}`}
                                               imageUrl={imageUrl}
@@ -193,7 +193,7 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                               }}
                                             />
                                           ))}
-                                          {(note.imageUris!.length ?? 0) > 2 && (
+                                          {(note.imageUris!.length ?? 0) > 3 && (
                                             <Pressable
                                               onPress={() => {
                                                 openImageViewer(note.imageUris!);
@@ -203,7 +203,7 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                                 pressed && styles['card-image-more-pressed'],
                                               ]}>
                                               <Text style={styles['card-image-more-text']}>
-                                                +{note.imageUris!.length - 2}
+                                                +{note.imageUris!.length - 3}
                                               </Text>
                                             </Pressable>
                                           )}
@@ -216,7 +216,7 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                       <View style={styles['card-section-row']}>
                                         <Text style={styles['card-section-label']}>동영상</Text>
                                         <View style={styles['card-videos-preview']}>
-                                          {(note.videos || note.videoUris || [])!.slice(0, 2).map((video, idx) => {
+                                          {(note.videos || note.videoUris || [])!.slice(0, 3).map((video, idx) => {
                                             const videoUrl = typeof video === 'string' ? video : video.url;
                                             const thumbnailUrl = typeof video === 'string' ? undefined : video.thumbnailUrl;
                                             return (
@@ -244,9 +244,9 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                               </Pressable>
                                             );
                                           })}
-                                          {((note.videos?.length ?? 0) + (note.videoUris?.length ?? 0)) > 2 && (
+                                          {((note.videos?.length ?? 0) + (note.videoUris?.length ?? 0)) > 3 && (
                                             <Text style={styles['card-video-more']}>
-                                              +{((note.videos?.length ?? 0) + (note.videoUris?.length ?? 0)) - 2}
+                                              +{((note.videos?.length ?? 0) + (note.videoUris?.length ?? 0)) - 3}
                                             </Text>
                                           )}
                                         </View>

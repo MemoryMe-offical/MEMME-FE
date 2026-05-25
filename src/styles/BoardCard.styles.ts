@@ -228,8 +228,8 @@ export const boardCardStyles = StyleSheet.create({
   },
 
   'card-image-thumbnail': {
-    width: 56,
-    height: 56,
+    width: 48,
+    height: 48,
     borderRadius: 8,
     backgroundColor: '#EEF3FF',
   },
@@ -239,8 +239,8 @@ export const boardCardStyles = StyleSheet.create({
   },
 
   'card-image-more': {
-    width: 56,
-    height: 56,
+    width: 48,
+    height: 48,
     borderRadius: 8,
     backgroundColor: '#F0F4FF',
     alignItems: 'center',
@@ -252,7 +252,7 @@ export const boardCardStyles = StyleSheet.create({
   },
 
   'card-image-more-text': {
-    fontSize: 10,
+    fontSize: 12,
     fontWeight: '600',
     color: '#588DFF',
     fontFamily: 'PretendardVariable',
@@ -268,8 +268,8 @@ export const boardCardStyles = StyleSheet.create({
   },
 
   'card-video-thumbnail': {
-    width: 56,
-    height: 56,
+    width: 48,
+    height: 48,
     borderRadius: 8,
     backgroundColor: '#EEF3FF',
     alignItems: 'center',
@@ -281,8 +281,8 @@ export const boardCardStyles = StyleSheet.create({
   },
 
   'card-video-thumbnail-placeholder': {
-    width: 56,
-    height: 56,
+    width: 48,
+    height: 48,
     borderRadius: 8,
     backgroundColor: '#EEF3FF',
     alignItems: 'center',
@@ -294,7 +294,7 @@ export const boardCardStyles = StyleSheet.create({
   },
 
   'card-video-more': {
-    fontSize: 11,
+    fontSize: 12,
     color: '#AABBCC',
     fontFamily: 'PretendardVariable',
     paddingHorizontal: 0,
@@ -389,7 +389,7 @@ export const boardCardStyles = StyleSheet.create({
     color: '#AABBCC',
     fontFamily: 'PretendardVariable',
     lineHeight: 11,
-    padding: 4
+    paddingTop: 6
   },
 
   // 링크 컨테이너
