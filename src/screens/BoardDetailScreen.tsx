@@ -249,12 +249,12 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
 
           {hasNotes
             ? (board.notes!.map(note => (
-                <NoteCard
-                  key={note.id}
-                  note={note}
-                  onPress={() => handleNotePress(note)}
-                />
-              )))
+              <NoteCard
+                key={note.id}
+                note={note}
+                onPress={() => handleNotePress(note)}
+              />
+            )))
             : (
               <TouchableOpacity style={styles.emptyState} onPress={handleAddNote} activeOpacity={0.7}>
                 <Text style={styles.emptyStateTitle}>아직 노트가 없어요.</Text>
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 12,
   },
-  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 },
+  tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 10 },
   tagChip: { backgroundColor: '#E8EEFF', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 4 },
   tagText: { fontSize: 11, color: '#588DFF', fontFamily: 'PretendardVariable', fontWeight: '500' },
   notesSection: { gap: 6 },
