@@ -306,7 +306,6 @@ const MemoConvertSheet = ({
                     textAlignVertical="top"
                   />
                 </View>
-                <View style={styles['form-divider']} />
                 <View style={styles['form-row']}>
                   <Text style={styles['form-label']}>
                     첫 번째 노트 이름 <Text style={styles.required}>*</Text>

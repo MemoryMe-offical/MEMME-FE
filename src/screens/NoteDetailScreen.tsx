@@ -685,7 +685,6 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
             maxLength={200}
             returnKeyType="next"
           />
-          <View style={styles.divider} />
 
           {/* 본문 */}
           <Text style={styles['input-label']}>내용</Text>
@@ -705,8 +704,6 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           />
 
           {/* 첨부 섹션 */}
-          <View style={styles['section-divider']} />
-
           <View style={styles['attachments-container']}>
             {/* 이미지 */}
             <View style={styles['subsection-header']}>

@@ -160,7 +160,6 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
             placeholderTextColor="#AABBCC"
             maxLength={100}
           />
-          <View style={styles.divider} />
 
           {/* 설명 */}
           <TextInput

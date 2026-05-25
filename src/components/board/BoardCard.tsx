@@ -179,7 +179,6 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                 <View style={styles['card-attachments-container']}>
                                   {(note.imageUris?.length ?? 0) > 0 && (
                                     <>
-                                      <View style={styles['card-section-divider']} />
                                       <View style={styles['card-section-row']}>
                                         <Text style={styles['card-section-label']}>이미지</Text>
                                         <View style={styles['card-images-preview']}>
@@ -212,7 +211,6 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                   )}
                                   {((note.videos?.length ?? 0) > 0 || (note.videoUris?.length ?? 0) > 0) && (
                                     <>
-                                      <View style={styles['card-section-divider']} />
                                       <View style={styles['card-section-row']}>
                                         <Text style={styles['card-section-label']}>동영상</Text>
                                         <View style={styles['card-videos-preview']}>
@@ -255,7 +253,6 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                   )}
                                   {(note.files?.length ?? 0) > 0 && (
                                     <>
-                                      <View style={styles['card-section-divider']} />
                                       <View style={styles['card-section-row']}>
                                         <Text style={styles['card-section-label']}>파일</Text>
                                         <View style={styles['card-files-preview']}>
