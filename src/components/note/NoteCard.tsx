@@ -94,10 +94,14 @@ const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: Not
         )}
         <Text style={[styles.title, (selectionMode || isSelected) && styles.titleWithCheckbox]} numberOfLines={2}>{note.title}</Text>
 
-        {!!note.content && (
+        {note.content ? (
           <View style={[styles['section-row'], { marginTop: 16, ...((!hasImages && !hasVideos && !hasFiles && !hasLinks) && { marginBottom: 16 }) }]}>
             <Text style={styles['section-label']}>내용</Text>
             <Text style={styles['content-text']}>{note.content}</Text>
+          </View>
+        ) : (!hasImages && !hasVideos && !hasFiles && !hasLinks) && (
+          <View style={[styles['section-row'], { marginTop: 16, marginBottom: 16 }]}>
+            <Text style={styles['empty-content-text']}>아직 내용이 없습니다</Text>
           </View>
         )}
 
@@ -446,6 +450,12 @@ const styles = StyleSheet.create({
   'content-text': {
     fontSize: 11,
     color: '#333333',
+    fontFamily: 'PretendardVariable',
+    lineHeight: 18,
+  },
+  'empty-content-text': {
+    fontSize: 11,
+    color: '#AABBCC',
     fontFamily: 'PretendardVariable',
     lineHeight: 18,
   },

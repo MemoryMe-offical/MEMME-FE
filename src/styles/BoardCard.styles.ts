@@ -105,6 +105,14 @@ export const boardCardStyles = StyleSheet.create({
     lineHeight: 18,
   },
 
+  // 빈 본문 텍스트
+  'card-empty-content-text': {
+    fontSize: 11,
+    color: '#AABBCC',
+    fontFamily: 'PretendardVariable',
+    lineHeight: 18,
+  },
+
   // 접힌 상태 노트 제목 행
   'card-collapsed-subtitle-row': {
     marginHorizontal: 10,

@@ -168,12 +168,16 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                             onPress={() => onDetailPress(item, note.id)}
                             activeOpacity={0.7}
                             style={{ paddingVertical: 8 }}>
-                            {!!note.content && (
+                            {note.content ? (
                               <View style={styles['card-section-row']}>
                                 <Text style={styles['card-section-label']}>내용</Text>
                                 <Text style={styles['card-content-text']} numberOfLines={10}>
                                   {note.content}
                                 </Text>
+                              </View>
+                            ) : !((note.imageUris?.length ?? 0) > 0 || (note.videos?.length ?? 0) > 0 || note.url || (note.files?.length ?? 0) > 0) && (
+                              <View style={styles['card-section-row']}>
+                                <Text style={styles['card-empty-content-text']}>아직 내용이 없습니다</Text>
                               </View>
                             )}
                             {((note.imageUris?.length ?? 0) > 0 || (note.videos?.length ?? 0) > 0 || note.url || (note.files?.length ?? 0) > 0) && (
