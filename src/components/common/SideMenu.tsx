@@ -82,19 +82,38 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
   // OG 데이터 자동 로드 (NoteDetailScreen과 동일한 방식)
   useEffect(() => {
     const loadOgDataForLinks = async () => {
-      const linksNeedingOgData = mediaData.links.filter(link => !link.hasOgData);
+      const boards = items.filter(i => i.type === 'board') as Board[];
 
-      for (const link of linksNeedingOgData) {
-        if (cachedOgData[link.url]) continue;
+      for (const board of boards) {
+        for (const note of (board.notes ?? [])) {
+          // 배열 형식의 URLs 처리
+          if (note.urls && note.urls.length > 0) {
+            for (let idx = 0; idx < note.urls.length; idx++) {
+              const url = note.urls[idx];
+              if (cachedOgData[url] || note.ogDatas?.[idx]) continue;
 
-        try {
-          const ogData = await fetchOgData(link.url);
-          setCachedOgData(prev => ({
-            ...prev,
-            [link.url]: ogData,
-          }));
-        } catch (error) {
-          console.error('Failed to fetch OG data for link:', link.url, error);
+              try {
+                const ogData = await fetchOgData(url);
+                setCachedOgData(prev => ({
+                  ...prev,
+                  [url]: ogData,
+                }));
+              } catch (error) {
+                console.error('Failed to fetch OG data for link:', url, error);
+              }
+            }
+          } else if (note.url && !cachedOgData[note.url] && !note.ogData) {
+            // 레거시 단수 형식 호환
+            try {
+              const ogData = await fetchOgData(note.url);
+              setCachedOgData(prev => ({
+                ...prev,
+                [note.url]: ogData,
+              }));
+            } catch (error) {
+              console.error('Failed to fetch OG data for link:', note.url, error);
+            }
+          }
         }
       }
     };
@@ -121,7 +140,19 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
         if (note.files) {
           files.push(...note.files);
         }
-        if (note.url) {
+        // 배열 형식의 URLs 처리
+        if (note.urls && note.urls.length > 0) {
+          note.urls.forEach((url, idx) => {
+            const ogData = (note.ogDatas?.[idx]) || cachedOgData[url];
+            links.push({
+              url,
+              title: ogData?.title || new URL(url).hostname,
+              imageUrl: ogData?.imageUrl,
+              hasOgData: !!(note.ogDatas?.[idx] || cachedOgData[url]),
+            });
+          });
+        } else if (note.url) {
+          // 레거시 단수 형식 호환
           const ogData = note.ogData || cachedOgData[note.url];
           links.push({
             url: note.url,

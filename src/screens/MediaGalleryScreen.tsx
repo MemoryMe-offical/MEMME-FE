@@ -8,6 +8,7 @@ import {
   Dimensions,
   Linking,
   Modal,
+  Image,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -125,18 +126,37 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
                 file,
               });
             });
-          } else if (galleryType === 'links' && note.url) {
-            const cachedOg = cachedOgData[`link-${board.id}-${note.id}`];
-            items.push({
-              id: `link-${board.id}-${note.id}`,
-              uri: cachedOg?.imageUrl || note.ogData?.imageUrl || '',
-              title: cachedOg?.title || note.ogData?.title || note.url,
-              type: 'link',
-              createdAt: board.updatedAt || board.createdAt,
-              note,
-              board,
-              ogData: cachedOg || note.ogData,
-            });
+          } else if (galleryType === 'links') {
+            // 배열 형식의 URLs 처리
+            if (note.urls && note.urls.length > 0) {
+              note.urls.forEach((url, idx) => {
+                const ogData = note.ogDatas?.[idx];
+                const cachedOg = cachedOgData[`link-${board.id}-${note.id}-${idx}`];
+                items.push({
+                  id: `link-${board.id}-${note.id}-${idx}`,
+                  uri: url,
+                  title: cachedOg?.title || ogData?.title || url,
+                  type: 'link',
+                  createdAt: board.updatedAt || board.createdAt,
+                  note: { ...note, url } as Note,
+                  board,
+                  ogData: cachedOg || ogData,
+                });
+              });
+            } else if (note.url) {
+              // 레거시 단수 형식 호환
+              const cachedOg = cachedOgData[`link-${board.id}-${note.id}`];
+              items.push({
+                id: `link-${board.id}-${note.id}`,
+                uri: note.url,
+                title: cachedOg?.title || note.ogData?.title || note.url,
+                type: 'link',
+                createdAt: board.updatedAt || board.createdAt,
+                note,
+                board,
+                ogData: cachedOg || note.ogData,
+              });
+            }
           }
         });
       });
@@ -176,18 +196,35 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
 
       for (const board of boards) {
         for (const note of (board.notes ?? [])) {
-          if (!note.url) continue;
+          // 배열 형식의 URLs 처리
+          if (note.urls && note.urls.length > 0) {
+            for (let idx = 0; idx < note.urls.length; idx++) {
+              const url = note.urls[idx];
+              const linkId = `link-${board.id}-${note.id}-${idx}`;
+              if (newCachedOgData[linkId] || note.ogDatas?.[idx]) continue;
 
-          const linkId = `link-${board.id}-${note.id}`;
-          if (newCachedOgData[linkId] || note.ogData) continue;
-
-          try {
-            const ogData = await fetchOgData(note.url);
-            if (ogData) {
-              newCachedOgData[linkId] = ogData;
+              try {
+                const ogData = await fetchOgData(url);
+                if (ogData) {
+                  newCachedOgData[linkId] = ogData;
+                }
+              } catch (error) {
+                console.error(`Failed to fetch OG data for ${url}:`, error);
+              }
             }
-          } catch (error) {
-            console.error(`Failed to fetch OG data for ${note.url}:`, error);
+          } else if (note.url) {
+            // 레거시 단수 형식 호환
+            const linkId = `link-${board.id}-${note.id}`;
+            if (newCachedOgData[linkId] || note.ogData) continue;
+
+            try {
+              const ogData = await fetchOgData(note.url);
+              if (ogData) {
+                newCachedOgData[linkId] = ogData;
+              }
+            } catch (error) {
+              console.error(`Failed to fetch OG data for ${note.url}:`, error);
+            }
           }
         }
       }
@@ -286,7 +323,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
   };
 
   const renderLinkItem = ({ item }: { item: MediaItem }) => {
-    const linkUrl = item.note?.url || '';
+    const linkUrl = item.uri || '';
     const linkTitle = item.ogData?.title || item.title || linkUrl;
 
     const handleOpenLink = async () => {
@@ -308,9 +345,9 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
         style={[styles.linkItem, { width: THUMBNAIL_SIZE }]}
         onPress={handleOpenLink}
       >
-        {item.uri ? (
+        {item.ogData?.imageUrl ? (
           <Image
-            source={{ uri: item.uri }}
+            source={{ uri: item.ogData.imageUrl }}
             style={styles.linkImage}
           />
         ) : (
