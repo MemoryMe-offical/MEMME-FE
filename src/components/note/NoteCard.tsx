@@ -8,6 +8,9 @@ import LoadingImage from '../common/LoadingImage';
 interface NoteCardProps {
   note: Note;
   onPress?: () => void;
+  isSelected?: boolean;
+  onLongPress?: () => void;
+  selectionMode?: boolean;
 }
 
 const ImageThumbnail = ({ imageUrl, onPress }: { imageUrl: string; onPress: () => void }) => {
@@ -27,7 +30,7 @@ const ImageThumbnail = ({ imageUrl, onPress }: { imageUrl: string; onPress: () =
   );
 };
 
-const NoteCard = ({ note, onPress }: NoteCardProps) => {
+const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: NoteCardProps) => {
   const { width: windowWidth } = useWindowDimensions();
   const [ogDataCache, setOgDataCache] = useState<Record<string, OgData>>({});
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
@@ -77,8 +80,19 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
 
   return (
     <>
-      <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
-        <Text style={styles.title} numberOfLines={2}>{note.title}</Text>
+      <TouchableOpacity
+        style={[styles.container, isSelected && styles.containerSelected]}
+        onPress={onPress}
+        onLongPress={onLongPress}
+        activeOpacity={0.7}>
+        {(selectionMode || isSelected) && (
+          <View style={styles.checkboxContainer}>
+            <View style={[styles.checkbox, !isSelected && styles.checkboxEmpty]}>
+              <Text style={styles.checkmark}>{isSelected ? '✓' : ''}</Text>
+            </View>
+          </View>
+        )}
+        <Text style={[styles.title, (selectionMode || isSelected) && styles.titleWithCheckbox]} numberOfLines={2}>{note.title}</Text>
 
         {!!note.content && (
           <View style={[styles['section-row'], { marginTop: 16, ...((!hasImages && !hasVideos && !hasFiles && !hasLinks) && { marginBottom: 16 }) }]}>
@@ -377,6 +391,35 @@ const styles = StyleSheet.create({
     borderColor: '#E4ECFF',
     gap: 10,
   },
+  containerSelected: {
+    backgroundColor: '#F0F4FF',
+    borderColor: '#588DFF',
+    borderWidth: 2,
+  },
+  checkboxContainer: {
+    position: 'absolute',
+    left: 10,
+    top: 10,
+    zIndex: 10,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    backgroundColor: '#588DFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxEmpty: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 2,
+    borderColor: '#588DFF',
+  },
+  checkmark: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   title: {
     fontSize: 14,
     fontWeight: '700',
@@ -385,6 +428,9 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginTop: 10,
     marginBottom: 0,
+  },
+  titleWithCheckbox: {
+    marginLeft: 28,
   },
   'section-row': {
     gap: 6,

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Alert,
   StyleSheet,
   ActivityIndicator,
+  BackHandler,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
@@ -21,6 +22,7 @@ import {
 } from '../components/common/Icons';
 import TagInput from '../components/common/TagInput';
 import NoteCard from '../components/note/NoteCard';
+import NoteActionBar from '../components/board/NoteActionBar';
 import * as boardService from '../services/boardService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BoardDetail'>;
@@ -44,6 +46,10 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
   const [editTitle, setEditTitle] = useState(initialBoard.title);
   const [editDescription, setEditDescription] = useState(initialBoard.description ?? '');
   const [editTags, setEditTags] = useState<string[]>(initialBoard.tags ?? []);
+
+  // 노트 선택 상태
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedNotes, setSelectedNotes] = useState<string[]>([]);
 
   const enterEdit = () => {
     setEditTitle(board.title);
@@ -99,12 +105,48 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
     });
   };
 
+  const handleToggleSelectNote = (noteId: string) => {
+    setSelectedNotes(prev =>
+      prev.includes(noteId)
+        ? prev.filter(id => id !== noteId)
+        : [...prev, noteId]
+    );
+  };
+
   const handleNotePress = (note: Note) => {
-    navigation.navigate('NoteDetail', {
-      note,
-      boardId: board.id,
-      boardTitle: board.title,
-    });
+    if (selectionMode) {
+      handleToggleSelectNote(note.id);
+    } else {
+      navigation.navigate('NoteDetail', {
+        note,
+        boardId: board.id,
+        boardTitle: board.title,
+      });
+    }
+  };
+
+  const handleNoteLongPress = (note: Note) => {
+    if (!selectionMode) {
+      setSelectionMode(true);
+      setSelectedNotes([note.id]);
+    }
+  };
+
+  const handleExitSelectionMode = () => {
+    setSelectionMode(false);
+    setSelectedNotes([]);
+  };
+
+  const handleNoteDeleteSuccess = async () => {
+    const updatedBoard = await boardService.fetchBoard(board.id);
+    setBoard(updatedBoard);
+    handleExitSelectionMode();
+  };
+
+  const handleNoteMoveSuccess = async () => {
+    const updatedBoard = await boardService.fetchBoard(board.id);
+    setBoard(updatedBoard);
+    handleExitSelectionMode();
   };
 
   useFocusEffect(
@@ -121,6 +163,22 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
       refreshBoard();
     }, [board.id])
   );
+
+  useEffect(() => {
+    if (selectionMode) {
+      const backAction = () => {
+        handleExitSelectionMode();
+        return true;
+      };
+
+      const backHandler = BackHandler.addEventListener(
+        'hardwareBackPress',
+        backAction,
+      );
+
+      return () => backHandler.remove();
+    }
+  }, [selectionMode]);
 
   // ── 편집 모드 ──
   if (isEditing) {
@@ -253,6 +311,9 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
                 key={note.id}
                 note={note}
                 onPress={() => handleNotePress(note)}
+                onLongPress={() => handleNoteLongPress(note)}
+                isSelected={selectedNotes.includes(note.id)}
+                selectionMode={selectionMode}
               />
             )))
             : (
@@ -263,6 +324,17 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
             )}
         </View>
       </ScrollView>
+
+      {selectionMode && (
+        <NoteActionBar
+          selectedCount={selectedNotes.length}
+          currentBoardId={board.id}
+          onDeleteSuccess={handleNoteDeleteSuccess}
+          onMoveSuccess={handleNoteMoveSuccess}
+          onCancel={handleExitSelectionMode}
+          selectedNoteIds={selectedNotes}
+        />
+      )}
     </SafeAreaView>
   );
 };

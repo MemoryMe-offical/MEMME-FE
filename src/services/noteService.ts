@@ -174,3 +174,26 @@ export const moveNote = async (
     throw error;
   }
 };
+
+/**
+ * 여러 노트를 다른 보드로 이동
+ */
+export const moveNotes = async (
+  sourceBoard: string,
+  noteUids: string[],
+  targetBoard: string
+): Promise<void> => {
+  try {
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/boards/${sourceBoard}/notes/move`, {
+      method: 'PATCH',
+      body: JSON.stringify({ noteUids, targetBoardUid: targetBoard }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+  } catch (error) {
+    console.error('Failed to move notes:', error);
+    throw error;
+  }
+};

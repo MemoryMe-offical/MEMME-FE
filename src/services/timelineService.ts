@@ -74,7 +74,6 @@ const transformTimelineItem = (item: any): TimelineItem => {
         url: note.url,
         ogData: note.ogData,
       };
-      console.log('Transformed note:', transformedNote);
       return transformedNote;
     }),
   };
