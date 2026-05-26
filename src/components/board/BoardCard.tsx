@@ -132,14 +132,18 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
 
         {/* 펼쳐진 상태 */}
         {isExpanded && (
-          <View style={styles['card-inner-card']}>
+          <View style={[
+            styles['card-inner-card'],
+            (!item.tags || item.tags.length === 0) && { marginTop: 10 }
+          ]}>
             {hasNotes
               ? (
                 <View>
                   {item.notes!.slice(0, 3).map((note, idx) => {
                     const isNoteExpanded = expandedNoteId === note.id;
+                    const isLastNote = idx === Math.min(2, item.notes!.length - 1);
                     return (
-                      <View key={note.id} style={styles['note-card-wrapper']}>
+                      <View key={note.id} style={[styles['note-card-wrapper'], isLastNote && { marginBottom: 0 }]}>
                         <TouchableOpacity
                           style={styles['sub-accordion-header']}
                           onPress={() => toggleNote(note.id)}
