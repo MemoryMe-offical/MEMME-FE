@@ -999,7 +999,6 @@ const MainScreen = () => {
                   setLinkDetectionModalVisible(false);
                   setDetectedLink(null);
                   setLinkOgData(null);
-                  setInputText('');
                 }}
                 style={{
                   flex: 1,
