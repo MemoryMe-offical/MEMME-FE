@@ -13,7 +13,7 @@ interface ApiResponse<T> {
 /**
  * 빠른 메모 생성
  */
-export const createMemo = async (text: string): Promise<Memo> => {
+export const createMemo = async (text: string, urls?: string[], ogDatas?: any[]): Promise<Memo> => {
   try {
     const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/memos`, {
       method: 'POST',
@@ -31,6 +31,8 @@ export const createMemo = async (text: string): Promise<Memo> => {
       userId: memo.userId || '',
       type: 'memo',
       text: memo.text,
+      urls: memo.urls || urls,
+      ogDatas: memo.ogDatas || ogDatas,
       bookmarked: memo.bookmarked ?? false,
       createdAt: memo.createdAt,
     };
@@ -79,6 +81,8 @@ export const toggleMemoBookmark = async (memoUid: string, bookmarked?: boolean):
       userId: memo.userId || '',
       type: 'memo',
       text: memo.text,
+      urls: memo.urls,
+      ogDatas: memo.ogDatas,
       bookmarked: memo.bookmarked ?? false,
       createdAt: memo.createdAt,
     };

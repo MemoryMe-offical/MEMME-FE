@@ -411,9 +411,9 @@ const MainScreen = () => {
     return null;
   };
 
-  const createMemoWithoutLink = async (text: string) => {
+  const createMemoWithoutLink = async (text: string, urls?: string[], ogDatas?: any[]) => {
     try {
-      const newMemo = await memoService.createMemo(text);
+      const newMemo = await memoService.createMemo(text, urls, ogDatas);
       shouldScrollToEnd.current = true;
       setItems(prev => [...prev, newMemo]);
       setInputText('');
@@ -428,6 +428,8 @@ const MainScreen = () => {
     if (!detectedLink || !userId) return;
 
     const text = inputText.trim();
+    // 링크만 입력된 경우 텍스트를 빈 문자열로 처리
+    const memoText = isLinkOnly(text) ? '' : text;
 
     try {
       if (selectedBoard) {
@@ -458,8 +460,8 @@ const MainScreen = () => {
         setPendingLinks(prev => [...prev, linkWithOgData]);
       }
 
-      // 메모도 생성
-      await createMemoWithoutLink(text);
+      // 메모도 생성 (링크 정보와 함께, 링크만인 경우 텍스트는 공백)
+      await createMemoWithoutLink(memoText, [detectedLink], linkOgData ? [linkOgData] : undefined);
     } catch (error) {
       console.error('Failed to handle link:', error);
       Alert.alert('오류', '링크 처리에 실패했습니다.');
@@ -516,6 +518,15 @@ const MainScreen = () => {
         flatListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
       }
     }
+  };
+
+  const isLinkOnly = (text: string): boolean => {
+    // 텍스트가 순수 URL로만 이루어져 있는지 확인
+    const trimmed = text.trim();
+    if (!trimmed) return false;
+
+    const urlRegex = /^(?:https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z]{2,}(?:[^\s]*)?)$/;
+    return urlRegex.test(trimmed);
   };
 
   const handleSend = async () => {

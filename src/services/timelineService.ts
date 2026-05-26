@@ -34,6 +34,8 @@ const transformTimelineItem = (item: any): TimelineItem => {
       ...base,
       type: 'memo' as const,
       text: item.text,
+      urls: item.urls,
+      ogDatas: item.ogDatas,
     };
   }
 

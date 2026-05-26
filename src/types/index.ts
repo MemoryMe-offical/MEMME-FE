@@ -12,6 +12,8 @@ export interface BaseItem {
 export interface Memo extends BaseItem {
   type: 'memo';
   text: string;
+  urls?: string[];
+  ogDatas?: OgData[];
 }
 
 // ── 보드 ────────────────────────────────────
