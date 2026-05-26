@@ -85,7 +85,10 @@ const MainScreen = () => {
 
   const [recentBoards, setRecentBoards] = useState<Board[]>([]);
 
+  // 보드 목록 로드 (시간이 걸릴 수 있으므로 loadTimeline 이후에 시도)
   useEffect(() => {
+    if (!loaded) return;
+
     const loadRecentBoards = async () => {
       try {
         const response = await timelineService.fetchTimeline({
@@ -96,12 +99,13 @@ const MainScreen = () => {
         setRecentBoards(response.items as Board[]);
       } catch (error) {
         console.error('Failed to load recent boards:', error);
-        setRecentBoards((items.filter(i => i.type === 'board') as Board[]).slice(0, 5));
+        const boards = (items.filter(i => i.type === 'board') as Board[]).slice(0, 5);
+        setRecentBoards(boards);
       }
     };
 
     loadRecentBoards();
-  }, []);
+  }, [loaded, items]);
 
   // 저장소 사용량 계산 (GB 단위)
   const storageUsed = useMemo(() => {
@@ -454,19 +458,24 @@ const MainScreen = () => {
 
   const handlePendingLinkAddToBoard = async (link: PendingLink, board: Board) => {
     try {
+      // 1. 노트 생성
       const createdNote = await noteService.createNote(board.id, {
         title: link.ogData?.title || link.url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || link.url,
-        url: link.url,
+        content: link.ogData?.description,
+        urls: [link.url],
+        ogDatas: link.ogData ? [link.ogData] : undefined,
       });
 
+      // 2. Pending link 삭제 (먼저 API 호출)
+      await pendingLinkService.removePendingLink(link.id);
+
+      // 3. 모두 성공하면 UI 업데이트
       const updatedBoard: Board = {
         ...board,
         notes: [...(board.notes ?? []), createdNote],
         updatedAt: new Date().toISOString(),
       };
       setItems(prev => prev.map(i => i.id === board.id ? updatedBoard : i));
-
-      await pendingLinkService.removePendingLink(link.id);
       setPendingLinks(prev => prev.filter(l => l.id !== link.id));
     } catch (error) {
       console.error('Failed to add note to board:', error);
@@ -474,9 +483,14 @@ const MainScreen = () => {
     }
   };
 
-  const handlePendingLinkDismiss = (linkId: string) => {
-    pendingLinkService.removePendingLink(linkId);
-    setPendingLinks(prev => prev.filter(l => l.id !== linkId));
+  const handlePendingLinkDismiss = async (linkId: string) => {
+    try {
+      await pendingLinkService.removePendingLink(linkId);
+      setPendingLinks(prev => prev.filter(l => l.id !== linkId));
+    } catch (error) {
+      console.error('Failed to dismiss pending link:', error);
+      Alert.alert('오류', '링크 삭제에 실패했습니다.');
+    }
   };
 
   return (

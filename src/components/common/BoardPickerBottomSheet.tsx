@@ -40,14 +40,14 @@ const formatRelativeTime = (iso: string): string => {
 const BoardPickerBottomSheet = ({
   visible,
   title,
-  boards: initialBoards = [],
+  boards: initialBoards,
   excludeBoardId,
   onSelect,
   onClose,
 }: BoardPickerBottomSheetProps) => {
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
-  const [boards, setBoards] = useState<Board[]>(initialBoards);
+  const [boards, setBoards] = useState<Board[]>(initialBoards ?? []);
 
   useEffect(() => {
     if (visible) {
@@ -63,13 +63,15 @@ const BoardPickerBottomSheet = ({
         sort: 'updatedAt',
         order: 'desc',
       });
-      setBoards((data as Board[]) || initialBoards);
+      const allBoards = (Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : [])) as Board[];
+      setBoards(allBoards.length > 0 ? allBoards : (initialBoards ?? []));
     } catch (error) {
-      setBoards(initialBoards);
+      console.error('Failed to load boards:', error);
+      setBoards(initialBoards ?? []);
     }
   };
 
-  const filteredBoards = boards
+  const filteredBoards = (boards ?? [])
     .filter(b => b.id !== excludeBoardId)
     .filter(b =>
       searchQuery.trim()
