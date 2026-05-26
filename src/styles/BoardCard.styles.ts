@@ -186,7 +186,7 @@ export const boardCardStyles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 14,
     paddingTop: 8,
-    paddingBottom: 2,
+    paddingBottom: 10,
   },
 
   'card-tag-chip': {
