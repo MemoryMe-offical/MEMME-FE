@@ -54,6 +54,12 @@ const MainScreen = () => {
   const flatListRef = useRef<FlatList<TimelineItem>>(null);
   const shouldScrollToEnd = useRef(false);
 
+  // 링크 감지 관련 state
+  const [detectedLink, setDetectedLink] = useState<string | null>(null);
+  const [linkDetectionModalVisible, setLinkDetectionModalVisible] = useState(false);
+  const [linkOgData, setLinkOgData] = useState<any>(null);
+  const [isFetchingOg, setIsFetchingOg] = useState(false);
+
   // 로그인한 사용자 ID 로드
   useEffect(() => {
     const loadUserId = async () => {
@@ -392,6 +398,78 @@ const MainScreen = () => {
     setConvertTargetMemo(null);
   };
 
+  const detectUrl = (text: string): string | null => {
+    const urlRegex = /https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z]{2,}(?:[^\s]*)?/g;
+    const matches = text.match(urlRegex);
+    if (matches && matches.length > 0) {
+      let url = matches[0];
+      if (!url.startsWith('http')) {
+        url = 'https://' + url;
+      }
+      return url;
+    }
+    return null;
+  };
+
+  const createMemoWithoutLink = async (text: string) => {
+    try {
+      const newMemo = await memoService.createMemo(text);
+      shouldScrollToEnd.current = true;
+      setItems(prev => [...prev, newMemo]);
+      setInputText('');
+    } catch (error) {
+      console.error('Failed to create memo:', error);
+      Alert.alert('오류', '메모 저장에 실패했습니다.');
+      setInputText(text);
+    }
+  };
+
+  const handleConfirmLink = async (selectedBoard?: Board) => {
+    if (!detectedLink || !userId) return;
+
+    const text = inputText.trim();
+
+    try {
+      if (selectedBoard) {
+        // 보드에 노트로 추가
+        const createdNote = await noteService.createNote(selectedBoard.id, {
+          title: linkOgData?.title || detectedLink.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || detectedLink,
+          content: linkOgData?.description,
+          urls: [detectedLink],
+          ogDatas: linkOgData ? [linkOgData] : undefined,
+        });
+
+        const updatedBoard: Board = {
+          ...selectedBoard,
+          notes: [...(selectedBoard.notes ?? []), createdNote],
+          updatedAt: new Date().toISOString(),
+        };
+        setItems(prev => prev.map(i => i.id === selectedBoard.id ? updatedBoard : i));
+      } else {
+        // Pending link로 저장
+        const link = await pendingLinkService.addPendingLink({
+          userId,
+          url: detectedLink,
+          ogData: linkOgData || undefined,
+          receivedAt: new Date().toISOString(),
+        });
+
+        const linkWithOgData = { ...link, ogData: linkOgData };
+        setPendingLinks(prev => [...prev, linkWithOgData]);
+      }
+
+      // 메모도 생성
+      await createMemoWithoutLink(text);
+    } catch (error) {
+      console.error('Failed to handle link:', error);
+      Alert.alert('오류', '링크 처리에 실패했습니다.');
+    }
+
+    setLinkDetectionModalVisible(false);
+    setDetectedLink(null);
+    setLinkOgData(null);
+  };
+
   const handleContextDelete = () => {
     if (!contextMenuItem) return;
     const id = contextMenuItem.id;
@@ -443,16 +521,28 @@ const MainScreen = () => {
   const handleSend = async () => {
     if (!inputText.trim()) return;
     const text = inputText.trim();
-    setInputText('');
 
-    try {
-      const newMemo = await memoService.createMemo(text);
-      shouldScrollToEnd.current = true;
-      setItems(prev => [...prev, newMemo]);
-    } catch (error) {
-      console.error('Failed to create memo:', error);
-      Alert.alert('오류', '메모 저장에 실패했습니다.');
-      setInputText(text);
+    // 링크 감지
+    const detectedUrl = detectUrl(text);
+
+    if (detectedUrl) {
+      // OG 데이터 조회 시작
+      setIsFetchingOg(true);
+      try {
+        const ogData = await fetchOgData(detectedUrl);
+        setDetectedLink(detectedUrl);
+        setLinkOgData(ogData);
+        setLinkDetectionModalVisible(true);
+      } catch (error) {
+        console.error('Failed to fetch OG data:', error);
+        // OG 데이터 조회 실패 시 그냥 메모 생성
+        await createMemoWithoutLink(text);
+      } finally {
+        setIsFetchingOg(false);
+      }
+    } else {
+      // 링크가 없으면 그냥 메모 생성
+      await createMemoWithoutLink(text);
     }
   };
 
@@ -785,6 +875,161 @@ const MainScreen = () => {
           onClose={handleMemoConvertCancel}
         />
       )}
+
+      {/* 링크 감지 모달 */}
+      <Modal
+        visible={linkDetectionModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
+          setLinkDetectionModalVisible(false);
+          setDetectedLink(null);
+          setLinkOgData(null);
+        }}>
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
+          activeOpacity={1}
+          onPress={() => {
+            setLinkDetectionModalVisible(false);
+            setDetectedLink(null);
+            setLinkOgData(null);
+          }}>
+          <View
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              paddingTop: 14,
+              paddingHorizontal: 18,
+              paddingBottom: Math.max(insets.bottom, 18),
+              marginTop: 'auto',
+              maxHeight: '80%',
+            }}
+            onStartShouldSetResponder={() => true}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A1A', fontFamily: 'PretendardVariable' }}>
+                링크 감지됨
+              </Text>
+              <TouchableOpacity onPress={() => {
+                setLinkDetectionModalVisible(false);
+                setDetectedLink(null);
+                setLinkOgData(null);
+              }}>
+                <Text style={{ fontSize: 24, color: '#9DAFC8' }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={{ fontSize: 12, color: '#666666', marginBottom: 12, fontFamily: 'PretendardVariable' }}>
+              방금 입력한 텍스트에 링크가 포함되어 있습니다. 어디에 추가할까요?
+            </Text>
+
+            {/* OG 프리뷰 */}
+            {isFetchingOg ? (
+              <View style={{ paddingVertical: 20, alignItems: 'center' }}>
+                <Text style={{ fontSize: 12, color: '#AABBCC', fontFamily: 'PretendardVariable' }}>
+                  링크 정보 불러오는 중...
+                </Text>
+              </View>
+            ) : linkOgData ? (
+              <View style={{
+                backgroundColor: '#F8F9FB',
+                borderRadius: 12,
+                padding: 12,
+                marginBottom: 14,
+                borderWidth: 1,
+                borderColor: '#E8EEF8',
+              }}>
+                {linkOgData.imageUrl && (
+                  <Image
+                    source={{ uri: linkOgData.imageUrl }}
+                    style={{ width: '100%', height: 120, borderRadius: 8, marginBottom: 10 }}
+                  />
+                )}
+                <Text style={{ fontSize: 13, fontWeight: '600', color: '#1A1A1A', marginBottom: 4, fontFamily: 'PretendardVariable' }}>
+                  {linkOgData.title || detectedLink}
+                </Text>
+                {linkOgData.description && (
+                  <Text style={{ fontSize: 11, color: '#666666', marginBottom: 6, fontFamily: 'PretendardVariable' }} numberOfLines={2}>
+                    {linkOgData.description}
+                  </Text>
+                )}
+                <Text style={{ fontSize: 10, color: '#9DAFC8', fontFamily: 'PretendardVariable' }}>
+                  {linkOgData.siteName || detectedLink}
+                </Text>
+              </View>
+            ) : null}
+
+            <ScrollView showsVerticalScrollIndicator={false} style={{ marginBottom: 12 }}>
+              {/* 보드 선택 옵션 */}
+              <Text style={{ fontSize: 11, fontWeight: '600', color: '#588DFF', marginBottom: 8, fontFamily: 'PretendardVariable' }}>
+                보드에 추가
+              </Text>
+              {recentBoards.length > 0 ? (
+                recentBoards.map((board) => (
+                  <TouchableOpacity
+                    key={board.id}
+                    onPress={() => handleConfirmLink(board)}
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 10,
+                      marginBottom: 8,
+                      borderRadius: 8,
+                      backgroundColor: '#F8F9FB',
+                      borderWidth: 1,
+                      borderColor: '#E8EEF8',
+                    }}>
+                    <Text style={{ fontSize: 12, fontWeight: '500', color: '#1A1A1A', fontFamily: 'PretendardVariable' }}>
+                      {board.title}
+                    </Text>
+                    <Text style={{ fontSize: 10, color: '#9DAFC8', marginTop: 2, fontFamily: 'PretendardVariable' }}>
+                      노트 {board.notes?.length ?? 0}개
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <Text style={{ fontSize: 11, color: '#AABBCC', fontFamily: 'PretendardVariable', textAlign: 'center', paddingVertical: 8 }}>
+                  보드가 없습니다
+                </Text>
+              )}
+            </ScrollView>
+
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity
+                onPress={() => {
+                  setLinkDetectionModalVisible(false);
+                  setDetectedLink(null);
+                  setLinkOgData(null);
+                  setInputText('');
+                }}
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  borderRadius: 8,
+                  borderWidth: 1,
+                  borderColor: '#E8EEF8',
+                  alignItems: 'center',
+                }}>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: '#588DFF', fontFamily: 'PretendardVariable' }}>
+                  취소
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleConfirmLink()}
+                style={{
+                  flex: 1,
+                  paddingVertical: 10,
+                  borderRadius: 8,
+                  backgroundColor: '#588DFF',
+                  alignItems: 'center',
+                }}>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: '#FFFFFF', fontFamily: 'PretendardVariable' }}>
+                  임시 보관함에 저장
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 };
