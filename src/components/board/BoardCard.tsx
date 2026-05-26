@@ -130,17 +130,6 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
           </View>
         )}
 
-        {/* 접힌 상태 */}
-        {!isExpanded && hasNotes && (
-          <View style={styles['card-collapsed-subtitle-row']}>
-            <Text style={styles['card-collapsed-subtitle-text']} numberOfLines={1}>
-              {expandedNoteId
-                ? item.notes!.find(n => n.id === expandedNoteId)?.title ?? item.notes![0].title
-                : item.notes![0].title}
-            </Text>
-          </View>
-        )}
-
         {/* 펼쳐진 상태 */}
         {isExpanded && (
           <View style={styles['card-inner-card']}>
