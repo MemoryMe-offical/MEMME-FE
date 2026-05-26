@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingTop: 6,
-    paddingBottom: 0,
+    paddingBottom: 12,
     borderWidth: 1,
     borderColor: '#E4ECFF',
     gap: 10,
