@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
-  Image,
   StyleSheet,
   Platform,
   Modal,
@@ -14,7 +13,9 @@ import {
   KeyboardAvoidingView,
   Pressable,
   Linking,
+  ToastAndroid,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -25,12 +26,14 @@ import {
   CloseIcon,
   TrashIcon,
   PlusIcon,
+  AiIcon,
 } from '../components/common/Icons';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { pick, types, isErrorWithCode, errorCodes } from '@react-native-documents/picker';
-import { fetchOgData } from '../services/ogService';
+import { fetchOgData, fetchOgSummary, OgSummaryError } from '../services/ogService';
 import { uploadImages, uploadFile, uploadVideo, MAX_UPLOAD_SIZE } from '../services/uploadService';
 import OgPreviewCard from '../components/note/OgPreviewCard';
+import LoadingImage from '../components/common/LoadingImage';
 import * as noteService from '../services/noteService';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NoteDetail'>;
@@ -38,7 +41,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'NoteDetail'>;
 const ImagePreview = ({ imageUrl, onRemove }: { imageUrl: string; onRemove: () => void }) => {
   return (
     <View style={styles['image-wrapper']}>
-      <Image
+      <LoadingImage
         source={{ uri: imageUrl }}
         style={styles.thumbnail}
         resizeMode="cover"
@@ -69,6 +72,9 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
   );
   const [editFiles, setEditFiles] = useState<FileAttachment[]>(note?.files ?? []);
 
+  const [loadingSummaryIndexes, setLoadingSummaryIndexes] = useState<Set<number>>(new Set());
+  const [addedSummaryIndexes, setAddedSummaryIndexes] = useState<Set<number>>(new Set());
+
   const [isLinkModalVisible, setIsLinkModalVisible] = useState(false);
   const [linkInput, setLinkInput] = useState('');
   const [isFetchingOg, setIsFetchingOg] = useState(false);
@@ -82,17 +88,72 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
   // 저장 버튼으로 인한 goBack()과 일반 뒤로가기를 구분하는 플래그
   const isSavingRef = useRef(false);
 
-  // 화면 포커스 시 note 데이터 초기화
+  // editContent 변경 시 높이 자동 업데이트
+  useEffect(() => {
+    const lineCount = editContent.split('\n').length;
+    const lineHeight = 26;
+    const paddingVertical = 14;
+    const newHeight = Math.max(140, lineCount * lineHeight + paddingVertical);
+    setContentHeight(newHeight);
+  }, [editContent]);
+
+  // AsyncStorage에 요약 저장
+  useEffect(() => {
+    const saveSummaries = async () => {
+      if (!note?.id) return;
+      try {
+        const summaryMap: Record<string, string> = {};
+        editOgDatas.forEach((ogData, index) => {
+          if (ogData.summary && editUrls[index]) {
+            summaryMap[editUrls[index]] = ogData.summary;
+          }
+        });
+        await AsyncStorage.setItem(`note_summaries_${note.id}`, JSON.stringify(summaryMap));
+      } catch (error) {
+        console.error('Failed to save summaries:', error);
+      }
+    };
+    saveSummaries();
+  }, [editOgDatas, editUrls, note?.id]);
+
+  // 화면 포커스 시 note 데이터 초기화 + 저장된 요약 로드
   useFocusEffect(
     useCallback(() => {
-      setEditTitle(route.params.note?.title ?? '');
-      setEditContent(route.params.note?.content ?? '');
-      setEditImageUris(route.params.note?.imageUris ?? []);
-      setEditVideos(route.params.note?.videos ?? []);
-      setEditUrls(route.params.note?.urls ?? (route.params.note?.url ? [route.params.note.url] : []));
-      setEditOgDatas(route.params.note?.ogDatas ?? (route.params.note?.ogData ? [route.params.note.ogData] : []));
-      setEditFiles(route.params.note?.files ?? []);
-      setIsLoadingOgData(false);
+      const loadDataWithSummaries = async () => {
+        setEditTitle(route.params.note?.title ?? '');
+        setEditContent(route.params.note?.content ?? '');
+        setEditImageUris(route.params.note?.imageUris ?? []);
+        setEditVideos(route.params.note?.videos ?? []);
+        setEditUrls(route.params.note?.urls ?? (route.params.note?.url ? [route.params.note.url] : []));
+
+        let ogDatas = route.params.note?.ogDatas ?? (route.params.note?.ogData ? [route.params.note.ogData] : []);
+
+        // AsyncStorage에서 저장된 요약 로드
+        if (route.params.note?.id) {
+          try {
+            const summaryJson = await AsyncStorage.getItem(`note_summaries_${route.params.note.id}`);
+            if (summaryJson) {
+              const summaryMap = JSON.parse(summaryJson);
+              const urls = route.params.note?.urls ?? (route.params.note?.url ? [route.params.note.url] : []);
+
+              // 각 URL에 해당하는 요약 병합
+              ogDatas = ogDatas.map((ogData, index) => {
+                const url = urls[index];
+                const savedSummary = url ? summaryMap[url] : undefined;
+                return savedSummary ? { ...ogData, summary: savedSummary } : ogData;
+              });
+            }
+          } catch (error) {
+            console.error('Failed to load summaries:', error);
+          }
+        }
+
+        setEditOgDatas(ogDatas);
+        setEditFiles(route.params.note?.files ?? []);
+        setIsLoadingOgData(false);
+      };
+
+      loadDataWithSummaries();
     }, [route.params.note])
   );
 
@@ -177,6 +238,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         videos: editVideos.length > 0 ? editVideos : undefined,
         urls: editUrls.length > 0 ? editUrls : undefined,
         files: editFiles.length > 0 ? editFiles : undefined,
+        ogDatas: editOgDatas.length > 0 ? editOgDatas : undefined,
       };
       console.log('Saving note with data:', noteData);
 
@@ -381,6 +443,115 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
     setEditOgDatas(prev => prev.filter((_, i) => i !== index));
   };
 
+  const handleRequestSummary = async (index: number) => {
+    const url = editUrls[index];
+    if (!url) return;
+    setLoadingSummaryIndexes(prev => new Set(prev).add(index));
+    try {
+      const summary = await fetchOgSummary(url);
+      setEditOgDatas(prev => {
+        const updated = [...prev];
+        updated[index] = { ...updated[index], summary };
+        return updated;
+      });
+    } catch (error) {
+      if (error instanceof OgSummaryError) {
+        Alert.alert('AI 요약 실패', 'AI 요약을 생성할 수 없습니다. 잠시 후 다시 시도해주세요.');
+      } else {
+        Alert.alert('오류', 'AI 요약 요청 중 문제가 발생했습니다.');
+      }
+    } finally {
+      setLoadingSummaryIndexes(prev => {
+        const next = new Set(prev);
+        next.delete(index);
+        return next;
+      });
+    }
+  };
+
+  const handleRequestAndAddSummary = async (index: number) => {
+    const url = editUrls[index];
+    const ogData = editOgDatas[index];
+    if (!url) return;
+
+    const addToNoteAndShowToast = (summary: string) => {
+      const linkTitle = ogData?.title || url || '링크';
+      const cleanedSummary = summary.split('\n')[0].slice(0, 500);
+      const summaryBlock = `🔗 [${linkTitle}](${url})\n\nAI 요약:\n${cleanedSummary}`;
+
+      setEditContent(prev => prev.trim() ? `${prev}\n\n---\n\n${summaryBlock}` : summaryBlock);
+      setAddedSummaryIndexes(prev => new Set(prev).add(index));
+
+      // 토스트 메시지 표시
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('요약이 내용에 추가되었습니다', ToastAndroid.SHORT);
+      } else {
+        Alert.alert('', '요약이 내용에 추가되었습니다', [{ text: '확인', onPress: () => { } }]);
+      }
+
+      // 3초 후에 버튼으로 복구
+      setTimeout(() => {
+        setAddedSummaryIndexes(prev => {
+          const next = new Set(prev);
+          next.delete(index);
+          return next;
+        });
+      }, 3000);
+    };
+
+    // 요약이 이미 있으면 바로 추가
+    const existingSummary = editOgDatas[index]?.summary;
+    if (existingSummary) {
+      addToNoteAndShowToast(existingSummary);
+      return;
+    }
+
+    // 요약이 없으면 생성 후 추가
+    setLoadingSummaryIndexes(prev => new Set(prev).add(index));
+    try {
+      const summary = await fetchOgSummary(url);
+
+      // ogDatas 업데이트
+      setEditOgDatas(prev => {
+        const updated = [...prev];
+        updated[index] = { ...updated[index], summary };
+        return updated;
+      });
+
+      addToNoteAndShowToast(summary);
+    } catch (error) {
+      if (error instanceof OgSummaryError) {
+        Alert.alert('AI 요약 실패', 'AI 요약을 생성할 수 없습니다. 잠시 후 다시 시도해주세요.');
+      } else {
+        Alert.alert('오류', 'AI 요약 요청 중 문제가 발생했습니다.');
+      }
+    } finally {
+      setLoadingSummaryIndexes(prev => {
+        const next = new Set(prev);
+        next.delete(index);
+        return next;
+      });
+    }
+  };
+
+  const handleAddSummaryToNote = (index: number) => {
+    const summary = editOgDatas[index]?.summary;
+    const url = editUrls[index];
+    const ogData = editOgDatas[index];
+    if (!summary) return;
+
+    const linkTitle = ogData?.title || url || '링크';
+
+    // 요약 정리: 첫 번째 문장 또는 500자까지만
+    const cleanedSummary = summary.split('\n')[0].slice(0, 500);
+
+    const summaryBlock = `🔗 [${linkTitle}](${url})\n\nAI 요약:\n${cleanedSummary}`;
+
+    // 기존 내용이 있으면 뒤에 이어서 추가
+    setEditContent(prev => prev.trim() ? `${prev}\n\n---\n\n${summaryBlock}` : summaryBlock);
+    setAddedSummaryIndexes(prev => new Set(prev).add(index));
+  };
+
   const handleAddFile = async () => {
     if (editFiles.length >= 10) {
       Alert.alert('알림', '파일은 최대 10개까지 추가할 수 있습니다.');
@@ -515,10 +686,9 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
             maxLength={200}
             returnKeyType="next"
           />
-          <View style={styles.divider} />
 
           {/* 본문 */}
-          <Text style={styles['input-label']}>내용</Text>
+          <Text style={[styles['input-label'], { marginTop: 14 }]}>내용</Text>
           <TextInput
             style={[styles['content-input'], { height: contentHeight }]}
             value={editContent}
@@ -535,145 +705,147 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           />
 
           {/* 첨부 섹션 */}
-          <View style={styles['section-divider']} />
-
           <View style={styles['attachments-container']}>
             {/* 이미지 */}
             <View style={styles['subsection-header']}>
-            <View>
-              <Text style={styles['subsection-label']}>이미지</Text>
-              <Text style={styles['subsection-count']}>{editImageUris.length}/10</Text>
+              <View>
+                <Text style={styles['subsection-label']}>이미지</Text>
+                <Text style={styles['subsection-count']}>{editImageUris.length}/10</Text>
+              </View>
+              <TouchableOpacity
+                onPress={handleAddImage}
+                disabled={isUploading || editImageUris.length >= 10}
+                hitSlop={8}>
+                <PlusIcon color={isUploading || editImageUris.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              onPress={handleAddImage}
-              disabled={isUploading || editImageUris.length >= 10}
-              hitSlop={8}>
-              <PlusIcon color={isUploading || editImageUris.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
-            </TouchableOpacity>
-          </View>
-          <View style={styles['images-section']}>
-            {editImageUris.length > 0 ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles['images-row']}>
-                <>
-                  {editImageUris.map((imageUrl) => (
-                    <ImagePreview key={imageUrl} imageUrl={imageUrl} onRemove={() => handleRemoveImage(imageUrl)} />
-                  ))}
-                </>
-              </ScrollView>
-            ) : (
-              <Text style={styles['empty-section-text']}>첨부된 이미지가 없습니다</Text>
-            )}
-          </View>
+            <View style={styles['images-section']}>
+              {editImageUris.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={true}
+                  persistentScrollbar={true}
+                  scrollIndicatorInsets={{ bottom: 4 }}
+                  contentContainerStyle={styles['images-row']}>
+                  <>
+                    {editImageUris.map((imageUrl) => (
+                      <ImagePreview key={imageUrl} imageUrl={imageUrl} onRemove={() => handleRemoveImage(imageUrl)} />
+                    ))}
+                  </>
+                </ScrollView>
+              ) : (
+                <Text style={styles['empty-section-text']}>첨부된 이미지가 없습니다</Text>
+              )}
+            </View>
 
-          {/* 파일 */}
-          <View style={styles['subsection-header']}>
-            <View>
-              <Text style={styles['subsection-label']}>파일</Text>
-              <Text style={styles['subsection-count']}>{editFiles.length}/10</Text>
+            {/* 파일 */}
+            <View style={styles['subsection-header']}>
+              <View>
+                <Text style={styles['subsection-label']}>파일</Text>
+                <Text style={styles['subsection-count']}>{editFiles.length}/10</Text>
+              </View>
+              <TouchableOpacity
+                onPress={handleAddFile}
+                disabled={isUploading || editFiles.length >= 10}
+                hitSlop={8}>
+                <PlusIcon color={isUploading || editFiles.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity
-              onPress={handleAddFile}
-              disabled={isUploading || editFiles.length >= 10}
-              hitSlop={8}>
-              <PlusIcon color={isUploading || editFiles.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
-            </TouchableOpacity>
-          </View>
-          <View style={styles['files-section']}>
-            {editFiles.length > 0 ? (
-              <>
-                {editFiles.map(file => (
-                  <View key={file.uid} style={styles['file-row']}>
-                    <Text style={styles['file-icon']}>📄</Text>
-                    <Text style={styles['file-name']} numberOfLines={1}>{file.name}</Text>
-                    <TouchableOpacity onPress={() => handleRemoveFile(file.uid)} hitSlop={8}>
-                      <CloseIcon color="#9DAFC8" size={16} />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </>
-            ) : (
-              <Text style={styles['empty-section-text']}>첨부된 파일이 없습니다</Text>
-            )}
-          </View>
-
-          {/* 동영상 */}
-          <View style={styles['subsection-header']}>
-            <View>
-              <Text style={styles['subsection-label']}>동영상</Text>
-              <Text style={styles['subsection-count']}>{editVideos.length}/10</Text>
-            </View>
-            <TouchableOpacity
-              onPress={handleAddVideo}
-              disabled={isUploading || editVideos.length >= 10}
-              hitSlop={8}>
-              <PlusIcon color={isUploading || editVideos.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
-            </TouchableOpacity>
-          </View>
-          <View style={styles['videos-section']}>
-            {editVideos.length > 0 ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles['videos-row']}>
+            <View style={styles['files-section']}>
+              {editFiles.length > 0 ? (
                 <>
-                  {editVideos.map((video) => (
-                    <Pressable
-                      key={video.uid}
-                      onPress={() => {
-                        setSelectedVideoUrl(video.url);
-                        setVideoViewerVisible(true);
-                      }}
-                      style={({ pressed }) => [
-                        styles['video-wrapper'],
-                        pressed && styles['video-wrapper-pressed'],
-                      ]}>
-                      {video.thumbnailUrl ? (
-                        <Image
-                          source={{ uri: video.thumbnailUrl }}
-                          style={styles['video-thumbnail']}
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <View style={styles['video-thumbnail']}>
-                          <Text style={styles['video-icon']}>🎬</Text>
-                        </View>
-                      )}
-                      {video.duration && (
-                        <Text style={styles['video-duration']}>
-                          {Math.floor(video.duration / 60)}:{String(Math.floor(video.duration % 60)).padStart(2, '0')}
-                        </Text>
-                      )}
-                      <TouchableOpacity
-                        style={styles['video-remove-btn']}
-                        onPress={() => handleRemoveVideo(video.uid)}
-                        hitSlop={4}>
-                        <CloseIcon color="#FFFFFF" size={12} />
+                  {editFiles.map(file => (
+                    <View key={file.uid} style={styles['file-row']}>
+                      <Text style={styles['file-icon']}>📄</Text>
+                      <Text style={styles['file-name']} numberOfLines={1}>{file.name}</Text>
+                      <TouchableOpacity onPress={() => handleRemoveFile(file.uid)} hitSlop={8}>
+                        <CloseIcon color="#9DAFC8" size={16} />
                       </TouchableOpacity>
-                    </Pressable>
+                    </View>
                   ))}
                 </>
-              </ScrollView>
-            ) : (
-              <Text style={styles['empty-section-text']}>첨부된 동영상이 없습니다</Text>
-            )}
-          </View>
-
-          {/* 링크 */}
-          <View style={styles['subsection-header']}>
-            <View>
-              <Text style={styles['subsection-label']}>링크</Text>
-              <Text style={styles['subsection-count']}>{editUrls.length}/10</Text>
+              ) : (
+                <Text style={styles['empty-section-text']}>첨부된 파일이 없습니다</Text>
+              )}
             </View>
-            <TouchableOpacity
-              onPress={handleOpenLinkModal}
-              disabled={editUrls.length >= 10}
-              hitSlop={8}>
-              <PlusIcon color={editUrls.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
-            </TouchableOpacity>
-          </View>
+
+            {/* 동영상 */}
+            <View style={styles['subsection-header']}>
+              <View>
+                <Text style={styles['subsection-label']}>동영상</Text>
+                <Text style={styles['subsection-count']}>{editVideos.length}/10</Text>
+              </View>
+              <TouchableOpacity
+                onPress={handleAddVideo}
+                disabled={isUploading || editVideos.length >= 10}
+                hitSlop={8}>
+                <PlusIcon color={isUploading || editVideos.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles['videos-section']}>
+              {editVideos.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={true}
+                  persistentScrollbar={true}
+                  scrollIndicatorInsets={{ bottom: 4 }}
+                  contentContainerStyle={styles['videos-row']}>
+                  <>
+                    {editVideos.map((video) => (
+                      <Pressable
+                        key={video.uid}
+                        onPress={() => {
+                          setSelectedVideoUrl(video.url);
+                          setVideoViewerVisible(true);
+                        }}
+                        style={({ pressed }) => [
+                          styles['video-wrapper'],
+                          pressed && styles['video-wrapper-pressed'],
+                        ]}>
+                        {video.thumbnailUrl ? (
+                          <LoadingImage
+                            source={{ uri: video.thumbnailUrl }}
+                            style={styles['video-thumbnail']}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <View style={styles['video-thumbnail']}>
+                            <Text style={styles['video-icon']}>🎬</Text>
+                          </View>
+                        )}
+                        {video.duration && (
+                          <Text style={styles['video-duration']}>
+                            {Math.floor(video.duration / 60)}:{String(Math.floor(video.duration % 60)).padStart(2, '0')}
+                          </Text>
+                        )}
+                        <TouchableOpacity
+                          style={styles['video-remove-btn']}
+                          onPress={() => handleRemoveVideo(video.uid)}
+                          hitSlop={4}>
+                          <CloseIcon color="#FFFFFF" size={12} />
+                        </TouchableOpacity>
+                      </Pressable>
+                    ))}
+                  </>
+                </ScrollView>
+              ) : (
+                <Text style={styles['empty-section-text']}>첨부된 동영상이 없습니다</Text>
+              )}
+            </View>
+
+            {/* 링크 */}
+            <View style={styles['subsection-header']}>
+              <View>
+                <Text style={styles['subsection-label']}>링크</Text>
+                <Text style={styles['subsection-count']}>{editUrls.length}/10</Text>
+              </View>
+              <TouchableOpacity
+                onPress={handleOpenLinkModal}
+                disabled={editUrls.length >= 10}
+                hitSlop={8}>
+                <PlusIcon color={editUrls.length >= 10 ? '#C0CDD8' : '#588DFF'} size={20} />
+              </TouchableOpacity>
+            </View>
             <View style={styles['link-section']}>
               {editUrls.length > 0 ? (
                 <>
@@ -684,6 +856,19 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                         ogData={editOgDatas[index] || { title: url }}
                         onRemove={() => handleRemoveLink(index)}
                       />
+                      {loadingSummaryIndexes.has(index) ? (
+                        <ActivityIndicator size={10} color="#588DFF" style={{ alignSelf: 'center', marginTop: 8 }} />
+                      ) : addedSummaryIndexes.has(index) ? (
+                        <Text style={[styles['summary-added-text'], { alignSelf: 'center' }]}>✓ 추가됨</Text>
+                      ) : (
+                        <TouchableOpacity
+                          style={styles['summary-button']}
+                          onPress={() => handleRequestAndAddSummary(index)}
+                          activeOpacity={0.7}>
+                          <AiIcon color="#588DFF" size={12} />
+                          <Text style={styles['summary-button-text']}>내용에 AI 요약 추가</Text>
+                        </TouchableOpacity>
+                      )}
                     </View>
                   ))}
                 </>
@@ -693,7 +878,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
             </View>
           </View>
 
-          <View style={{ height: 32 }} />
+          <View style={{ height: 0 }} />
         </ScrollView>
       </KeyboardAvoidingView>
 
@@ -816,15 +1001,15 @@ const styles = StyleSheet.create({
   },
   'save-text-disabled': { color: '#C0CDD8' },
   body: { flex: 1 },
-  'body-content': { padding: 20, paddingBottom: 40 },
+  'body-content': { padding: 20 },
   'title-input': {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
     lineHeight: 28,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
     borderWidth: 1,
@@ -832,7 +1017,7 @@ const styles = StyleSheet.create({
   },
   divider: { height: 1, backgroundColor: '#D5DFED', marginVertical: 16 },
   'content-input': {
-    fontSize: 13,
+    fontSize: 11,
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
     lineHeight: 26,
@@ -844,7 +1029,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E4ECFF',
   },
-  'section-divider': { height: 1.2, backgroundColor: '#D5DFED', marginTop: 20, marginBottom: 16 },
+  'section-divider': {
+    height: 1.2,
+    backgroundColor: '#D5DFED',
+    marginTop: 20,
+    marginBottom: 10
+  },
   'section-label': {
     fontSize: 13,
     fontWeight: '700',
@@ -856,17 +1046,18 @@ const styles = StyleSheet.create({
   'attachments-container': {
     backgroundColor: '#F7FAFF',
     borderRadius: 12,
-    padding: 16,
     gap: 16,
+    marginTop: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
   },
   'subsection-header': {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
   },
   'subsection-label': {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
     color: '#588DFF',
     fontFamily: 'PretendardVariable',
@@ -880,14 +1071,14 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   'input-label': {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '700',
     color: '#588DFF',
     fontFamily: 'PretendardVariable',
     letterSpacing: 0.2,
     marginBottom: 10,
   },
-  'images-section': { marginBottom: 0 },
+  'images-section': { paddingVertical: 12, marginBottom: 0 },
   'empty-section-text': {
     fontSize: 13,
     color: '#AABBCC',
@@ -899,11 +1090,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
+    paddingBottom: 12,
   },
   'image-wrapper': { position: 'relative' },
   thumbnail: {
-    width: 72,
-    height: 72,
+    width: 64,
+    height: 64,
     borderRadius: 10,
   },
   'image-remove-btn': {
@@ -918,8 +1110,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   'add-image-btn': {
-    width: 72,
-    height: 72,
+    width: 64,
+    height: 64,
     borderRadius: 10,
     borderWidth: 1.5,
     borderColor: '#C0D0F0',
@@ -937,19 +1129,20 @@ const styles = StyleSheet.create({
   'add-image-btn-disabled': {
     opacity: 0.6,
   },
-  'videos-section': { marginBottom: 0 },
+  'videos-section': { paddingVertical: 12, marginBottom: 0 },
   'videos-row': {
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
+    paddingBottom: 12,
   },
   'video-wrapper': { position: 'relative' },
   'video-wrapper-pressed': {
     opacity: 0.7,
   },
   'video-thumbnail': {
-    width: 72,
-    height: 72,
+    width: 64,
+    height: 64,
     borderRadius: 10,
     backgroundColor: '#E8EEF8',
     alignItems: 'center',
@@ -982,15 +1175,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  'link-section': { gap: 10, marginBottom: 0 },
-  'link-item-wrapper': { marginBottom: 10 },
-  'files-section': { gap: 10, marginBottom: 0 },
+  'link-section': { gap: 10, paddingVertical: 12, marginBottom: 0 },
+  'link-item-wrapper': { marginBottom: 6, flexDirection: 'column', gap: 8 },
+  'summary-button': {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    alignSelf: 'center',
+    borderRadius: 8,
+    backgroundColor: '#EEF3FF',
+  },
+  'summary-button-text': {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#588DFF',
+    fontFamily: 'PretendardVariable',
+  },
+  'summary-added-text': {
+    fontSize: 11,
+    color: '#AABBCC',
+    fontFamily: 'PretendardVariable',
+  },
+  'files-section': { gap: 10, paddingVertical: 12, marginBottom: 0 },
   'file-row': {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
-    padding: 14,
+    padding: 10,
     borderWidth: 1,
     borderColor: '#E4ECFF',
     gap: 10,
@@ -998,7 +1212,7 @@ const styles = StyleSheet.create({
   'file-icon': { fontSize: 14 },
   'file-name': {
     flex: 1,
-    fontSize: 12,
+    fontSize: 10,
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
     lineHeight: 20,

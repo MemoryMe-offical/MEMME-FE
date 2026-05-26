@@ -157,7 +157,6 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardPos
                         <View>
                           {!!sub.content && (
                             <>
-                              <View style={styles['card-section-divider']} />
                               <View style={styles['card-section-row']}>
                                 <Text style={styles['card-section-label']}>내용</Text>
                                 <Text style={styles['card-content-text']} numberOfLines={3}>
@@ -168,18 +167,14 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardPos
                           )}
                           {!!sub.imageUris?.length && (
                             <>
-                              <View style={styles['card-section-divider']} />
                               <View style={styles['card-section-row']}>
                                 <Text style={styles['card-section-label']}>사진</Text>
                               </View>
                             </>
                           )}
-                          {!!(sub.url || item.url) && <View style={styles['card-section-divider']} />}
                           <LinkSection url={sub.url ?? item.url} ogData={sub.ogData ?? item.ogData} />
                         </View>
                       )}
-
-                      {!isLast && <View style={styles['sub-accordion-divider']} />}
                     </View>
                   );
                 })
@@ -192,9 +187,6 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardPos
                           {item.content}
                         </Text>
                       </View>
-                      {!!(item.imageUris?.length || item.url) && (
-                        <View style={styles['card-section-divider']} />
-                      )}
                     </>
                   )}
                   {!!item.imageUris?.length && (
@@ -202,7 +194,6 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardPos
                       <View style={styles['card-section-row']}>
                         <Text style={styles['card-section-label']}>사진</Text>
                       </View>
-                      {!!item.url && <View style={styles['card-section-divider']} />}
                     </>
                   )}
                   <LinkSection url={item.url} ogData={item.ogData} />

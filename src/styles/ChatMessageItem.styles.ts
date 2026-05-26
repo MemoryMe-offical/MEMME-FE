@@ -23,16 +23,16 @@ export const chatMessageItemStyles = StyleSheet.create({
     backgroundColor: '#588DFF',
     borderRadius: 18,
     borderBottomRightRadius: 4,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     maxWidth: '72%',
   },
 
   // 채팅 아이템 - 말풍선 - 텍스트
   'chatMessageItem-bubble-text': {
     color: '#FFFFFF',
-    fontSize: 15,
+    fontSize: 13,
     fontFamily: 'PretendardVariable',
-    lineHeight: 22,
+    lineHeight: 20,
   },
 });

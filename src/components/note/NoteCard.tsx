@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, Linking, StyleSheet, Modal, FlatList, Dimensions, Pressable, ActivityIndicator, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Linking, StyleSheet, Modal, FlatList, Dimensions, Pressable, ActivityIndicator, useWindowDimensions, ScrollView } from 'react-native';
 import { Note, OgData } from '../../types';
 import { LinkIcon } from '../common/Icons';
 import { fetchOgData } from '../../services/ogService';
+import LoadingImage from '../common/LoadingImage';
 
 interface NoteCardProps {
   note: Note;
@@ -17,7 +18,7 @@ const ImageThumbnail = ({ imageUrl, onPress }: { imageUrl: string; onPress: () =
         styles['image-thumbnail'],
         pressed && styles['image-thumbnail-pressed'],
       ]}>
-      <Image
+      <LoadingImage
         source={{ uri: imageUrl }}
         style={styles['image-thumbnail']}
         resizeMode="cover"
@@ -49,21 +50,25 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
   // OG 데이터 로드
   useEffect(() => {
     const loadOgData = async () => {
-      if (!note.url || note.ogData || ogDataCache[note.url]) return;
+      const urlsToLoad = note.urls || (note.url ? [note.url] : []);
 
-      try {
-        const ogData = await fetchOgData(note.url);
-        setOgDataCache(prev => ({
-          ...prev,
-          [note.url!]: ogData,
-        }));
-      } catch (error) {
-        console.error('Failed to load OG data for note:', note.url, error);
+      for (const url of urlsToLoad) {
+        if (!url || ogDataCache[url]) continue;
+
+        try {
+          const ogData = await fetchOgData(url);
+          setOgDataCache(prev => ({
+            ...prev,
+            [url]: ogData,
+          }));
+        } catch (error) {
+          console.error('Failed to load OG data for URL:', url, error);
+        }
       }
     };
 
     loadOgData();
-  }, [note.url, note.ogData, ogDataCache]);
+  }, [note.urls, note.url, note.ogData, ogDataCache]);
 
   const hasImages = (note.imageUris?.length ?? 0) > 0;
   const hasVideos = (note.videos?.length ?? 0) > 0;
@@ -76,18 +81,22 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
         <Text style={styles.title} numberOfLines={2}>{note.title}</Text>
 
         {!!note.content && (
-          <View style={styles['section-row']}>
+          <View style={[styles['section-row'], { marginTop: 16, ...((!hasImages && !hasVideos && !hasFiles && !hasLinks) && { marginBottom: 16 }) }]}>
             <Text style={styles['section-label']}>내용</Text>
-            <Text style={styles['content-text']} numberOfLines={3}>{note.content}</Text>
+            <Text style={styles['content-text']}>{note.content}</Text>
           </View>
         )}
 
         {hasImages && (
-          <>
-            <View style={styles['section-divider']} />
-            <View style={styles['section-row']}>
-              <Text style={styles['section-label']}>이미지</Text>
-              <View style={styles['images-preview']}>
+          <View style={[styles['section-row'], { marginTop: 16, ...(!hasVideos && !hasFiles && !hasLinks && { marginBottom: 16 }) }]}>
+            <Text style={styles['section-label']}>이미지</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={true}
+                persistentScrollbar={true}
+                scrollEventThrottle={16}
+                scrollIndicatorInsets={{ bottom: 4 }}
+                contentContainerStyle={styles['images-preview']}>
                 <>
                   {note.imageUris!.slice(0, maxMediaItems).map((imageUrl) => (
                     <ImageThumbnail
@@ -113,17 +122,20 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                     </Text>
                   </Pressable>
                 )}
-              </View>
+              </ScrollView>
             </View>
-          </>
         )}
 
         {hasVideos && (
-          <>
-            <View style={styles['section-divider']} />
-            <View style={styles['section-row']}>
-              <Text style={styles['section-label']}>동영상</Text>
-              <View style={styles['videos-preview']}>
+          <View style={[styles['section-row'], { marginTop: 16, ...(!hasFiles && !hasLinks && { marginBottom: 16 }) }]}>
+            <Text style={styles['section-label']}>동영상</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={true}
+                persistentScrollbar={true}
+                scrollEventThrottle={16}
+                scrollIndicatorInsets={{ bottom: 4 }}
+                contentContainerStyle={styles['videos-preview']}>
                 <>
                   {note.videos!.slice(0, maxMediaItems).map((video) => (
                     <Pressable
@@ -137,7 +149,7 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                         pressed && styles['video-thumbnail-pressed'],
                       ]}>
                       {video.thumbnailUrl ? (
-                        <Image
+                        <LoadingImage
                           source={{ uri: video.thumbnailUrl }}
                           style={styles['video-thumbnail']}
                           resizeMode="cover"
@@ -155,19 +167,16 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                     +{note.videos!.length - maxMediaItems}개
                   </Text>
                 )}
-              </View>
+              </ScrollView>
             </View>
-          </>
         )}
 
         {hasFiles && (
-          <>
-            <View style={styles['section-divider']} />
-            <View style={styles['section-row']}>
-              <Text style={styles['section-label']}>파일</Text>
+          <View style={[styles['section-row'], { marginTop: 16, ...(!hasLinks && { marginBottom: 16 }) }]}>
+            <Text style={styles['section-label']}>파일</Text>
               <View style={styles['files-preview']}>
                 <>
-                  {note.files!.slice(0, maxMediaItems).map((file) => (
+                  {note.files!.slice(0, 5).map((file) => (
                     <TouchableOpacity
                       key={file.uid}
                       style={styles['file-item']}
@@ -177,72 +186,83 @@ const NoteCard = ({ note, onPress }: NoteCardProps) => {
                         });
                       }}
                       activeOpacity={0.7}>
+                      <Text style={styles['file-icon']}>📄</Text>
                       <Text style={styles['file-name']} numberOfLines={1}>
                         {file.name || 'file'}
                       </Text>
                     </TouchableOpacity>
                   ))}
                 </>
-                {(note.files!.length ?? 0) > maxMediaItems && (
+                {(note.files!.length ?? 0) > 5 && (
                   <Text style={styles['file-more']}>
-                    +{note.files!.length - maxMediaItems}개
+                    +{note.files!.length - 5}개
                   </Text>
                 )}
               </View>
             </View>
-          </>
         )}
 
         {hasLinks && (() => {
           const urlsToShow = note.urls && note.urls.length > 0 ? note.urls : (note.url ? [note.url] : []);
-          const ogDatasToShow = note.ogDatas && note.ogDatas.length > 0 ? note.ogDatas : (note.ogData ? [note.ogData] : []);
+          const maxLinksToShow = 3;
+          const linksToDisplay = urlsToShow.slice(0, maxLinksToShow);
+
+          const getOgDataForUrl = (url: string, urlIndex: number) => {
+            return ogDataCache[url] || note.ogDatas?.[urlIndex] ||
+                   (urlIndex === 0 ? note.ogData : undefined);
+          };
 
           return (
-            <>
-              <View style={styles['section-divider']} />
-              <View style={styles['section-row']}>
-                <View style={styles['link-header']}>
-                  <Text style={styles['section-label']}>링크</Text>
-                  {urlsToShow.length > 2 && (
-                    <Text style={styles['link-count']}>+{urlsToShow.length - 1}</Text>
+            <View style={[styles['section-row'], { marginTop: 16, marginBottom: 16 }]}>
+              <View style={styles['link-header']}>
+                <Text style={styles['section-label']}>링크</Text>
+                  {urlsToShow.length > maxLinksToShow && (
+                    <Text style={styles['link-count']}>+{urlsToShow.length - maxLinksToShow}</Text>
                   )}
                 </View>
-                <TouchableOpacity
-                  style={styles['link-card']}
-                  onPress={() => {
-                    Linking.openURL(urlsToShow[0]).catch(() => {
-                      console.error('Failed to open URL:', urlsToShow[0]);
-                    });
-                  }}
-                  activeOpacity={0.7}>
-                  {ogDatasToShow[0]?.imageUrl ? (
-                    <Image
-                      source={{ uri: ogDatasToShow[0].imageUrl }}
-                      style={styles['link-image']}
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View style={styles['link-image-placeholder']}>
-                      <LinkIcon color="#AABBCC" size={20} />
-                    </View>
-                  )}
-                  <View style={styles['link-info']}>
-                    <Text style={styles['link-domain']} numberOfLines={1}>
-                      {ogDatasToShow[0]?.siteName || (urlsToShow[0].match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || urlsToShow[0])}
-                    </Text>
-                    <Text style={styles['link-title']} numberOfLines={2}>
-                      {ogDatasToShow[0]?.title || '링크'}
-                    </Text>
-                    {!!ogDatasToShow[0]?.description && (
-                      <Text style={styles['link-desc']} numberOfLines={1}>
-                        {ogDatasToShow[0].description}
-                      </Text>
-                    )}
-                  </View>
-                </TouchableOpacity>
+                <View style={styles['links-container']}>
+                  {linksToDisplay.map((url, displayIndex) => {
+                    const ogData = getOgDataForUrl(url, displayIndex);
+                    return (
+                      <TouchableOpacity
+                        key={url}
+                        style={styles['link-card']}
+                        onPress={() => {
+                          Linking.openURL(url).catch(() => {
+                            console.error('Failed to open URL:', url);
+                          });
+                        }}
+                        activeOpacity={0.7}>
+                        {ogData?.imageUrl ? (
+                          <LoadingImage
+                            source={{ uri: ogData.imageUrl }}
+                            style={styles['link-image']}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <View style={styles['link-image-placeholder']}>
+                            <LinkIcon color="#AABBCC" size={20} />
+                          </View>
+                        )}
+                        <View style={styles['link-info']}>
+                          <Text style={styles['link-domain']} numberOfLines={1}>
+                            {ogData?.siteName || (url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || url)}
+                          </Text>
+                          <Text style={styles['link-title']} numberOfLines={1}>
+                            {ogData?.title || '링크'}
+                          </Text>
+                          {!!ogData?.description && (
+                            <Text style={styles['link-desc']} numberOfLines={1}>
+                              {ogData.description}
+                            </Text>
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
               </View>
-            </>
-          );
+            );
         })()}
       </TouchableOpacity>
 
@@ -350,34 +370,38 @@ const styles = StyleSheet.create({
   container: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 16,
+    paddingHorizontal: 14,
+    paddingTop: 6,
+    paddingBottom: 0,
     borderWidth: 1,
     borderColor: '#E4ECFF',
-    gap: 12,
+    gap: 10,
   },
   title: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
-    lineHeight: 24,
+    lineHeight: 22,
+    marginTop: 10,
+    marginBottom: 0,
   },
   'section-row': {
-    gap: 8,
+    gap: 6,
   },
   'section-label': {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '700',
     color: '#588DFF',
     fontFamily: 'PretendardVariable',
     letterSpacing: 0.5,
-    marginBottom: 4,
+    marginBottom: 2,
   },
   'content-text': {
-    fontSize: 13,
+    fontSize: 11,
     color: '#333333',
     fontFamily: 'PretendardVariable',
-    lineHeight: 20,
+    lineHeight: 18,
   },
   'section-divider': {
     height: 1,
@@ -387,10 +411,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
+    paddingHorizontal: 0,
+    paddingBottom: 12,
   },
   'image-thumbnail': {
-    width: 56,
-    height: 56,
+    width: 64,
+    height: 64,
     borderRadius: 8,
     backgroundColor: '#EEF3FF',
   },
@@ -398,8 +424,8 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   'image-more': {
-    width: 56,
-    height: 56,
+    width: 64,
+    height: 64,
     borderRadius: 8,
     backgroundColor: '#F0F4FF',
     alignItems: 'center',
@@ -409,7 +435,7 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   'image-more-text': {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '600',
     color: '#588DFF',
     fontFamily: 'PretendardVariable',
@@ -418,10 +444,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
+    paddingHorizontal: 0,
+    paddingBottom: 12,
   },
   'video-thumbnail': {
-    width: 56,
-    height: 56,
+    width: 64,
+    height: 64,
     borderRadius: 8,
     backgroundColor: '#EEF3FF',
     alignItems: 'center',
@@ -431,14 +459,14 @@ const styles = StyleSheet.create({
     fontSize: 20,
   },
   'video-more': {
-    fontSize: 11,
+    fontSize: 9,
     color: '#AABBCC',
     fontFamily: 'PretendardVariable',
     paddingHorizontal: 0,
   },
   'video-thumbnail-placeholder': {
-    width: 56,
-    height: 56,
+    width: 64,
+    height: 64,
     borderRadius: 8,
     backgroundColor: '#EEF3FF',
     alignItems: 'center',
@@ -461,19 +489,23 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
   'video-open-text': {
-    fontSize: 12,
+    fontSize: 10,
     color: '#FFFFFF',
     fontFamily: 'PretendardVariable',
   },
   'link-header': {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   'link-count': {
-    fontSize: 11,
+    fontSize: 9,
     color: '#AABBCC',
     fontFamily: 'PretendardVariable',
+    lineHeight: 16,
+  },
+  'links-container': {
+    gap: 8,
   },
   'link-card': {
     flexDirection: 'row',
@@ -482,42 +514,44 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E4ECFF',
     overflow: 'hidden',
+    height: 68,
     alignItems: 'flex-start',
   },
   'link-image': {
-    width: 52,
-    height: 52,
+    width: 68,
+    height: 68,
   },
   'link-image-placeholder': {
-    width: 52,
-    height: 52,
+    width: 68,
+    height: 68,
     backgroundColor: '#EEF3FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   'link-info': {
     flex: 1,
-    padding: 6,
-    gap: 1,
+    padding: 8,
+    gap: 2,
   },
   'link-domain': {
-    fontSize: 9,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '700',
     color: '#588DFF',
     fontFamily: 'PretendardVariable',
+    letterSpacing: 0.2,
   },
   'link-title': {
-    fontSize: 10,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
     lineHeight: 16,
   },
   'link-desc': {
-    fontSize: 9,
+    fontSize: 10,
     color: '#6B7E9A',
     fontFamily: 'PretendardVariable',
-    lineHeight: 14,
+    lineHeight: 15,
   },
   'files-preview': {
     gap: 8,
@@ -526,23 +560,27 @@ const styles = StyleSheet.create({
   'file-item': {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     backgroundColor: '#F0F4FF',
     borderRadius: 6,
+    gap: 8,
+  },
+  'file-icon': {
+    fontSize: 14,
   },
   'file-name': {
     flex: 1,
-    fontSize: 12,
+    fontSize: 10,
     color: '#4A5568',
     fontFamily: 'PretendardVariable',
   },
   'file-more': {
-    fontSize: 11,
+    fontSize: 9,
     color: '#AABBCC',
     fontFamily: 'PretendardVariable',
     paddingHorizontal: 0,
-    paddingTop: 8,
+    paddingTop: 6,
   },
 });
 

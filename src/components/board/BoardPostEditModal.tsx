@@ -81,8 +81,6 @@ const BoardPostEditModal = ({ post, onClose, onSave }: Props) => {
             maxLength={100}
           />
 
-          <View style={styles['editModal-divider']} />
-
           {/* 내용 입력 */}
           <TextInput
             style={styles['editModal-contentInput']}
@@ -95,7 +93,6 @@ const BoardPostEditModal = ({ post, onClose, onSave }: Props) => {
           />
 
           {/* 미디어 섹션 */}
-          <View style={styles['editModal-section-divider']} />
           <Text style={styles['editModal-section-label']}>미디어</Text>
           <TouchableOpacity style={styles['editModal-placeholder-row']} disabled>
             <CameraIcon color="#3A3A3A" size={18} />

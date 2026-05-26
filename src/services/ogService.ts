@@ -86,6 +86,31 @@ const fetchOgDataDirect = async (url: string): Promise<OgData> => {
   }
 };
 
+export class OgSummaryError extends Error {
+  constructor(public readonly code: string, message: string) {
+    super(message);
+    this.name = 'OgSummaryError';
+  }
+}
+
+/**
+ * AI 기반 링크 요약 조회 (on-demand)
+ * GET /v1/og/summary?url={url}
+ * 실패 시 OgSummaryError throw
+ */
+export const fetchOgSummary = async (url: string): Promise<string> => {
+  const endpoint = `${BASE_URL}/og/summary?url=${encodeURIComponent(url)}`;
+  const response = await fetchWithAutoLogoutHandler(endpoint, { method: 'GET' });
+  const body: ApiResponse<{ summary: string }> = await response.json();
+  if (!response.ok || !body.success) {
+    throw new OgSummaryError(
+      (body.data as any)?.code ?? 'OG_002',
+      body.message ?? 'AI 요약을 가져오는 데 실패했습니다.',
+    );
+  }
+  return body.data.summary;
+};
+
 /**
  * URL의 Open Graph 메타데이터 조회
  * 1차: 직접 크롤링 (클라이언트)

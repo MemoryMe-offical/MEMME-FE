@@ -72,6 +72,7 @@ export interface OgData {
   description?: string;
   imageUrl?: string;
   siteName?: string;
+  summary?: string;
 }
 
 // ── 링크 인박스 임시 항목 ─────────────────────

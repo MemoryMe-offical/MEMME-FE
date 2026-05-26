@@ -15,6 +15,11 @@ Gradle 캐시 (Android 빌드):
   rmdir /s /q android\.gradle
   rmdir /s /q android\app\build
 
+[요소 확인 툴 켜기]
+  터미널에 npx react-devtools@6 입력
+  애뮬레이터 새로고침(R)
+  오른쪽 패널 아래 rendered by 확인
+
 -----
 <참고: Android 16 이슈>
 

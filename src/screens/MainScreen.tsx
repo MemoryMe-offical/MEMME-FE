@@ -519,7 +519,7 @@ const MainScreen = () => {
               <TouchableOpacity
                 style={[styles['main-header-iconButton'], selectedTags.length > 0 && { backgroundColor: '#E8EEFF' }]}
                 onPress={() => setIsTagFilterVisible(true)}>
-                <Text style={[{ fontSize: 12, fontWeight: '600', color: selectedTags.length > 0 ? '#588DFF' : '#1A1A1A' }]}>
+                <Text style={[{ fontSize: 10, fontWeight: '600', color: selectedTags.length > 0 ? '#588DFF' : '#1A1A1A' }]}>
                   필터
                 </Text>
               </TouchableOpacity>
@@ -636,15 +636,15 @@ const MainScreen = () => {
               backgroundColor: '#FFFFFF',
               borderTopLeftRadius: 20,
               borderTopRightRadius: 20,
-              paddingTop: 16,
-              paddingHorizontal: 20,
-              paddingBottom: Math.max(insets.bottom, 20),
+              paddingTop: 14,
+              paddingHorizontal: 18,
+              paddingBottom: Math.max(insets.bottom, 18),
               marginTop: 'auto',
               maxHeight: '70%',
             }}
             onStartShouldSetResponder={() => true}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-              <Text style={{ fontSize: 18, fontWeight: '700', color: '#1A1A1A', fontFamily: 'PretendardVariable' }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+              <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A1A', fontFamily: 'PretendardVariable' }}>
                 태그 필터
               </Text>
               <TouchableOpacity onPress={() => setIsTagFilterVisible(false)}>
@@ -652,7 +652,7 @@ const MainScreen = () => {
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} style={{ marginBottom: 16 }}>
+            <ScrollView showsVerticalScrollIndicator={false} style={{ marginBottom: 12 }}>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {/* 모든 태그 */}
                 {Array.from(new Set(
@@ -670,15 +670,15 @@ const MainScreen = () => {
                       );
                     }}
                     style={{
-                      paddingHorizontal: 14,
-                      paddingVertical: 8,
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
                       borderRadius: 20,
                       backgroundColor: selectedTags.includes(tag) ? '#588DFF' : '#F0F4FF',
                       borderWidth: selectedTags.includes(tag) ? 0 : 1,
                       borderColor: '#C0CDD8',
                     }}>
                     <Text style={{
-                      fontSize: 13,
+                      fontSize: 11,
                       fontWeight: '500',
                       color: selectedTags.includes(tag) ? '#FFFFFF' : '#588DFF',
                       fontFamily: 'PretendardVariable',
@@ -694,7 +694,7 @@ const MainScreen = () => {
                   .filter(i => i.type === 'board')
                   .flatMap(i => (i as Board).tags ?? [])
               )).length === 0 && (
-                <Text style={{ fontSize: 14, color: '#AABBCC', fontFamily: 'PretendardVariable', textAlign: 'center', paddingVertical: 20 }}>
+                <Text style={{ fontSize: 12, color: '#AABBCC', fontFamily: 'PretendardVariable', textAlign: 'center', paddingVertical: 16 }}>
                   사용 가능한 태그가 없습니다
                 </Text>
               )}
@@ -704,12 +704,12 @@ const MainScreen = () => {
               <TouchableOpacity
                 onPress={() => setSelectedTags([])}
                 style={{
-                  paddingVertical: 10,
+                  paddingVertical: 8,
                   alignItems: 'center',
                   borderTopWidth: 1,
                   borderTopColor: '#E8EEF8',
                 }}>
-                <Text style={{ fontSize: 14, color: '#9DAFC8', fontWeight: '600', fontFamily: 'PretendardVariable' }}>
+                <Text style={{ fontSize: 12, color: '#9DAFC8', fontWeight: '600', fontFamily: 'PretendardVariable' }}>
                   필터 초기화
                 </Text>
               </TouchableOpacity>

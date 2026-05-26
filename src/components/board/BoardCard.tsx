@@ -4,6 +4,7 @@ import { Board, OgData } from '../../types';
 import { boardCardStyles as styles } from '../../styles/BoardCard.styles';
 import { ChevronDownIcon, ChevronUpIcon, MoreIcon, LinkIcon } from '../common/Icons';
 import { fetchOgData } from '../../services/ogService';
+import LoadingImage from '../common/LoadingImage';
 
 const formatTime = (isoString: string): string => {
   const date = new Date(isoString);
@@ -22,7 +23,7 @@ const CardImageThumbnail = ({ imageUrl, onPress }: { imageUrl: string; onPress: 
         styles['card-image-thumbnail'],
         pressed && styles['card-image-thumbnail-pressed'],
       ]}>
-      <Image
+      <LoadingImage
         source={{ uri: imageUrl }}
         style={styles['card-image-thumbnail']}
         resizeMode="cover"
@@ -67,21 +68,21 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
     const loadOgData = async () => {
       if (!hasNotes) return;
 
-      const notesNeedingOgData = item.notes!.filter(
-        note => note.url && !note.ogData && !ogDataCache[note.url]
-      );
+      for (const note of item.notes!) {
+        const urlsToCheck = note.urls && note.urls.length > 0 ? note.urls : (note.url ? [note.url] : []);
 
-      if (notesNeedingOgData.length === 0) return;
+        for (const url of urlsToCheck) {
+          if (!url || ogDataCache[url]) continue;
 
-      for (const note of notesNeedingOgData) {
-        try {
-          const ogData = await fetchOgData(note.url!);
-          setOgDataCache(prev => ({
-            ...prev,
-            [note.url!]: ogData,
-          }));
-        } catch (error) {
-          console.error('Failed to load OG data for note:', note.url, error);
+          try {
+            const ogData = await fetchOgData(url);
+            setOgDataCache(prev => ({
+              ...prev,
+              [url]: ogData,
+            }));
+          } catch (error) {
+            console.error('Failed to load OG data for URL:', url, error);
+          }
         }
       }
     };
@@ -165,11 +166,12 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                         {isNoteExpanded && (
                           <TouchableOpacity
                             onPress={() => onDetailPress(item, note.id)}
-                            activeOpacity={0.7}>
+                            activeOpacity={0.7}
+                            style={{ paddingVertical: 8 }}>
                             {!!note.content && (
                               <View style={styles['card-section-row']}>
                                 <Text style={styles['card-section-label']}>내용</Text>
-                                <Text style={styles['card-content-text']} numberOfLines={3}>
+                                <Text style={styles['card-content-text']} numberOfLines={10}>
                                   {note.content}
                                 </Text>
                               </View>
@@ -179,11 +181,10 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                 <View style={styles['card-attachments-container']}>
                                   {(note.imageUris?.length ?? 0) > 0 && (
                                     <>
-                                      <View style={styles['card-section-divider']} />
                                       <View style={styles['card-section-row']}>
                                         <Text style={styles['card-section-label']}>이미지</Text>
                                         <View style={styles['card-images-preview']}>
-                                          {note.imageUris!.slice(0, 2).map((imageUrl, idx) => (
+                                          {note.imageUris!.slice(0, 3).map((imageUrl, idx) => (
                                             <CardImageThumbnail
                                               key={`${note.id}-img-${idx}`}
                                               imageUrl={imageUrl}
@@ -192,7 +193,7 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                               }}
                                             />
                                           ))}
-                                          {(note.imageUris!.length ?? 0) > 2 && (
+                                          {(note.imageUris!.length ?? 0) > 3 && (
                                             <Pressable
                                               onPress={() => {
                                                 openImageViewer(note.imageUris!);
@@ -202,7 +203,7 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                                 pressed && styles['card-image-more-pressed'],
                                               ]}>
                                               <Text style={styles['card-image-more-text']}>
-                                                +{note.imageUris!.length - 2}
+                                                +{note.imageUris!.length - 3}
                                               </Text>
                                             </Pressable>
                                           )}
@@ -212,11 +213,10 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                   )}
                                   {((note.videos?.length ?? 0) > 0 || (note.videoUris?.length ?? 0) > 0) && (
                                     <>
-                                      <View style={styles['card-section-divider']} />
                                       <View style={styles['card-section-row']}>
                                         <Text style={styles['card-section-label']}>동영상</Text>
                                         <View style={styles['card-videos-preview']}>
-                                          {(note.videos || note.videoUris || [])!.slice(0, 2).map((video, idx) => {
+                                          {(note.videos || note.videoUris || [])!.slice(0, 3).map((video, idx) => {
                                             const videoUrl = typeof video === 'string' ? video : video.url;
                                             const thumbnailUrl = typeof video === 'string' ? undefined : video.thumbnailUrl;
                                             return (
@@ -231,7 +231,7 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                                   pressed && styles['card-video-thumbnail-pressed'],
                                                 ]}>
                                                 {thumbnailUrl ? (
-                                                  <Image
+                                                  <LoadingImage
                                                     source={{ uri: thumbnailUrl }}
                                                     style={styles['card-video-thumbnail']}
                                                     resizeMode="cover"
@@ -244,9 +244,9 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                               </Pressable>
                                             );
                                           })}
-                                          {((note.videos?.length ?? 0) + (note.videoUris?.length ?? 0)) > 2 && (
+                                          {((note.videos?.length ?? 0) + (note.videoUris?.length ?? 0)) > 3 && (
                                             <Text style={styles['card-video-more']}>
-                                              +{((note.videos?.length ?? 0) + (note.videoUris?.length ?? 0)) - 2}
+                                              +{((note.videos?.length ?? 0) + (note.videoUris?.length ?? 0)) - 3}
                                             </Text>
                                           )}
                                         </View>
@@ -255,9 +255,10 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                   )}
                                   {(note.files?.length ?? 0) > 0 && (
                                     <>
-                                      <View style={styles['card-section-divider']} />
                                       <View style={styles['card-section-row']}>
-                                        <Text style={styles['card-section-label']}>파일</Text>
+                                        <View style={styles['card-file-header']}>
+                                          <Text style={styles['card-section-label']}>파일</Text>
+                                        </View>
                                         <View style={styles['card-files-preview']}>
                                           {note.files!.slice(0, 2).map((file, idx) => (
                                             <TouchableOpacity
@@ -269,65 +270,86 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                                                 });
                                               }}
                                               activeOpacity={0.7}>
+                                              <Text style={styles['card-file-icon']}>📄</Text>
                                               <Text style={styles['card-file-name']} numberOfLines={1}>
                                                 {file.name || 'file'}
                                               </Text>
                                             </TouchableOpacity>
                                           ))}
-                                          {(note.files!.length ?? 0) > 2 && (
-                                            <Text style={styles['card-file-more']}>
-                                              +{note.files!.length - 2}
-                                            </Text>
-                                          )}
                                         </View>
+                                        {(note.files!.length ?? 0) > 2 && (
+                                          <Text style={[styles['card-file-more'], { alignSelf: 'center', marginTop: 4 }]}>
+                                            +{note.files!.length - 2}
+                                          </Text>
+                                        )}
                                       </View>
                                     </>
                                   )}
-                                  {note.url && (() => {
-                                    const ogData = note.ogData ?? ogDataCache[note.url];
-                                    const displayDomain = note.url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || note.url;
+                                  {(() => {
+                                    const urlsToShow = note.urls && note.urls.length > 0 ? note.urls : (note.url ? [note.url] : []);
+                                    const maxLinksToShow = 2;
+                                    const linksToDisplay = urlsToShow.slice(0, maxLinksToShow);
 
-                                    return (
+                                    const getOgDataForUrl = (url: string, urlIndex: number) => {
+                                      return ogDataCache[url] || note.ogDatas?.[urlIndex] ||
+                                             (urlIndex === 0 ? note.ogData : undefined);
+                                    };
+
+                                    return urlsToShow.length > 0 ? (
                                       <>
-                                        <View style={styles['card-section-divider']} />
                                         <View style={styles['card-section-row']}>
-                                          <Text style={styles['card-section-label']}>링크</Text>
-                                          <TouchableOpacity
-                                            style={styles['card-link-card']}
-                                            onPress={() => {
-                                              Linking.openURL(note.url!).catch(() => {
-                                                console.error('Failed to open URL:', note.url);
-                                              });
-                                            }}
-                                            activeOpacity={0.7}>
-                                            {ogData?.imageUrl ? (
-                                              <Image
-                                                source={{ uri: ogData.imageUrl }}
-                                                style={styles['card-link-image']}
-                                                resizeMode="cover"
-                                              />
-                                            ) : (
-                                              <View style={styles['card-link-image-placeholder']}>
-                                                <LinkIcon color="#AABBCC" size={20} />
-                                              </View>
-                                            )}
-                                            <View style={styles['card-link-info']}>
-                                              <Text style={styles['card-link-domain']} numberOfLines={1}>
-                                                {ogData?.siteName || displayDomain}
-                                              </Text>
-                                              <Text style={styles['card-link-title']} numberOfLines={2}>
-                                                {ogData?.title || '링크'}
-                                              </Text>
-                                              {!!ogData?.description && (
-                                                <Text style={styles['card-link-desc']} numberOfLines={1}>
-                                                  {ogData.description}
-                                                </Text>
-                                              )}
-                                            </View>
-                                          </TouchableOpacity>
+                                          <View style={styles['card-link-header']}>
+                                            <Text style={styles['card-section-label']}>링크</Text>
+                                          </View>
+                                          <View style={styles['card-links-container']}>
+                                            {linksToDisplay.map((url, displayIndex) => {
+                                              const ogData = getOgDataForUrl(url, displayIndex);
+                                              const displayDomain = url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || url;
+
+                                              return (
+                                                <TouchableOpacity
+                                                  key={url}
+                                                  style={styles['card-link-card']}
+                                                  onPress={() => {
+                                                    Linking.openURL(url).catch(() => {
+                                                      console.error('Failed to open URL:', url);
+                                                    });
+                                                  }}
+                                                  activeOpacity={0.7}>
+                                                  {ogData?.imageUrl ? (
+                                                    <LoadingImage
+                                                      source={{ uri: ogData.imageUrl }}
+                                                      style={styles['card-link-image']}
+                                                      resizeMode="cover"
+                                                    />
+                                                  ) : (
+                                                    <View style={styles['card-link-image-placeholder']}>
+                                                      <LinkIcon color="#AABBCC" size={20} />
+                                                    </View>
+                                                  )}
+                                                  <View style={styles['card-link-info']}>
+                                                    <Text style={styles['card-link-domain']} numberOfLines={1}>
+                                                      {ogData?.siteName || displayDomain}
+                                                    </Text>
+                                                    <Text style={styles['card-link-title']} numberOfLines={1}>
+                                                      {ogData?.title || '링크'}
+                                                    </Text>
+                                                    {!!ogData?.description && (
+                                                      <Text style={styles['card-link-desc']} numberOfLines={1}>
+                                                        {ogData.description}
+                                                      </Text>
+                                                    )}
+                                                  </View>
+                                                </TouchableOpacity>
+                                              );
+                                            })}
+                                          </View>
+                                          {urlsToShow.length > maxLinksToShow && (
+                                            <Text style={[styles['card-link-count'], { alignSelf: 'center', marginTop: 4 }]}>+{urlsToShow.length - maxLinksToShow}</Text>
+                                          )}
                                         </View>
                                       </>
-                                    );
+                                    ) : null;
                                   })()}
                                 </View>
                               </>

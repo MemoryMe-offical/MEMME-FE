@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Linking } from 'react-native';
 import { OgData } from '../../types';
 import { CloseIcon, LinkIcon } from '../common/Icons';
+import LoadingImage from '../common/LoadingImage';
 
 interface OgPreviewCardProps {
   url: string;
@@ -30,7 +31,7 @@ const OgPreviewCard = ({ url, ogData, onRemove }: OgPreviewCardProps) => {
       activeOpacity={0.7}>
       <View style={styles.content}>
         {ogData.imageUrl ? (
-          <Image source={{ uri: ogData.imageUrl }} style={styles.image} resizeMode="cover" />
+          <LoadingImage source={{ uri: ogData.imageUrl }} style={styles.image} resizeMode="cover" />
         ) : (
           <View style={styles['image-placeholder']}>
             <LinkIcon color="#AABBCC" size={32} />
@@ -40,11 +41,11 @@ const OgPreviewCard = ({ url, ogData, onRemove }: OgPreviewCardProps) => {
           <Text style={styles.domain} numberOfLines={1}>
             {ogData.siteName || displayDomain}
           </Text>
-          <Text style={styles.title} numberOfLines={3}>
+          <Text style={styles.title} numberOfLines={1}>
             {ogData.title || '링크'}
           </Text>
           {!!ogData.description && (
-            <Text style={styles.description} numberOfLines={2}>
+            <Text style={styles.description} numberOfLines={1}>
               {ogData.description}
             </Text>
           )}
@@ -78,42 +79,103 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'flex-start',
+    gap: 0,
   },
-  image: { width: 52, height: 52 },
+  image: { width: 68, height: 68 },
   'image-placeholder': {
-    width: 52,
-    height: 52,
+    width: 68,
+    height: 68,
     backgroundColor: '#EEF3FF',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  info: { flex: 1, padding: 6, gap: 1 },
+  info: { flex: 1, gap: 2, padding: 8 },
   domain: {
-    fontSize: 9,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '700',
     color: '#588DFF',
     fontFamily: 'PretendardVariable',
+    letterSpacing: 0.2,
   },
   title: {
-    fontSize: 10,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '700',
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
     lineHeight: 16,
   },
   description: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#6B7E9A',
     fontFamily: 'PretendardVariable',
-    lineHeight: 14,
+    lineHeight: 15,
   },
   url: {
-    fontSize: 9,
+    fontSize: 10,
     color: '#AABBCC',
     fontFamily: 'PretendardVariable',
-    lineHeight: 14,
+    lineHeight: 15,
   },
   'remove-btn': { padding: 8 },
+  'summary-box': {
+    backgroundColor: '#F0F5FF',
+    borderRadius: 8,
+    padding: 8,
+    marginTop: 6,
+  },
+  'summary-label': {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#588DFF',
+    fontFamily: 'PretendardVariable',
+    marginBottom: 4,
+    letterSpacing: 0.3,
+  },
+  'summary-text': {
+    fontSize: 10,
+    color: '#4A5568',
+    fontFamily: 'PretendardVariable',
+    lineHeight: 15,
+  },
+  'summary-btn': {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    backgroundColor: '#EEF3FF',
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  'summary-btn-text': {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#588DFF',
+    fontFamily: 'PretendardVariable',
+  },
+  'summary-footer': {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 6,
+  },
+  'add-to-note-btn': {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+    padding: 2,
+  },
+  'add-to-note-text': {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#588DFF',
+    fontFamily: 'PretendardVariable',
+  },
+  'added-text': {
+    fontSize: 10,
+    color: '#AABBCC',
+    fontFamily: 'PretendardVariable',
+  },
 });
 
 export default OgPreviewCard;
