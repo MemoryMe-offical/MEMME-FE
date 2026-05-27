@@ -50,7 +50,6 @@ const MainScreen = () => {
   const [contextMenuItem, setContextMenuItem] = useState<TimelineItem | null>(null);
   const [sideMenuVisible, setSideMenuVisible] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [androidKeyboardHeight, setAndroidKeyboardHeight] = useState(0);
   const flatListRef = useRef<FlatList<TimelineItem>>(null);
   const shouldScrollToEnd = useRef(false);
 
@@ -286,13 +285,11 @@ const MainScreen = () => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
-    const showSub = Keyboard.addListener(showEvent, (e) => {
+    const showSub = Keyboard.addListener(showEvent, () => {
       setKeyboardVisible(true);
-      if (Platform.OS === 'android') setAndroidKeyboardHeight(e.endCoordinates.height);
     });
     const hideSub = Keyboard.addListener(hideEvent, () => {
       setKeyboardVisible(false);
-      if (Platform.OS === 'android') setAndroidKeyboardHeight(0);
     });
 
     return () => {
@@ -633,7 +630,7 @@ const MainScreen = () => {
       </View>
 
       <KeyboardAvoidingView
-        style={[styles['main-body'], Platform.OS === 'android' && { marginBottom: androidKeyboardHeight > 0 ? androidKeyboardHeight + insets.bottom : 0 }]}
+        style={styles['main-body']}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={0}
       >
@@ -907,7 +904,7 @@ const MainScreen = () => {
             </View>
 
             <Text style={{ fontSize: 12, color: '#666666', marginBottom: 12, fontFamily: 'PretendardVariable' }}>
-              방금 입력한 텍스트에 링크가 포함되어 있습니다. 어디에 추가할까요?
+              위 입력한 텍스트에 링크가 포함되어 있습니다. 어디에 추가할까요?
             </Text>
 
             {/* OG 프리뷰 */}
