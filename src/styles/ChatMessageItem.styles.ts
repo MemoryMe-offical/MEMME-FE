@@ -1,12 +1,12 @@
 import { StyleSheet, Dimensions } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-export const CHAT_MESSAGE_MAX_WIDTH = (SCREEN_WIDTH - 60) / 2;
+export const CHAT_MESSAGE_MAX_WIDTH = SCREEN_WIDTH - 60;
 
 export const chatMessageItemStyles = StyleSheet.create({
   // 채팅 아이템 - 행 컨테이너 (우측 정렬)
   'chatMessageItem-row': {
-    width: '90%',
+    width: '85%',
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'flex-end',

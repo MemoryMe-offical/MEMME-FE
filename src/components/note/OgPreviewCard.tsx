@@ -67,6 +67,7 @@ const OgPreviewCard = ({ url, ogData, onRemove }: OgPreviewCardProps) => {
 
 const styles = StyleSheet.create({
   container: {
+    width: 140,
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
