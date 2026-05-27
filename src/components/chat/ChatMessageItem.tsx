@@ -139,6 +139,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
             onLongPress={() => onLongPress(item)}
             delayLongPress={400}
             style={{
+              width: CHAT_MESSAGE_MAX_WIDTH,
               marginTop: item.text.trim().length > 0 ? 8 : 0,
               marginRight: 8,
               borderRadius: 8,
@@ -151,7 +152,8 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
             {firstOgData.imageUrl && (
               <Image
                 source={{ uri: firstOgData.imageUrl }}
-                style={{ width: '100%', height: 100 }}
+                style={{ width: '100%', aspectRatio: 3 / 2 }}
+                resizeMode="cover"
               />
             )}
 
