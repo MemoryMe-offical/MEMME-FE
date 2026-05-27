@@ -70,13 +70,16 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
   };
 
   return (
-    <View style={styles['chatMessageItem-row']}>
-      <Text style={styles['chatMessageItem-time']}>
-        {formatTime(item.createdAt)}
-      </Text>
-      <View style={{ width: '85%', alignItems: 'flex-end' }}>
+    <View style={{ width: '85%', alignSelf: 'flex-end' }}>
+      {/* 메시지 + 시간 행 */}
+      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6, justifyContent: 'flex-end' }}>
+        {/* 시간 */}
+        <Text style={styles['chatMessageItem-time']}>
+          {formatTime(item.createdAt)}
+        </Text>
+
+        {/* 텍스트 메시지 (있으면 표시) */}
         <View style={{ flexShrink: 1, maxWidth: CHAT_MESSAGE_MAX_WIDTH }}>
-          {/* 텍스트 메시지 (있으면 표시) */}
           {item.text.trim().length > 0 && (
             <TouchableOpacity
               style={styles['chatMessageItem-bubble']}
@@ -113,9 +116,10 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
             </TouchableOpacity>
           )}
         </View>
+      </View>
 
-        {/* 링크 관련 아이템들 */}
-        <View style={{ gap: 8, alignSelf: 'flex-end' }}>
+      {/* 링크 관련 아이템들 */}
+      <View style={{ gap: 8, alignItems: 'flex-end', marginTop: 8, alignSelf: 'flex-end' }}>
           {/* OG 데이터 로딩 중 */}
           {firstLink && isLoadingOg && !firstOgData && (
             <View style={{
@@ -143,7 +147,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
               onLongPress={() => onLongPress(item)}
               delayLongPress={400}
               style={{
-                maxWidth: CHAT_MESSAGE_MAX_WIDTH,
+                maxWidth: CHAT_MESSAGE_MAX_WIDTH * 0.85,
                 marginTop: item.text.trim().length > 0 ? 8 : 0,
                 marginRight: 8,
                 borderRadius: 8,
@@ -228,32 +232,33 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
               </Text>
             </TouchableOpacity>
           )}
-
-          {/* 링크 추가 버튼 */}
-          {firstLink && onOpenLinkModal && (
-            <TouchableOpacity
-              onPress={() => onOpenLinkModal(firstLink, firstOgData)}
-              style={{
-                marginRight: 8,
-                paddingHorizontal: 14,
-                paddingVertical: 8,
-                borderRadius: 20,
-                backgroundColor: '#d7e4ff',
-                alignSelf: 'center',
-              }}>
-              <Text
-                style={{
-                  fontSize: 12,
-                  fontWeight: '600',
-                  color: '#588DFF',
-                  fontFamily: 'PretendardVariable',
-                }}>
-                ↳ 링크를 노트에 추가하기
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
       </View>
+
+      {/* 링크 추가 버튼 (별도 행) */}
+      {firstLink && onOpenLinkModal && (
+        <TouchableOpacity
+          onPress={() => onOpenLinkModal(firstLink, firstOgData)}
+          style={{
+            marginTop: 5,
+            marginBottom: 16,
+            marginRight: 8,
+            paddingHorizontal: 10,
+            paddingVertical: 6,
+            borderRadius: 20,
+            backgroundColor: '#d7e4ff',
+            alignSelf: 'flex-end',
+          }}>
+          <Text
+            style={{
+              fontSize: 12,
+              fontWeight: '600',
+              color: '#588DFF',
+              fontFamily: 'PretendardVariable',
+            }}>
+            ↳ 링크를 노트에 추가하기
+          </Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
