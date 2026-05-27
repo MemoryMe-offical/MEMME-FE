@@ -1179,7 +1179,7 @@ const styles = StyleSheet.create({
   },
   'link-section': { gap: 10, paddingVertical: 12, marginBottom: 0 },
   'link-item-wrapper': { marginBottom: 6, flexDirection: 'column', gap: 8 },
-  'note-edit-og-card': { width: '100%', height: 100 },
+  'note-edit-og-card': { width: '100%', height: 68 },
   'summary-button': {
     flexDirection: 'row',
     alignItems: 'center',

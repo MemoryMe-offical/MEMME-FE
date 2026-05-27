@@ -43,11 +43,11 @@ const OgPreviewCard = ({ url, ogData, onRemove, containerStyle, isEditMode }: Og
           <Text style={styles.domain} numberOfLines={1}>
             {ogData.siteName || displayDomain}
           </Text>
-          <Text style={styles.title} numberOfLines={isEditMode ? 2 : 1}>
+          <Text style={styles.title} numberOfLines={1}>
             {ogData.title || '링크'}
           </Text>
           {!!ogData.description && (
-            <Text style={styles.description} numberOfLines={isEditMode ? 2 : 1}>
+            <Text style={styles.description} numberOfLines={1}>
               {ogData.description}
             </Text>
           )}
@@ -91,10 +91,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 0,
-    height: 100,
+    height: 68,
   },
   image: { width: 100, height: 100 },
-  'image-edit': { width: 100, height: 100 },
+  'image-edit': { width: 68, height: 68 },
   'image-placeholder': {
     width: 100,
     height: 100,
@@ -103,8 +103,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   'image-placeholder-edit': {
-    width: 100,
-    height: 100,
+    width: 68,
+    height: 68,
     backgroundColor: '#EEF3FF',
     alignItems: 'center',
     justifyContent: 'center',
