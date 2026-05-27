@@ -1,9 +1,10 @@
 // 채팅 아이템 컴포넌트
 
-import React from 'react';
-import { View, Text, TouchableOpacity, Image, Linking } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, Image, Linking, ActivityIndicator } from 'react-native';
 import { Memo } from '../../types';
 import { chatMessageItemStyles as styles, CHAT_MESSAGE_MAX_WIDTH } from '../../styles/ChatMessageItem.styles';
+import { fetchOgData } from '../../services/ogService';
 
 const formatTime = (isoString: string): string => {
   const date = new Date(isoString);
@@ -27,10 +28,40 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
   const isLong = item.text.length > maxChars;
   const displayText = expanded ? item.text : item.text.substring(0, maxChars);
 
-  // 링크만 있는지 확인 (텍스트가 없거나 링크 정보만 있는 경우)
-  const hasLink = item.urls && item.urls.length > 0;
-  const firstLink = hasLink ? item.urls?.[0] : null;
-  const firstOgData = hasLink && item.ogDatas && item.ogDatas.length > 0 ? item.ogDatas[0] : null;
+  const [detectedOgData, setDetectedOgData] = useState<any>(null);
+  const [isLoadingOg, setIsLoadingOg] = useState(false);
+
+  const detectUrlFromText = (text: string): string | null => {
+    const urlRegex = /https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z]{2,}(?:[^\s]*)?/g;
+    const matches = text.match(urlRegex);
+    if (matches && matches.length > 0) {
+      let url = matches[0];
+      if (!url.startsWith('http')) {
+        url = 'https://' + url;
+      }
+      return url;
+    }
+    return null;
+  };
+
+  // 메모에 이미 링크 정보가 있으면 사용, 없으면 텍스트에서 감지
+  const hasStoredLink = item.urls && item.urls.length > 0;
+  const firstLink = hasStoredLink ? item.urls?.[0] : detectUrlFromText(item.text);
+  const firstOgData = hasStoredLink && item.ogDatas && item.ogDatas.length > 0 ? item.ogDatas[0] : detectedOgData;
+
+  // 텍스트에서 감지한 링크의 OG 데이터 조회
+  useEffect(() => {
+    if (hasStoredLink || !firstLink) return; // 이미 저장된 링크가 있거나 링크가 없으면 스킵
+
+    setIsLoadingOg(true);
+    fetchOgData(firstLink)
+      .then(data => setDetectedOgData(data || null))
+      .catch(error => {
+        console.error('Failed to fetch OG data:', error);
+        setDetectedOgData(null);
+      })
+      .finally(() => setIsLoadingOg(false));
+  }, [firstLink, hasStoredLink]);
 
   const handleLinkPress = (url: string) => {
     Linking.openURL(url).catch(() => {
@@ -79,6 +110,26 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
               </Text>
             )}
           </TouchableOpacity>
+        )}
+
+        {/* OG 데이터 로딩 중 */}
+        {firstLink && isLoadingOg && !firstOgData && (
+          <View style={{
+            marginTop: item.text.trim().length > 0 ? 8 : 0,
+            marginRight: 8,
+            paddingVertical: 12,
+            paddingHorizontal: 16,
+            borderRadius: 8,
+            backgroundColor: '#F8F9FB',
+            borderWidth: 1,
+            borderColor: '#E8EEF8',
+            alignItems: 'center',
+          }}>
+            <ActivityIndicator size="small" color="#588DFF" />
+            <Text style={{ fontSize: 11, color: '#AABBCC', marginTop: 6, fontFamily: 'PretendardVariable' }}>
+              링크 정보 불러오는 중...
+            </Text>
+          </View>
         )}
 
         {/* 링크 카드 (있으면 표시) */}

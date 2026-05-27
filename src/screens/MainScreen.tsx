@@ -398,18 +398,6 @@ const MainScreen = () => {
     setConvertTargetMemo(null);
   };
 
-  const detectUrl = (text: string): string | null => {
-    const urlRegex = /https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z]{2,}(?:[^\s]*)?/g;
-    const matches = text.match(urlRegex);
-    if (matches && matches.length > 0) {
-      let url = matches[0];
-      if (!url.startsWith('http')) {
-        url = 'https://' + url;
-      }
-      return url;
-    }
-    return null;
-  };
 
   const createMemoWithoutLink = async (text: string, urls?: string[], ogDatas?: any[]) => {
     try {
@@ -513,48 +501,35 @@ const MainScreen = () => {
     }
   };
 
-  const isLinkOnly = (text: string): boolean => {
-    // 텍스트가 순수 URL로만 이루어져 있는지 확인
-    const trimmed = text.trim();
-    if (!trimmed) return false;
-
-    const urlRegex = /^(?:https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z]{2,}(?:[^\s]*)?)$/;
-    return urlRegex.test(trimmed);
-  };
 
   const handleOpenLinkModal = (url: string, ogData?: any) => {
     setDetectedLink(url);
-    setLinkOgData(ogData);
     setLinkDetectionModalVisible(true);
+
+    if (!ogData) {
+      setIsFetchingOg(true);
+      fetchOgData(url)
+        .then(data => {
+          setLinkOgData(data || null);
+        })
+        .catch(error => {
+          console.error('Failed to fetch OG data:', error);
+          setLinkOgData(null);
+        })
+        .finally(() => {
+          setIsFetchingOg(false);
+        });
+    } else {
+      setLinkOgData(ogData);
+    }
   };
 
   const handleSend = async () => {
     if (!inputText.trim()) return;
     const text = inputText.trim();
 
-    // 링크 감지
-    const detectedUrl = detectUrl(text);
-
-    if (detectedUrl) {
-      // OG 데이터 조회 (백그라운드에서)
-      setIsFetchingOg(true);
-      try {
-        const ogData = await fetchOgData(detectedUrl);
-        // 링크 정보와 함께 메모 저장
-        const memoText = isLinkOnly(text) ? '' : text;
-        await createMemoWithoutLink(memoText, [detectedUrl], ogData ? [ogData] : undefined);
-      } catch (error) {
-        console.error('Failed to fetch OG data:', error);
-        // OG 데이터 조회 실패해도 메모는 저장
-        const memoText = isLinkOnly(text) ? '' : text;
-        await createMemoWithoutLink(memoText, [detectedUrl], undefined);
-      } finally {
-        setIsFetchingOg(false);
-      }
-    } else {
-      // 링크가 없으면 그냥 메모 생성
-      await createMemoWithoutLink(text);
-    }
+    // 링크 감지 없이 바로 메모 저장
+    await createMemoWithoutLink(text);
   };
 
   const handlePendingLinkAddToBoard = async (link: PendingLink, board: Board) => {
