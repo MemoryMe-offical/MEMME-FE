@@ -855,6 +855,8 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                         url={url}
                         ogData={editOgDatas[index] || { title: url }}
                         onRemove={() => handleRemoveLink(index)}
+                        containerStyle={styles['note-edit-og-card']}
+                        isEditMode={true}
                       />
                       {loadingSummaryIndexes.has(index) ? (
                         <ActivityIndicator size={10} color="#588DFF" style={{ alignSelf: 'center', marginTop: 8 }} />
@@ -1177,6 +1179,7 @@ const styles = StyleSheet.create({
   },
   'link-section': { gap: 10, paddingVertical: 12, marginBottom: 0 },
   'link-item-wrapper': { marginBottom: 6, flexDirection: 'column', gap: 8 },
+  'note-edit-og-card': { width: '100%', height: 100 },
   'summary-button': {
     flexDirection: 'row',
     alignItems: 'center',

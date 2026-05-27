@@ -8,9 +8,11 @@ interface OgPreviewCardProps {
   url: string;
   ogData: OgData;
   onRemove?: () => void;
+  containerStyle?: any;
+  isEditMode?: boolean;
 }
 
-const OgPreviewCard = ({ url, ogData, onRemove }: OgPreviewCardProps) => {
+const OgPreviewCard = ({ url, ogData, onRemove, containerStyle, isEditMode }: OgPreviewCardProps) => {
   const displayDomain = (() => {
     const match = url.match(/^(?:https?:\/\/)?([^/?#]+)/);
     return match ? match[1] : url;
@@ -26,26 +28,26 @@ const OgPreviewCard = ({ url, ogData, onRemove }: OgPreviewCardProps) => {
 
   return (
     <TouchableOpacity
-      style={styles.container}
+      style={[styles.container, containerStyle]}
       onPress={handlePress}
       activeOpacity={0.7}>
-      <View style={styles.content}>
+      <View style={isEditMode ? styles['content-edit'] : styles.content}>
         {ogData.imageUrl ? (
-          <LoadingImage source={{ uri: ogData.imageUrl }} style={styles.image} resizeMode="cover" />
+          <LoadingImage source={{ uri: ogData.imageUrl }} style={isEditMode ? styles['image-edit'] : styles.image} resizeMode="cover" />
         ) : (
-          <View style={styles['image-placeholder']}>
-            <LinkIcon color="#AABBCC" size={32} />
+          <View style={isEditMode ? styles['image-placeholder-edit'] : styles['image-placeholder']}>
+            <LinkIcon color="#AABBCC" size={isEditMode ? 24 : 32} />
           </View>
         )}
-        <View style={styles.info}>
+        <View style={isEditMode ? styles['info-edit'] : styles.info}>
           <Text style={styles.domain} numberOfLines={1}>
             {ogData.siteName || displayDomain}
           </Text>
-          <Text style={styles.title} numberOfLines={1}>
+          <Text style={styles.title} numberOfLines={isEditMode ? 2 : 1}>
             {ogData.title || '링크'}
           </Text>
           {!!ogData.description && (
-            <Text style={styles.description} numberOfLines={1}>
+            <Text style={styles.description} numberOfLines={isEditMode ? 2 : 1}>
               {ogData.description}
             </Text>
           )}
@@ -84,7 +86,15 @@ const styles = StyleSheet.create({
     gap: 0,
     height: 120,
   },
+  'content-edit': {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 0,
+    height: 100,
+  },
   image: { width: 100, height: 100 },
+  'image-edit': { width: 100, height: 100 },
   'image-placeholder': {
     width: 100,
     height: 100,
@@ -92,7 +102,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  'image-placeholder-edit': {
+    width: 100,
+    height: 100,
+    backgroundColor: '#EEF3FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   info: { flex: 1, gap: 2, padding: 8 },
+  'info-edit': { flex: 1, gap: 4, padding: 10, justifyContent: 'flex-start' },
   domain: {
     fontSize: 10,
     fontWeight: '700',
