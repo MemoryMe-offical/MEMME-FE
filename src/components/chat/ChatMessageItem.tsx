@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, Image, Linking, ActivityIndicator } from 'react-native';
 import { Memo } from '../../types';
-import { chatMessageItemStyles as styles, CHAT_MESSAGE_MAX_WIDTH } from '../../styles/ChatMessageItem.styles';
+import { chatMessageItemStyles as styles, CHAT_MESSAGE_MAX_WIDTH, CHAT_LINK_CARD_MAX_WIDTH } from '../../styles/ChatMessageItem.styles';
 import { fetchOgData } from '../../services/ogService';
 
 const formatTime = (isoString: string): string => {
@@ -70,16 +70,16 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
   };
 
   return (
-    <View style={{ width: '85%', alignSelf: 'flex-end' }}>
+    <View style={styles['container']}>
       {/* 메시지 + 시간 행 */}
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6, justifyContent: 'flex-end' }}>
+      <View style={styles['message-row']}>
         {/* 시간 */}
         <Text style={styles['chatMessageItem-time']}>
           {formatTime(item.createdAt)}
         </Text>
 
         {/* 텍스트 메시지 (있으면 표시) */}
-        <View style={{ flexShrink: 1, maxWidth: CHAT_MESSAGE_MAX_WIDTH }}>
+        <View style={styles['message-bubble-wrapper']}>
           {item.text.trim().length > 0 && (
             <TouchableOpacity
               style={styles['chatMessageItem-bubble']}
@@ -100,16 +100,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
               </Text>
               {/* 전문 보기 힌트 */}
               {!expanded && isLong && (
-                <Text
-                  style={{
-                    fontSize: 10,
-                    color: '#FFFFFF',
-                    fontFamily: 'PretendardVariable',
-                    marginTop: 6,
-                    fontStyle: 'italic',
-                    opacity: 0.8,
-                    textAlign: 'center',
-                  }}>
+                <Text style={styles['expand-hint-text']}>
                   - 본문을 눌러 전문 보기 -
                 </Text>
               )}
@@ -119,22 +110,12 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
       </View>
 
       {/* 링크 관련 아이템들 */}
-      <View style={{ gap: 8, alignItems: 'flex-end', marginTop: 8, alignSelf: 'flex-end' }}>
+      <View style={styles['links-container']}>
           {/* OG 데이터 로딩 중 */}
           {firstLink && isLoadingOg && !firstOgData && (
-            <View style={{
-              marginTop: item.text.trim().length > 0 ? 8 : 0,
-              marginRight: 8,
-              paddingVertical: 12,
-              paddingHorizontal: 16,
-              borderRadius: 8,
-              backgroundColor: '#F8F9FB',
-              borderWidth: 1,
-              borderColor: '#E8EEF8',
-              alignItems: 'center',
-            }}>
+            <View style={[styles['og-loading'], { marginTop: item.text.trim().length > 0 ? 8 : 0, marginRight: 8 }]}>
               <ActivityIndicator size="small" color="#588DFF" />
-              <Text style={{ fontSize: 11, color: '#AABBCC', marginTop: 6, fontFamily: 'PretendardVariable' }}>
+              <Text style={styles['og-loading-text']}>
                 링크 정보 불러오는 중...
               </Text>
             </View>
@@ -146,59 +127,29 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
               onPress={() => handleLinkPress(firstLink)}
               onLongPress={() => onLongPress(item)}
               delayLongPress={400}
-              style={{
-                maxWidth: CHAT_MESSAGE_MAX_WIDTH * 0.85,
-                marginTop: item.text.trim().length > 0 ? 8 : 0,
-                marginRight: 8,
-                borderRadius: 8,
-                overflow: 'hidden',
-                backgroundColor: '#FFFFFF',
-                borderWidth: 1,
-                borderColor: '#E8EEF8',
-              }}>
+              style={[styles['link-card'], { marginTop: item.text.trim().length > 0 ? 8 : 0, marginRight: 8 }]}>
               {/* 썸네일 */}
               {firstOgData.imageUrl && (
                 <Image
                   source={{ uri: firstOgData.imageUrl }}
-                  style={{ width: '100%', aspectRatio: 16 / 9 }}
+                  style={styles['link-card-image']}
                   resizeMode="cover"
                 />
               )}
 
               {/* 내용 */}
-              <View style={{ padding: 12 }}>
+              <View style={styles['link-card-content']}>
                 {firstOgData.title && (
-                  <Text
-                    style={{
-                      fontSize: 12,
-                      fontWeight: '600',
-                      color: '#1A1A1A',
-                      marginBottom: 4,
-                      fontFamily: 'PretendardVariable',
-                    }}
-                    numberOfLines={2}>
+                  <Text style={styles['link-card-title']} numberOfLines={2}>
                     {firstOgData.title}
                   </Text>
                 )}
                 {firstOgData.description && (
-                  <Text
-                    style={{
-                      fontSize: 11,
-                      color: '#666666',
-                      marginBottom: 6,
-                      fontFamily: 'PretendardVariable',
-                    }}
-                    numberOfLines={2}>
+                  <Text style={styles['link-card-description']} numberOfLines={2}>
                     {firstOgData.description}
                   </Text>
                 )}
-                <Text
-                  style={{
-                    fontSize: 10,
-                    color: '#9DAFC8',
-                    fontFamily: 'PretendardVariable',
-                  }}
-                  numberOfLines={1}>
+                <Text style={styles['link-card-domain']} numberOfLines={1}>
                   {firstOgData.siteName || firstLink}
                 </Text>
               </View>
@@ -211,23 +162,8 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
               onPress={() => handleLinkPress(firstLink)}
               onLongPress={() => onLongPress(item)}
               delayLongPress={400}
-              style={{
-                marginTop: item.text.trim().length > 0 ? 8 : 0,
-                marginRight: 8,
-                paddingHorizontal: 12,
-                paddingVertical: 8,
-                borderRadius: 8,
-                backgroundColor: '#F8F9FB',
-                borderWidth: 1,
-                borderColor: '#E8EEF8',
-              }}>
-              <Text
-                style={{
-                  fontSize: 11,
-                  color: '#588DFF',
-                  fontFamily: 'PretendardVariable',
-                }}
-                numberOfLines={1}>
+              style={[styles['link-only-card'], { marginTop: item.text.trim().length > 0 ? 8 : 0, marginRight: 8 }]}>
+              <Text style={styles['link-only-text']} numberOfLines={1}>
                 🔗 {firstLink}
               </Text>
             </TouchableOpacity>
@@ -236,28 +172,15 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
 
       {/* 링크 추가 버튼 (별도 행) */}
       {firstLink && onOpenLinkModal && (
-        <TouchableOpacity
-          onPress={() => onOpenLinkModal(firstLink, firstOgData)}
-          style={{
-            marginTop: 5,
-            marginBottom: 16,
-            marginRight: 8,
-            paddingHorizontal: 10,
-            paddingVertical: 6,
-            borderRadius: 20,
-            backgroundColor: '#d7e4ff',
-            alignSelf: 'flex-end',
-          }}>
-          <Text
-            style={{
-              fontSize: 12,
-              fontWeight: '600',
-              color: '#588DFF',
-              fontFamily: 'PretendardVariable',
-            }}>
-            ↳ 링크를 노트에 추가하기
-          </Text>
-        </TouchableOpacity>
+        <View style={styles['button-wrapper']}>
+          <TouchableOpacity
+            onPress={() => onOpenLinkModal(firstLink, firstOgData)}
+            style={styles['add-link-button']}>
+            <Text style={styles['add-link-button-text']}>
+              ↳ 링크를 노트에 추가하기
+            </Text>
+          </TouchableOpacity>
+        </View>
       )}
     </View>
   );
