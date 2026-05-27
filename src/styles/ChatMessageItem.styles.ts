@@ -1,11 +1,16 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+export const CHAT_MESSAGE_MAX_WIDTH = SCREEN_WIDTH - 60;
 
 export const chatMessageItemStyles = StyleSheet.create({
   // 채팅 아이템 - 행 컨테이너 (우측 정렬)
   'chatMessageItem-row': {
+    width: '90%',
     flexDirection: 'row',
     justifyContent: 'flex-end',
     alignItems: 'flex-end',
+    alignSelf: 'flex-end',
     marginBottom: 4,
   },
 
@@ -25,7 +30,8 @@ export const chatMessageItemStyles = StyleSheet.create({
     borderBottomRightRadius: 4,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    maxWidth: '72%',
+    flexShrink: 1,
+    flexGrow: 0,
   },
 
   // 채팅 아이템 - 말풍선 - 텍스트
@@ -34,5 +40,6 @@ export const chatMessageItemStyles = StyleSheet.create({
     fontSize: 13,
     fontFamily: 'PretendardVariable',
     lineHeight: 20,
+    flexWrap: 'wrap',
   },
 });

@@ -427,10 +427,6 @@ const MainScreen = () => {
   const handleConfirmLink = async (selectedBoard?: Board) => {
     if (!detectedLink || !userId) return;
 
-    const text = inputText.trim();
-    // 링크만 입력된 경우 텍스트를 빈 문자열로 처리
-    const memoText = isLinkOnly(text) ? '' : text;
-
     try {
       if (selectedBoard) {
         // 보드에 노트로 추가
@@ -459,9 +455,6 @@ const MainScreen = () => {
         const linkWithOgData = { ...link, ogData: linkOgData };
         setPendingLinks(prev => [...prev, linkWithOgData]);
       }
-
-      // 메모도 생성 (링크 정보와 함께, 링크만인 경우 텍스트는 공백)
-      await createMemoWithoutLink(memoText, [detectedLink], linkOgData ? [linkOgData] : undefined);
     } catch (error) {
       console.error('Failed to handle link:', error);
       Alert.alert('오류', '링크 처리에 실패했습니다.');
@@ -529,6 +522,12 @@ const MainScreen = () => {
     return urlRegex.test(trimmed);
   };
 
+  const handleOpenLinkModal = (url: string, ogData?: any) => {
+    setDetectedLink(url);
+    setLinkOgData(ogData);
+    setLinkDetectionModalVisible(true);
+  };
+
   const handleSend = async () => {
     if (!inputText.trim()) return;
     const text = inputText.trim();
@@ -537,17 +536,18 @@ const MainScreen = () => {
     const detectedUrl = detectUrl(text);
 
     if (detectedUrl) {
-      // OG 데이터 조회 시작
+      // OG 데이터 조회 (백그라운드에서)
       setIsFetchingOg(true);
       try {
         const ogData = await fetchOgData(detectedUrl);
-        setDetectedLink(detectedUrl);
-        setLinkOgData(ogData);
-        setLinkDetectionModalVisible(true);
+        // 링크 정보와 함께 메모 저장
+        const memoText = isLinkOnly(text) ? '' : text;
+        await createMemoWithoutLink(memoText, [detectedUrl], ogData ? [ogData] : undefined);
       } catch (error) {
         console.error('Failed to fetch OG data:', error);
-        // OG 데이터 조회 실패 시 그냥 메모 생성
-        await createMemoWithoutLink(text);
+        // OG 데이터 조회 실패해도 메모는 저장
+        const memoText = isLinkOnly(text) ? '' : text;
+        await createMemoWithoutLink(memoText, [detectedUrl], undefined);
       } finally {
         setIsFetchingOg(false);
       }
@@ -692,6 +692,7 @@ const MainScreen = () => {
                     expanded={expandedMemoId === memo.id}
                     onToggleExpand={(m) => setExpandedMemoId(expandedMemoId === m.id ? null : m.id)}
                     onLongPress={handleContextMenu}
+                    onOpenLinkModal={handleOpenLinkModal}
                   />
                 );
               }

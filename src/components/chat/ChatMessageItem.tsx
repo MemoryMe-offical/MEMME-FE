@@ -3,7 +3,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, Linking } from 'react-native';
 import { Memo } from '../../types';
-import { chatMessageItemStyles as styles } from '../../styles/ChatMessageItem.styles';
+import { chatMessageItemStyles as styles, CHAT_MESSAGE_MAX_WIDTH } from '../../styles/ChatMessageItem.styles';
 
 const formatTime = (isoString: string): string => {
   const date = new Date(isoString);
@@ -19,16 +19,17 @@ interface ChatMessageItemProps {
   expanded?: boolean;
   onToggleExpand?: (item: Memo) => void;
   onLongPress: (item: Memo) => void;
+  onOpenLinkModal?: (url: string, ogData?: any) => void;
 }
 
-const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress }: ChatMessageItemProps) => {
-  const isLong = item.text.length > 50;
-  const displayText = expanded ? item.text : item.text.substring(0, 50);
+const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, onOpenLinkModal }: ChatMessageItemProps) => {
+  const maxChars = 500;
+  const isLong = item.text.length > maxChars;
+  const displayText = expanded ? item.text : item.text.substring(0, maxChars);
 
   // 링크만 있는지 확인 (텍스트가 없거나 링크 정보만 있는 경우)
   const hasLink = item.urls && item.urls.length > 0;
-  const isLinkOnly = hasLink && item.text.trim().length === 0;
-  const firstLink = hasLink ? item.urls[0] : null;
+  const firstLink = hasLink ? item.urls?.[0] : null;
   const firstOgData = hasLink && item.ogDatas && item.ogDatas.length > 0 ? item.ogDatas[0] : null;
 
   const handleLinkPress = (url: string) => {
@@ -42,7 +43,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress }
       <Text style={styles['chatMessageItem-time']}>
         {formatTime(item.createdAt)}
       </Text>
-      <View style={{ flex: 1 }}>
+      <View style={{ flexShrink: 1, maxWidth: CHAT_MESSAGE_MAX_WIDTH }}>
         {/* 텍스트 메시지 (있으면 표시) */}
         {item.text.trim().length > 0 && (
           <TouchableOpacity
@@ -58,16 +59,30 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress }
             delayLongPress={400}
             activeOpacity={0.85}>
             <Text
-              style={styles['chatMessageItem-bubble-text']}
-              numberOfLines={expanded ? 0 : 3}>
+              style={styles['chatMessageItem-bubble-text']}>
               {displayText}
               {!expanded && isLong && '...'}
             </Text>
+            {/* 전문 보기 힌트 */}
+            {!expanded && isLong && (
+              <Text
+                style={{
+                  fontSize: 10,
+                  color: '#FFFFFF',
+                  fontFamily: 'PretendardVariable',
+                  marginTop: 6,
+                  fontStyle: 'italic',
+                  opacity: 0.8,
+                  textAlign: 'center',
+                }}>
+                - 본문을 눌러 전문 보기 -
+              </Text>
+            )}
           </TouchableOpacity>
         )}
 
         {/* 링크 카드 (있으면 표시) */}
-        {hasLink && firstOgData && (
+        {firstLink && firstOgData && (
           <TouchableOpacity
             onPress={() => handleLinkPress(firstLink)}
             onLongPress={() => onLongPress(item)}
@@ -85,7 +100,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress }
             {firstOgData.imageUrl && (
               <Image
                 source={{ uri: firstOgData.imageUrl }}
-                style={{ width: '100%', height: 140 }}
+                style={{ width: '100%', height: 100 }}
               />
             )}
 
@@ -130,7 +145,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress }
         )}
 
         {/* 텍스트도 없고 링크 정보도 불완전한 경우 (OgData 없이 링크만 있는 경우) */}
-        {hasLink && !firstOgData && (
+        {firstLink && !firstOgData && (
           <TouchableOpacity
             onPress={() => handleLinkPress(firstLink)}
             onLongPress={() => onLongPress(item)}
@@ -153,6 +168,32 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress }
               }}
               numberOfLines={1}>
               🔗 {firstLink}
+            </Text>
+          </TouchableOpacity>
+        )}
+
+        {/* 링크 추가 버튼 */}
+        {firstLink && onOpenLinkModal && (
+          <TouchableOpacity
+            onPress={() => onOpenLinkModal(firstLink, firstOgData)}
+            style={{
+              marginTop: 8,
+              marginRight: 8,
+              paddingHorizontal: 16,
+              paddingVertical: 10,
+              borderRadius: 20,
+              backgroundColor: '#588DFF',
+              alignItems: 'center',
+              alignSelf: 'flex-start',
+            }}>
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: '600',
+                color: '#FFFFFF',
+                fontFamily: 'PretendardVariable',
+              }}>
+              링크를 노트에 추가하기
             </Text>
           </TouchableOpacity>
         )}

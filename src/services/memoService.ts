@@ -15,9 +15,10 @@ interface ApiResponse<T> {
  */
 export const createMemo = async (text: string, urls?: string[], ogDatas?: any[]): Promise<Memo> => {
   try {
+    const trimmedText = text.trim();
     const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/memos`, {
       method: 'POST',
-      body: JSON.stringify({ text }),
+      body: JSON.stringify({ text: trimmedText || ' ' }),
     });
 
     if (!response.ok) {
