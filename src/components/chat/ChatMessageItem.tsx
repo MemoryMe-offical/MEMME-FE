@@ -74,7 +74,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
       <Text style={styles['chatMessageItem-time']}>
         {formatTime(item.createdAt)}
       </Text>
-      <View style={{ width: '85%' }}>
+      <View style={{ width: '85%', alignItems: 'flex-end' }}>
         <View style={{ flexShrink: 1, maxWidth: CHAT_MESSAGE_MAX_WIDTH }}>
           {/* 텍스트 메시지 (있으면 표시) */}
           {item.text.trim().length > 0 && (
@@ -234,23 +234,21 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
             <TouchableOpacity
               onPress={() => onOpenLinkModal(firstLink, firstOgData)}
               style={{
-                marginTop: 8,
                 marginRight: 8,
-                paddingHorizontal: 16,
-                paddingVertical: 10,
+                paddingHorizontal: 14,
+                paddingVertical: 8,
                 borderRadius: 20,
-                backgroundColor: '#588DFF',
-                alignItems: 'center',
-                alignSelf: 'flex-start',
+                backgroundColor: '#d7e4ff',
+                alignSelf: 'center',
               }}>
               <Text
                 style={{
                   fontSize: 12,
                   fontWeight: '600',
-                  color: '#FFFFFF',
+                  color: '#588DFF',
                   fontFamily: 'PretendardVariable',
                 }}>
-                링크를 노트에 추가하기
+                ↳ 링크를 노트에 추가하기
               </Text>
             </TouchableOpacity>
           )}
