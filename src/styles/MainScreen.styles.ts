@@ -41,17 +41,31 @@ export const mainStyles = StyleSheet.create({
 
   // 메인 - 헤더 - 타이틀
   'main-header-title': {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
     fontSize: 15,
     fontWeight: '600',
-    color: '#1A1A1A',
-    fontFamily: 'PretendardVariable',
+    color: '#588DFF',
+  },
+
+  // 메인 - 헤더 - 좌측 버튼 컨테이너
+  'main-header-leftButtons': {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    justifyContent: 'flex-start',
   },
 
   // 메인 - 헤더 - 우측 버튼 컨테이너
   'main-header-rightButtons': {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    justifyContent: 'flex-end',
   },
 
   // 메인 - 헤더 - 아이콘 버튼

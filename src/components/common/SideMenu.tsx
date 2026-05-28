@@ -218,11 +218,6 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
 
             {/* 흰 프로필 영역 */}
             <View style={styles['sideMenu-profileSection']}>
-              <Image
-                source={require('../../assets/imgs/mainart.png')}
-                style={styles['sideMenu-profile-avatar']}
-              />
-
               <View style={styles['sideMenu-profile-nameRow']}>
                 <Text style={styles['sideMenu-profile-name']}>사용자 님</Text>
                 <EditIcon color="#9DAFC8" size={14} />

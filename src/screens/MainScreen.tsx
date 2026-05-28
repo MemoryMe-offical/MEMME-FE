@@ -587,16 +587,7 @@ const MainScreen = () => {
           </>
         ) : (
           <>
-            <TouchableOpacity style={styles['main-header-profileButton']}>
-              <Image
-                source={require('../assets/imgs/mainart.png')}
-                style={styles['main-header-profileButton-image']}
-              />
-            </TouchableOpacity>
-
-            <Text style={styles['main-header-title']}>나와의 채팅</Text>
-
-            <View style={styles['main-header-rightButtons']}>
+            <View style={styles['main-header-leftButtons']}>
               <TouchableOpacity
                 style={styles['main-header-iconButton']}
                 onPress={() => setIsSearchMode(true)}>
@@ -610,8 +601,11 @@ const MainScreen = () => {
                   필터
                 </Text>
               </TouchableOpacity>
+            </View>
 
-              {/* 인박스 아이콘 */}
+            <Text style={styles['main-header-title']}>MEMoryMe</Text>
+
+            <View style={styles['main-header-rightButtons']}>
               <TouchableOpacity
                 style={styles['main-header-iconButton']}
                 onPress={() => setPendingSheetVisible(true)}>

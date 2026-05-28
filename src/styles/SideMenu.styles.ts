@@ -37,13 +37,13 @@ export const sideMenuStyles = StyleSheet.create({
     backgroundColor: '#588DFF',
     borderTopLeftRadius: 30,
     paddingHorizontal: 16,
-    paddingBottom: 50,
   },
 
   'sideMenu-header': {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingTop: 12,
     paddingBottom: 10,
   },
 
@@ -58,7 +58,8 @@ export const sideMenuStyles = StyleSheet.create({
   'sideMenu-profileSection': {
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 16,
-    paddingBottom: 20,
+    paddingTop: 0,
+    paddingBottom: 14,
     borderBottomWidth: 1,
     borderBottomColor: '#E8EEFF',
   },
@@ -84,7 +85,8 @@ export const sideMenuStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 14,
+    marginTop: 14,
   },
 
   'sideMenu-profile-name': {
