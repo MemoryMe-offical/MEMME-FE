@@ -37,6 +37,7 @@ export const sideMenuStyles = StyleSheet.create({
     backgroundColor: '#588DFF',
     borderTopLeftRadius: 30,
     paddingHorizontal: 16,
+    paddingVertical: 6,
   },
 
   'sideMenu-header': {
@@ -45,6 +46,13 @@ export const sideMenuStyles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingTop: 12,
     paddingBottom: 10,
+  },
+
+  'sideMenu-header-logo': {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    fontFamily: 'Paprika',
   },
 
   'sideMenu-header-btn': {

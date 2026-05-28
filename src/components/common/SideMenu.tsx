@@ -207,6 +207,8 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                   <CloseIcon color="rgba(255,255,255,0.85)" size={25} />
                 </TouchableOpacity>
 
+                <Text style={styles['sideMenu-header-logo']}>MEMoryME</Text>
+
                 <TouchableOpacity
                   style={styles['sideMenu-header-btn']}
                   onPress={onSettings}
