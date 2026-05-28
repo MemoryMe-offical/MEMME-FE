@@ -57,6 +57,7 @@ export const mainStyles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     justifyContent: 'flex-start',
+    zIndex: 1,
   },
 
   // 메인 - 헤더 - 우측 버튼 컨테이너
@@ -66,6 +67,7 @@ export const mainStyles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     justifyContent: 'flex-end',
+    zIndex: 1,
   },
 
   // 메인 - 헤더 - 아이콘 버튼

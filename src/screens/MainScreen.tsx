@@ -603,7 +603,7 @@ const MainScreen = () => {
               </TouchableOpacity>
             </View>
 
-            <Text style={styles['main-header-title']}>MEMoryMe</Text>
+            <Text style={styles['main-header-title']} pointerEvents="none">MEMoryMe</Text>
 
             <View style={styles['main-header-rightButtons']}>
               <TouchableOpacity
