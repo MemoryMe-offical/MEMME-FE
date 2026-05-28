@@ -25,7 +25,7 @@ import ChatMessageItem from '../components/chat/ChatMessageItem';
 import BoardCard from '../components/board/BoardCard';
 import ContextMenu from '../components/common/ContextMenu';
 import SideMenu from '../components/common/SideMenu';
-import { HamburgerIcon, PlusIcon, SearchIcon, SendIcon } from '../components/common/Icons';
+import { HamburgerIcon, PlusIcon, SearchIcon, SendIcon, ArrowLeftIcon } from '../components/common/Icons';
 import Badge from '../components/common/Badge';
 import MemoConvertSheet from '../components/memo/MemoConvertSheet';
 import PendingLinksBottomSheet from '../components/pendingLinks/PendingLinksBottomSheet';
@@ -573,14 +573,14 @@ const MainScreen = () => {
       <View style={styles['main-header']}>
         {isSearchMode ? (
           <>
-            <TouchableOpacity onPress={() => { setIsSearchMode(false); setSearchText(''); }} style={styles['main-header-profileButton']}>
-              <Text style={{ fontSize: 20, color: '#588DFF' }}>←</Text>
+            <TouchableOpacity onPress={() => { setIsSearchMode(false); setSearchText(''); }} style={styles['main-header-iconButton']}>
+              <ArrowLeftIcon color="#1A1A1A" size={20} />
             </TouchableOpacity>
             <TextInput
               style={[styles['main-inputBar-input'], { marginHorizontal: 8, flex: 1 }]}
               value={searchText}
               onChangeText={setSearchText}
-              placeholder="메모, 보드 검색..."
+              placeholder="메모, 노트, 보드의 제목 검색..."
               placeholderTextColor="#AABBCC"
               autoFocus
             />
