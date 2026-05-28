@@ -166,13 +166,36 @@ const MainScreen = () => {
     // 검색 텍스트 필터
     if (searchText.trim()) {
       const query = searchText.toLowerCase();
-      result = result.filter(i => {
-        if (i.type === 'memo') {
-          return (i as Memo).text.toLowerCase().includes(query);
-        } else {
-          return (i as Board).title.toLowerCase().includes(query);
-        }
-      });
+
+      // 태그 검색 (# 포함)
+      if (query.startsWith('#')) {
+        const tagQuery = query.substring(1).trim();
+        result = result.filter(i => {
+          if (i.type === 'board') {
+            const board = i as Board;
+            return (board.tags ?? []).some(tag => tag.toLowerCase().includes(tagQuery));
+          }
+          return false;
+        });
+      } else {
+        // 일반 텍스트 검색
+        result = result.filter(i => {
+          if (i.type === 'memo') {
+            return (i as Memo).text.toLowerCase().includes(query);
+          } else {
+            const board = i as Board;
+            // 보드 제목 검색
+            if (board.title.toLowerCase().includes(query)) {
+              return true;
+            }
+            // 보드 내 노트 제목, 내용 검색
+            return (board.notes ?? []).some(note =>
+              note.title?.toLowerCase().includes(query) ||
+              note.content?.toLowerCase().includes(query)
+            );
+          }
+        });
+      }
     }
 
     return result;
