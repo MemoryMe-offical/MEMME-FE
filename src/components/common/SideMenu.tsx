@@ -222,7 +222,7 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
             <View style={styles['sideMenu-profileSection']}>
               <View style={styles['sideMenu-profile-nameRow']}>
                 <Text style={styles['sideMenu-profile-name']}>사용자 님</Text>
-                <EditIcon color="#9DAFC8" size={14} />
+                {/* <EditIcon color="#9DAFC8" size={14} /> */}
               </View>
 
               {/* 스토리지 */}
@@ -230,9 +230,9 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                 <View style={styles['sideMenu-storage-textRow']}>
                   <Text style={styles['sideMenu-storage-usedText']}>{storageUsed.toFixed(2)} GB</Text>
                   <Text style={styles['sideMenu-storage-totalText']}>/ 10 GB</Text>
-                  <TouchableOpacity style={styles['sideMenu-storage-detailBtn']}>
+                  {/* <TouchableOpacity style={styles['sideMenu-storage-detailBtn']}>
                     <Text style={styles['sideMenu-storage-detailText']}>자세히</Text>
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
                 </View>
 
                 <View style={styles['sideMenu-storage-barWrapper']}>
