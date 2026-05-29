@@ -705,6 +705,13 @@ const MainScreen = () => {
               placeholderTextColor="#AABBCC"
               autoFocus
             />
+            <TouchableOpacity
+              style={[styles['main-header-iconButton'], selectedTags.length > 0 && { backgroundColor: '#E8EEFF' }]}
+              onPress={() => setIsTagFilterVisible(true)}>
+              <Text style={[{ fontSize: 10, fontWeight: '600', color: selectedTags.length > 0 ? '#588DFF' : '#1A1A1A' }]}>
+                필터
+              </Text>
+            </TouchableOpacity>
           </>
         ) : (
           <>
@@ -713,14 +720,6 @@ const MainScreen = () => {
                 style={styles['main-header-iconButton']}
                 onPress={() => setIsSearchMode(true)}>
                 <SearchIcon color="#1A1A1A" size={20} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles['main-header-iconButton'], selectedTags.length > 0 && { backgroundColor: '#E8EEFF' }]}
-                onPress={() => setIsTagFilterVisible(true)}>
-                <Text style={[{ fontSize: 10, fontWeight: '600', color: selectedTags.length > 0 ? '#588DFF' : '#1A1A1A' }]}>
-                  필터
-                </Text>
               </TouchableOpacity>
 
               <TouchableOpacity
