@@ -53,6 +53,15 @@ export const sideMenuStyles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
     fontFamily: 'Paprika',
+    textAlign: 'center'
+  },
+
+  'sideMenu-header-subtitle': {
+    fontSize: 11,
+    fontWeight: '400',
+    color: '#FFFFFF',
+    marginTop: 4,
+    opacity: 0.85,
   },
 
   'sideMenu-header-btn': {

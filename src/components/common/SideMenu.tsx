@@ -207,7 +207,10 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                   <CloseIcon color="rgba(255,255,255,0.85)" size={25} />
                 </TouchableOpacity>
 
-                <Text style={styles['sideMenu-header-logo']}>MEMoryME</Text>
+                <View>
+                  <Text style={styles['sideMenu-header-logo']}>MEMoryME</Text>
+                  <Text style={styles['sideMenu-header-subtitle']}>나를 기억하고 기록하는 공간</Text>
+                </View>
 
                 <TouchableOpacity
                   style={styles['sideMenu-header-btn']}
