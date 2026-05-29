@@ -320,6 +320,19 @@ const MainScreen = () => {
   useFocusEffect(
     useCallback(() => {
       loadTimeline();
+      // 설정이 변경되었을 수 있으니 다시 로드
+      const loadExpandSettings = async () => {
+        try {
+          const savedSettings = await AsyncStorage.getItem('expandInitialSettings');
+          if (savedSettings) {
+            const settings = JSON.parse(savedSettings);
+            setExpandInitialSettings(settings);
+          }
+        } catch (error) {
+          console.error('Failed to load expand settings:', error);
+        }
+      };
+      loadExpandSettings();
     }, [loadTimeline])
   );
 
