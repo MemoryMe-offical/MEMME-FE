@@ -44,7 +44,7 @@ interface Props {
   onBookmarkPress: (item: TimelineItem) => void;
   isBookmarkFilterActive?: boolean;
   onBookmarkFilterToggle?: (active: boolean) => void;
-  onMediaGalleryPress?: (galleryType: 'images' | 'videos' | 'files' | 'links') => void;
+  onMediaGalleryPress?: (galleryType: 'images' | 'videos' | 'files' | 'links' | 'bookmarks') => void;
 }
 
 const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBookmarkPress, isBookmarkFilterActive, onBookmarkFilterToggle, onMediaGalleryPress }: Props) => {
@@ -343,6 +343,18 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                         </TouchableOpacity>
                       );
                     })}
+                    {bookmarkedItems.length > MAX_DISPLAY_ITEMS && (
+                      <TouchableOpacity
+                        style={[styles['sideMenu-bookmark-card'], { justifyContent: 'center', alignItems: 'center', paddingVertical: 10 }]}
+                        activeOpacity={0.7}
+                        onPress={() => {
+                          handleClose();
+                          onMediaGalleryPress?.('bookmarks');
+                        }}>
+                        <Text style={{ fontSize: 12, color: '#FF9500', fontWeight: '600', marginRight: 4 }}>더보기</Text>
+                        <ChevronRightIcon color="#FF9500" size={14} />
+                      </TouchableOpacity>
+                    )}
                   </>
                 )}
               </View>
@@ -389,6 +401,19 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                           }}
                         />
                       ))}
+                      {mediaData.images.length > MAX_DISPLAY_ITEMS && (
+                        <TouchableOpacity
+                          style={[styles['sideMenu-mediaThumbnail'], { justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0F5FF' }]}
+                          onPress={() => {
+                            handleClose();
+                            onMediaGalleryPress?.('images');
+                          }}>
+                          <View style={{ alignItems: 'center', gap: 4 }}>
+                            <ChevronRightIcon color="#588DFF" size={16} />
+                            <Text style={{ fontSize: 10, color: '#588DFF', fontWeight: '600' }}>더보기</Text>
+                          </View>
+                        </TouchableOpacity>
+                      )}
                     </ScrollView>
                   </>
                 )}
@@ -439,6 +464,19 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                           </View>
                         </TouchableOpacity>
                       ))}
+                      {mediaData.videos.length > MAX_DISPLAY_ITEMS && (
+                        <TouchableOpacity
+                          style={[styles['sideMenu-mediaThumbnail'], { justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0F5FF' }]}
+                          onPress={() => {
+                            handleClose();
+                            onMediaGalleryPress?.('videos');
+                          }}>
+                          <View style={{ alignItems: 'center', gap: 4 }}>
+                            <ChevronRightIcon color="#6B4DFF" size={16} />
+                            <Text style={{ fontSize: 10, color: '#6B4DFF', fontWeight: '600' }}>더보기</Text>
+                          </View>
+                        </TouchableOpacity>
+                      )}
                     </ScrollView>
                   </>
                 )}
@@ -500,6 +538,17 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                           </View>
                         </TouchableOpacity>
                       ))}
+                      {mediaData.links.length > MAX_DISPLAY_ITEMS && (
+                        <TouchableOpacity
+                          style={[styles['sideMenu-linkPreview'], { justifyContent: 'center', alignItems: 'center', paddingVertical: 8, backgroundColor: '#F7FAFF' }]}
+                          onPress={() => {
+                            handleClose();
+                            onMediaGalleryPress?.('links');
+                          }}>
+                          <Text style={{ fontSize: 12, color: '#00B386', fontWeight: '600' }}>더보기</Text>
+                          <ChevronRightIcon color="#00B386" size={14} />
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </>
                 )}
@@ -551,6 +600,17 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                           <Text style={styles['sideMenu-fileName']} numberOfLines={2}>{file.name}</Text>
                         </TouchableOpacity>
                       ))}
+                      {mediaData.files.length > MAX_DISPLAY_ITEMS && (
+                        <TouchableOpacity
+                          style={[styles['sideMenu-fileItem'], { justifyContent: 'center', alignItems: 'center', backgroundColor: '#F7FAFF' }]}
+                          onPress={() => {
+                            handleClose();
+                            onMediaGalleryPress?.('files');
+                          }}>
+                          <Text style={{ fontSize: 12, color: '#FF6B6B', fontWeight: '600' }}>더보기</Text>
+                          <ChevronRightIcon color="#FF6B6B" size={14} />
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </>
                 )}
