@@ -98,6 +98,7 @@ const MainScreen = () => {
     boardExpandMode: 'all' as 'all' | 'none',
     noteExpandMode: 'none' as 'none' | 'first' | 'all',
   });
+  const [expandModalVisible, setExpandModalVisible] = useState(false);
 
   // 초기 설정 로드
   useEffect(() => {
@@ -293,13 +294,17 @@ const MainScreen = () => {
     const newBoardStates: Record<string, boolean> = {};
     const newNoteStates: Record<string, boolean> = {};
 
+    // 노트를 펼칠 예정이면 보드도 자동으로 펼치기
+    const willExpandNotes = expandInitialSettings.noteExpandMode === 'all' || expandInitialSettings.noteExpandMode === 'first';
+    const boardShouldExpand = expandInitialSettings.boardExpandMode === 'all' || willExpandNotes;
+
     items.forEach((item) => {
       if (item.type === 'board') {
         const board = item as Board;
-        newBoardStates[board.id] = expandInitialSettings.boardExpandMode === 'all';
+        newBoardStates[board.id] = boardShouldExpand;
 
         // 노트 펼침 설정
-        if (board.notes) {
+        if (board.notes && boardShouldExpand) {
           if (expandInitialSettings.noteExpandMode === 'all') {
             board.notes.forEach((note) => {
               newNoteStates[note.id] = true;
@@ -314,7 +319,7 @@ const MainScreen = () => {
 
     setBoardExpandStates(newBoardStates);
     setNoteExpandStates(newNoteStates);
-    setAllBoardsExpanded(expandInitialSettings.boardExpandMode === 'all');
+    setAllBoardsExpanded(boardShouldExpand);
   }, [loaded, expandInitialSettings]);
 
   useFocusEffect(
@@ -720,9 +725,9 @@ const MainScreen = () => {
 
               <TouchableOpacity
                 style={styles['main-header-iconButton']}
-                onPress={toggleAllBoards}>
+                onPress={() => setExpandModalVisible(true)}>
                 <Text style={[{ fontSize: 10, fontWeight: '600', color: '#1A1A1A' }]}>
-                  {allBoardsExpanded ? '접기' : '펼치기'}
+                  접기/펼치기
                 </Text>
               </TouchableOpacity>
             </View>
@@ -795,12 +800,20 @@ const MainScreen = () => {
                   onPress={handleDetailPress}
                   isExpanded={boardExpandStates[(item as Board).id] ?? true}
                   onExpandChange={(id, expanded) => setBoardExpandStates(prev => ({ ...prev, [id]: expanded }))}
-                  expandedNoteId={Object.keys(noteExpandStates).find(key => {
+                  expandedNoteIds={Object.keys(noteExpandStates).filter(key => {
                     const board = item as Board;
-                    return board.notes?.some(n => n.id === key);
+                    return noteExpandStates[key] && board.notes?.some(n => n.id === key);
                   })}
                   onNoteExpandChange={(noteId, expanded) => {
-                    setNoteExpandStates(prev => ({ ...prev, [noteId]: expanded }));
+                    setNoteExpandStates(prev => {
+                      if (expanded) {
+                        return { ...prev, [noteId]: true };
+                      } else {
+                        const newStates = { ...prev };
+                        delete newStates[noteId];
+                        return newStates;
+                      }
+                    });
                   }}
                 />
               );
@@ -956,6 +969,226 @@ const MainScreen = () => {
           setSideMenuVisible(false);
         }}
       />
+
+      {/* 펼치기/접기 옵션 모달 */}
+      <Modal
+        visible={expandModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setExpandModalVisible(false)}>
+        <TouchableOpacity
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
+          activeOpacity={1}
+          onPress={() => setExpandModalVisible(false)}>
+          <View
+            style={{
+              backgroundColor: '#FFFFFF',
+              borderTopLeftRadius: 20,
+              borderTopRightRadius: 20,
+              paddingTop: 14,
+              paddingHorizontal: 18,
+              paddingBottom: Math.max(insets.bottom, 18),
+              marginTop: 'auto',
+            }}
+            onStartShouldSetResponder={() => true}>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A1A', fontFamily: 'PretendardVariable' }}>
+                표시 설정
+              </Text>
+              <TouchableOpacity onPress={() => setExpandModalVisible(false)}>
+                <Text style={{ fontSize: 24, color: '#9DAFC8' }}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {/* 보드 설정 */}
+              <Text style={{ fontSize: 12, fontWeight: '600', color: '#1A1A1A', marginBottom: 10, fontFamily: 'PretendardVariable' }}>
+                보드
+              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  const newMode = expandInitialSettings.boardExpandMode === 'all' ? 'none' : 'all';
+                  setExpandInitialSettings(prev => ({ ...prev, boardExpandMode: newMode as 'all' | 'none' }));
+                  AsyncStorage.setItem('expandInitialSettings', JSON.stringify({
+                    boardExpandMode: newMode,
+                    noteExpandMode: expandInitialSettings.noteExpandMode
+                  }));
+                }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: expandInitialSettings.boardExpandMode === 'all' ? '#F8FAFF' : '#FFFFFF',
+                  borderRadius: 10,
+                  paddingVertical: 12,
+                  paddingHorizontal: 14,
+                  marginBottom: 8,
+                  borderWidth: 1,
+                  borderColor: expandInitialSettings.boardExpandMode === 'all' ? '#588DFF' : '#E4ECFF',
+                }}>
+                <View style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 9,
+                  borderWidth: 2,
+                  borderColor: expandInitialSettings.boardExpandMode === 'all' ? '#588DFF' : '#C0CDD8',
+                  backgroundColor: expandInitialSettings.boardExpandMode === 'all' ? '#588DFF' : 'transparent',
+                  marginRight: 12,
+                }} />
+                <Text style={{ fontSize: 14, color: '#1A1A1A', fontFamily: 'PretendardVariable', fontWeight: '500' }}>
+                  모든 보드 펼치기
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => {
+                  setExpandInitialSettings(prev => ({
+                    ...prev,
+                    boardExpandMode: 'none' as 'all' | 'none',
+                    noteExpandMode: 'none' as 'none' | 'first' | 'all',
+                  }));
+                  AsyncStorage.setItem('expandInitialSettings', JSON.stringify({
+                    boardExpandMode: 'none',
+                    noteExpandMode: 'none'
+                  }));
+                }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: expandInitialSettings.boardExpandMode === 'none' ? '#F8FAFF' : '#FFFFFF',
+                  borderRadius: 10,
+                  paddingVertical: 12,
+                  paddingHorizontal: 14,
+                  marginBottom: 20,
+                  borderWidth: 1,
+                  borderColor: expandInitialSettings.boardExpandMode === 'none' ? '#588DFF' : '#E4ECFF',
+                }}>
+                <View style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 9,
+                  borderWidth: 2,
+                  borderColor: expandInitialSettings.boardExpandMode === 'none' ? '#588DFF' : '#C0CDD8',
+                  backgroundColor: expandInitialSettings.boardExpandMode === 'none' ? '#588DFF' : 'transparent',
+                  marginRight: 12,
+                }} />
+                <Text style={{ fontSize: 14, color: '#1A1A1A', fontFamily: 'PretendardVariable', fontWeight: '500' }}>
+                  모든 보드 접기
+                </Text>
+              </TouchableOpacity>
+
+              {/* 노트 설정 - 보드 접기일 때 비활성화 */}
+              <Text style={{ fontSize: 12, fontWeight: '600', color: expandInitialSettings.boardExpandMode === 'none' ? '#C0CDD8' : '#1A1A1A', marginBottom: 10, fontFamily: 'PretendardVariable' }}>
+                노트 {expandInitialSettings.boardExpandMode === 'none' ? '(보드 접기일 때 사용 불가)' : ''}
+              </Text>
+
+              <TouchableOpacity
+                disabled={expandInitialSettings.boardExpandMode === 'none'}
+                onPress={() => {
+                  setExpandInitialSettings(prev => ({ ...prev, noteExpandMode: 'none' as 'none' | 'first' | 'all' }));
+                  AsyncStorage.setItem('expandInitialSettings', JSON.stringify({
+                    boardExpandMode: expandInitialSettings.boardExpandMode,
+                    noteExpandMode: 'none'
+                  }));
+                }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: expandInitialSettings.noteExpandMode === 'none' ? '#F8FAFF' : '#FFFFFF',
+                  borderRadius: 10,
+                  paddingVertical: 12,
+                  paddingHorizontal: 14,
+                  marginBottom: 8,
+                  borderWidth: 1,
+                  borderColor: expandInitialSettings.noteExpandMode === 'none' ? '#588DFF' : '#E4ECFF',
+                  opacity: expandInitialSettings.boardExpandMode === 'none' ? 0.5 : 1,
+                }}>
+                <View style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 9,
+                  borderWidth: 2,
+                  borderColor: expandInitialSettings.noteExpandMode === 'none' ? '#588DFF' : '#C0CDD8',
+                  backgroundColor: expandInitialSettings.noteExpandMode === 'none' ? '#588DFF' : 'transparent',
+                  marginRight: 12,
+                }} />
+                <Text style={{ fontSize: 14, color: expandInitialSettings.boardExpandMode === 'none' ? '#C0CDD8' : '#1A1A1A', fontFamily: 'PretendardVariable', fontWeight: '500' }}>
+                  모든 노트 접기
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                disabled={expandInitialSettings.boardExpandMode === 'none'}
+                onPress={() => {
+                  setExpandInitialSettings(prev => ({ ...prev, noteExpandMode: 'first' as 'none' | 'first' | 'all' }));
+                  AsyncStorage.setItem('expandInitialSettings', JSON.stringify({
+                    boardExpandMode: expandInitialSettings.boardExpandMode,
+                    noteExpandMode: 'first'
+                  }));
+                }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: expandInitialSettings.noteExpandMode === 'first' ? '#F8FAFF' : '#FFFFFF',
+                  borderRadius: 10,
+                  paddingVertical: 12,
+                  paddingHorizontal: 14,
+                  marginBottom: 8,
+                  borderWidth: 1,
+                  borderColor: expandInitialSettings.noteExpandMode === 'first' ? '#588DFF' : '#E4ECFF',
+                  opacity: expandInitialSettings.boardExpandMode === 'none' ? 0.5 : 1,
+                }}>
+                <View style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 9,
+                  borderWidth: 2,
+                  borderColor: expandInitialSettings.noteExpandMode === 'first' ? '#588DFF' : '#C0CDD8',
+                  backgroundColor: expandInitialSettings.noteExpandMode === 'first' ? '#588DFF' : 'transparent',
+                  marginRight: 12,
+                }} />
+                <Text style={{ fontSize: 14, color: expandInitialSettings.boardExpandMode === 'none' ? '#C0CDD8' : '#1A1A1A', fontFamily: 'PretendardVariable', fontWeight: '500' }}>
+                  보드당 첫 번째 노트만 펼치기
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                disabled={expandInitialSettings.boardExpandMode === 'none'}
+                onPress={() => {
+                  setExpandInitialSettings(prev => ({ ...prev, noteExpandMode: 'all' as 'none' | 'first' | 'all' }));
+                  AsyncStorage.setItem('expandInitialSettings', JSON.stringify({
+                    boardExpandMode: expandInitialSettings.boardExpandMode,
+                    noteExpandMode: 'all'
+                  }));
+                }}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: expandInitialSettings.noteExpandMode === 'all' ? '#F8FAFF' : '#FFFFFF',
+                  borderRadius: 10,
+                  paddingVertical: 12,
+                  paddingHorizontal: 14,
+                  marginBottom: 8,
+                  borderWidth: 1,
+                  borderColor: expandInitialSettings.noteExpandMode === 'all' ? '#588DFF' : '#E4ECFF',
+                  opacity: expandInitialSettings.boardExpandMode === 'none' ? 0.5 : 1,
+                }}>
+                <View style={{
+                  width: 18,
+                  height: 18,
+                  borderRadius: 9,
+                  borderWidth: 2,
+                  borderColor: expandInitialSettings.noteExpandMode === 'all' ? '#588DFF' : '#C0CDD8',
+                  backgroundColor: expandInitialSettings.noteExpandMode === 'all' ? '#588DFF' : 'transparent',
+                  marginRight: 12,
+                }} />
+                <Text style={{ fontSize: 14, color: expandInitialSettings.boardExpandMode === 'none' ? '#C0CDD8' : '#1A1A1A', fontFamily: 'PretendardVariable', fontWeight: '500' }}>
+                  모든 노트 펼치기
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       <ContextMenu
         visible={contextMenuItem !== null}

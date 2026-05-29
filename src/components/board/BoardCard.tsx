@@ -39,7 +39,7 @@ interface BoardCardProps {
   onPress?: (board: Board) => void;
   isExpanded?: boolean;
   onExpandChange?: (id: string, expanded: boolean) => void;
-  expandedNoteId?: string | null;
+  expandedNoteIds?: string[];
   onNoteExpandChange?: (noteId: string, expanded: boolean) => void;
 }
 
@@ -49,16 +49,16 @@ const BoardCard = ({
   onDetailPress,
   isExpanded: propsIsExpanded,
   onExpandChange,
-  expandedNoteId: propsExpandedNoteId,
+  expandedNoteIds: propsExpandedNoteIds,
   onNoteExpandChange,
 }: BoardCardProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const hasNotes = Array.isArray(item.notes) && item.notes.length > 0;
-  const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
+  const [expandedNoteIds, setExpandedNoteIds] = useState<string[]>([]);
 
   // 부모로부터 받은 상태 사용 (있으면) 또는 로컬 상태 사용
   const displayIsExpanded = propsIsExpanded !== undefined ? propsIsExpanded : isExpanded;
-  const displayExpandedNoteId = propsExpandedNoteId !== undefined ? propsExpandedNoteId : expandedNoteId;
+  const displayExpandedNoteIds = propsExpandedNoteIds !== undefined ? propsExpandedNoteIds : expandedNoteIds;
   const [ogDataCache, setOgDataCache] = useState<Record<string, OgData>>({});
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [imageViewerImages, setImageViewerImages] = useState<string[]>([]);
@@ -68,11 +68,15 @@ const BoardCard = ({
   const flatListRef = useRef<FlatList>(null);
 
   const toggleNote = (noteId: string) => {
-    const isCurrentlyExpanded = displayExpandedNoteId === noteId;
+    const isCurrentlyExpanded = displayExpandedNoteIds.includes(noteId);
     if (onNoteExpandChange) {
       onNoteExpandChange(noteId, !isCurrentlyExpanded);
     } else {
-      setExpandedNoteId(prev => (prev === noteId ? null : noteId));
+      setExpandedNoteIds(prev =>
+        isCurrentlyExpanded
+          ? prev.filter(id => id !== noteId)
+          : [...prev, noteId]
+      );
     }
   };
 
@@ -167,7 +171,7 @@ const BoardCard = ({
               ? (
                 <View>
                   {item.notes!.slice(0, 3).map((note, idx) => {
-                    const isNoteExpanded = displayExpandedNoteId === note.id;
+                    const isNoteExpanded = displayExpandedNoteIds.includes(note.id);
                     const isLastNote = idx === Math.min(2, item.notes!.length - 1);
                     return (
                       <View key={note.id} style={[styles['note-card-wrapper'], isLastNote && { marginBottom: 0 }]}>
