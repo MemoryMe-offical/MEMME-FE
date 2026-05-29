@@ -90,6 +90,31 @@ const MainScreen = () => {
 
   const [recentBoards, setRecentBoards] = useState<Board[]>([]);
 
+  // 보드 & 노트 펼치기/접기 상태 관리
+  const [boardExpandStates, setBoardExpandStates] = useState<Record<string, boolean>>({});
+  const [noteExpandStates, setNoteExpandStates] = useState<Record<string, boolean>>({});
+  const [allBoardsExpanded, setAllBoardsExpanded] = useState(true);
+  const [expandInitialSettings, setExpandInitialSettings] = useState({
+    boardExpandMode: 'all' as 'all' | 'none',
+    noteExpandMode: 'none' as 'none' | 'first' | 'all',
+  });
+
+  // 초기 설정 로드
+  useEffect(() => {
+    const loadExpandSettings = async () => {
+      try {
+        const savedSettings = await AsyncStorage.getItem('expandInitialSettings');
+        if (savedSettings) {
+          const settings = JSON.parse(savedSettings);
+          setExpandInitialSettings(settings);
+        }
+      } catch (error) {
+        console.error('Failed to load expand settings:', error);
+      }
+    };
+    loadExpandSettings();
+  }, []);
+
   // 보드 목록 로드 (시간이 걸릴 수 있으므로 loadTimeline 이후에 시도)
   useEffect(() => {
     if (!loaded) return;
@@ -261,6 +286,37 @@ const MainScreen = () => {
     });
   }, [loadTimeline]);
 
+  // 타임라인 로드 후 보드/노트 확장 상태 초기화
+  useEffect(() => {
+    if (!loaded) return;
+
+    const newBoardStates: Record<string, boolean> = {};
+    const newNoteStates: Record<string, boolean> = {};
+
+    items.forEach((item) => {
+      if (item.type === 'board') {
+        const board = item as Board;
+        newBoardStates[board.id] = expandInitialSettings.boardExpandMode === 'all';
+
+        // 노트 펼침 설정
+        if (board.notes) {
+          if (expandInitialSettings.noteExpandMode === 'all') {
+            board.notes.forEach((note) => {
+              newNoteStates[note.id] = true;
+            });
+          } else if (expandInitialSettings.noteExpandMode === 'first' && board.notes.length > 0) {
+            newNoteStates[board.notes[0].id] = true;
+          }
+          // 'none'인 경우는 추가하지 않음
+        }
+      }
+    });
+
+    setBoardExpandStates(newBoardStates);
+    setNoteExpandStates(newNoteStates);
+    setAllBoardsExpanded(expandInitialSettings.boardExpandMode === 'all');
+  }, [loaded, expandInitialSettings]);
+
   useFocusEffect(
     useCallback(() => {
       loadTimeline();
@@ -320,6 +376,30 @@ const MainScreen = () => {
       hideSub.remove();
     };
   }, []);
+
+  const toggleAllBoards = () => {
+    const newState = !allBoardsExpanded;
+    setAllBoardsExpanded(newState);
+
+    const newBoardStates: Record<string, boolean> = {};
+    const newNoteStates: Record<string, boolean> = {};
+
+    items.forEach((item) => {
+      if (item.type === 'board') {
+        const board = item as Board;
+        newBoardStates[board.id] = newState;
+
+        if (newState && board.notes) {
+          board.notes.forEach((note) => {
+            newNoteStates[note.id] = true;
+          });
+        }
+      }
+    });
+
+    setBoardExpandStates(newBoardStates);
+    setNoteExpandStates(newNoteStates);
+  };
 
   const handleContextMenu = (item: TimelineItem) => setContextMenuItem(item);
   const handleCloseContextMenu = () => setContextMenuItem(null);
@@ -624,6 +704,14 @@ const MainScreen = () => {
                   필터
                 </Text>
               </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles['main-header-iconButton']}
+                onPress={toggleAllBoards}>
+                <Text style={[{ fontSize: 10, fontWeight: '600', color: '#1A1A1A' }]}>
+                  {allBoardsExpanded ? '접기' : '펼치기'}
+                </Text>
+              </TouchableOpacity>
             </View>
 
             <Text style={styles['main-header-title']} pointerEvents="none">MEMoryMe</Text>
@@ -692,6 +780,15 @@ const MainScreen = () => {
                   onContextMenu={handleContextMenu}
                   onDetailPress={handleDetailPress}
                   onPress={handleDetailPress}
+                  isExpanded={boardExpandStates[(item as Board).id] ?? true}
+                  onExpandChange={(id, expanded) => setBoardExpandStates(prev => ({ ...prev, [id]: expanded }))}
+                  expandedNoteId={Object.keys(noteExpandStates).find(key => {
+                    const board = item as Board;
+                    return board.notes?.some(n => n.id === key);
+                  })}
+                  onNoteExpandChange={(noteId, expanded) => {
+                    setNoteExpandStates(prev => ({ ...prev, [noteId]: expanded }));
+                  }}
                 />
               );
             }}

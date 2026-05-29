@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,47 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
 const SettingsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
+  const [boardExpandMode, setBoardExpandMode] = useState<'all' | 'none'>('all');
+  const [noteExpandMode, setNoteExpandMode] = useState<'none' | 'first' | 'all'>('none');
+
+  // 설정 로드
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const saved = await AsyncStorage.getItem('expandInitialSettings');
+        if (saved) {
+          const settings = JSON.parse(saved);
+          setBoardExpandMode(settings.boardExpandMode || 'all');
+          setNoteExpandMode(settings.noteExpandMode || 'none');
+        }
+      } catch (error) {
+        console.error('Failed to load settings:', error);
+      }
+    };
+    loadSettings();
+  }, []);
+
+  // 설정 저장
+  const saveSettings = async (boardMode: 'all' | 'none', noteMode: 'none' | 'first' | 'all') => {
+    try {
+      await AsyncStorage.setItem(
+        'expandInitialSettings',
+        JSON.stringify({ boardExpandMode: boardMode, noteExpandMode: noteMode })
+      );
+    } catch (error) {
+      console.error('Failed to save settings:', error);
+    }
+  };
+
+  const updateBoardMode = (mode: 'all' | 'none') => {
+    setBoardExpandMode(mode);
+    saveSettings(mode, noteExpandMode);
+  };
+
+  const updateNoteMode = (mode: 'none' | 'first' | 'all') => {
+    setNoteExpandMode(mode);
+    saveSettings(boardExpandMode, mode);
+  };
 
   const handleLogout = () => {
     Alert.alert('로그아웃', '로그아웃하시겠습니까?', [
@@ -67,6 +108,47 @@ const SettingsScreen = ({ navigation }: Props) => {
         style={styles.body}
         contentContainerStyle={styles.bodyContent}
       >
+        {/* 표시 설정 섹션 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>표시 설정</Text>
+
+          {/* 보드 설정 */}
+          <Text style={styles.optionGroupTitle}>보드</Text>
+          <TouchableOpacity
+            style={[styles.optionItem, boardExpandMode === 'all' && styles.optionItemSelected]}
+            onPress={() => updateBoardMode('all')}>
+            <View style={[styles.radioButton, boardExpandMode === 'all' && styles.radioButtonSelected]} />
+            <Text style={styles.optionText}>모든 보드 펼치기</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.optionItem, boardExpandMode === 'none' && styles.optionItemSelected]}
+            onPress={() => updateBoardMode('none')}>
+            <View style={[styles.radioButton, boardExpandMode === 'none' && styles.radioButtonSelected]} />
+            <Text style={styles.optionText}>모든 보드 접기</Text>
+          </TouchableOpacity>
+
+          {/* 노트 설정 */}
+          <Text style={[styles.optionGroupTitle, { marginTop: 20 }]}>노트</Text>
+          <TouchableOpacity
+            style={[styles.optionItem, noteExpandMode === 'none' && styles.optionItemSelected]}
+            onPress={() => updateNoteMode('none')}>
+            <View style={[styles.radioButton, noteExpandMode === 'none' && styles.radioButtonSelected]} />
+            <Text style={styles.optionText}>모든 노트 접기</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.optionItem, noteExpandMode === 'first' && styles.optionItemSelected]}
+            onPress={() => updateNoteMode('first')}>
+            <View style={[styles.radioButton, noteExpandMode === 'first' && styles.radioButtonSelected]} />
+            <Text style={styles.optionText}>보드당 첫 번째 노트만 펼치기</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.optionItem, noteExpandMode === 'all' && styles.optionItemSelected]}
+            onPress={() => updateNoteMode('all')}>
+            <View style={[styles.radioButton, noteExpandMode === 'all' && styles.radioButtonSelected]} />
+            <Text style={styles.optionText}>모든 노트 펼치기</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* 계정 섹션 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>계정</Text>
@@ -163,6 +245,47 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9DAFC8',
     fontFamily: 'PretendardVariable',
+  },
+  optionGroupTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: 'PretendardVariable',
+    marginBottom: 10,
+  },
+  optionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E4ECFF',
+  },
+  optionItemSelected: {
+    borderColor: '#588DFF',
+    backgroundColor: '#F8FAFF',
+  },
+  radioButton: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: '#C0CDD8',
+    marginRight: 12,
+  },
+  radioButtonSelected: {
+    borderColor: '#588DFF',
+    backgroundColor: '#588DFF',
+  },
+  optionText: {
+    fontSize: 14,
+    color: '#1A1A1A',
+    fontFamily: 'PretendardVariable',
+    fontWeight: '500',
+    flex: 1,
   },
 });
 
