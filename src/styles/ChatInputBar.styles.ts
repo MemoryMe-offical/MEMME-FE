@@ -11,6 +11,7 @@ export const chatInputBarStyles = StyleSheet.create({
     gap: 8,
     borderTopLeftRadius: 25,
     borderTopRightRadius: 25,
+    marginBottom: 8
   },
 
   // 입력 바 - 플러스 버튼
@@ -27,8 +28,7 @@ export const chatInputBarStyles = StyleSheet.create({
     backgroundColor: '#F0F4FF',
     borderRadius: 22,
     paddingHorizontal: 14,
-    paddingTop: 10,
-    paddingBottom: 10,
+    paddingVertical: 10,
     fontSize: 13,
     lineHeight: 16,
     color: '#1A1A1A',

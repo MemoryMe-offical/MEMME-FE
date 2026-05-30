@@ -7,7 +7,6 @@ interface ChatInputBarProps {
   inputText: string;
   onChangeText: (text: string) => void;
   onSend: () => void;
-  keyboardVisible: boolean;
   bottomInset: number;
 }
 
@@ -15,14 +14,15 @@ const ChatInputBar: React.FC<ChatInputBarProps> = ({
   inputText,
   onChangeText,
   onSend,
-  keyboardVisible,
   bottomInset,
 }) => {
+  const paddingBottom = Math.max(bottomInset, 8);
+
   return (
     <View
       style={[
         chatInputBarStyles.container,
-        { paddingBottom: keyboardVisible ? 8 : Math.max(bottomInset, 8) },
+        { paddingBottom },
       ]}
     >
       <TouchableOpacity style={chatInputBarStyles.plusButton}>

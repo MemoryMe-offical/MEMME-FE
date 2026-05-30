@@ -39,6 +39,8 @@ import * as memoService from '../services/memoService';
 import * as boardService from '../services/boardService';
 import * as noteService from '../services/noteService';
 
+const ANDROID_KEYBOARD_EXTRA_OFFSET = 50;
+
 const MainScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Main'>>();
@@ -51,8 +53,12 @@ const MainScreen = () => {
   const [contextMenuItem, setContextMenuItem] = useState<TimelineItem | null>(null);
   const [sideMenuVisible, setSideMenuVisible] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const flatListRef = useRef<FlatList<TimelineItem>>(null);
   const shouldScrollToEnd = useRef(false);
+  const androidInputOffset = Platform.OS === 'android' && keyboardVisible
+    ? keyboardHeight + Math.max(insets.bottom, ANDROID_KEYBOARD_EXTRA_OFFSET)
+    : 0;
 
   // 링크 감지 관련 state
   const [detectedLink, setDetectedLink] = useState<string | null>(null);
@@ -383,11 +389,13 @@ const MainScreen = () => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
-    const showSub = Keyboard.addListener(showEvent, () => {
+    const showSub = Keyboard.addListener(showEvent, (event) => {
       setKeyboardVisible(true);
+      setKeyboardHeight(event.endCoordinates.height);
     });
     const hideSub = Keyboard.addListener(hideEvent, () => {
       setKeyboardVisible(false);
+      setKeyboardHeight(0);
     });
 
     return () => {
@@ -689,9 +697,17 @@ const MainScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles['main-safeArea']} edges={['top', 'left', 'right']}>
+    <SafeAreaView
+      style={styles['main-safeArea']}
+      edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" backgroundColor="#EEF3FF" />
-
+      <View
+        pointerEvents="none"
+        style={[
+          styles['main-topSafeAreaFill'],
+          { height: insets.top },
+        ]}
+      />
       <View style={styles['main-header']}>
         {isSearchMode ? (
           <>
@@ -754,7 +770,7 @@ const MainScreen = () => {
 
       <KeyboardAvoidingView
         style={styles['main-body']}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'height' : undefined}
         keyboardVerticalOffset={0}
       >
         <View style={styles['main-content']}>
@@ -821,13 +837,14 @@ const MainScreen = () => {
           />
         </View>
 
-        <ChatInputBar
-          inputText={inputText}
-          onChangeText={setInputText}
-          onSend={handleSend}
-          keyboardVisible={keyboardVisible}
-          bottomInset={insets.bottom}
-        />
+        <View style={Platform.OS === 'android' ? { marginBottom: androidInputOffset } : null}>
+          <ChatInputBar
+            inputText={inputText}
+            onChangeText={setInputText}
+            onSend={handleSend}
+            bottomInset={insets.bottom}
+          />
+        </View>
       </KeyboardAvoidingView>
 
       {/* 태그 필터 모달 */}

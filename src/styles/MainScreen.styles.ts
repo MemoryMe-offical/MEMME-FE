@@ -6,6 +6,14 @@ export const mainStyles = StyleSheet.create({
   // 메인 - 최상위 SafeArea
   'main-safeArea': {
     flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+
+  'main-topSafeAreaFill': {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
     backgroundColor: '#EEF3FF',
   },
 
@@ -78,12 +86,13 @@ export const mainStyles = StyleSheet.create({
   // 메인 - 바디
   'main-body': {
     flex: 1,
-    backgroundColor: '#EEF3FF',
+    backgroundColor: '#FFFFFF',
   },
 
   // 메인 - 컨텐츠 영역
   'main-content': {
     flex: 1,
+    backgroundColor: '#EEF3FF',
   },
 
   // 메인 - 워터마크 컨테이너
