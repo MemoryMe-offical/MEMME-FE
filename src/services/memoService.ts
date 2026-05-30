@@ -13,7 +13,16 @@ interface ApiResponse<T> {
 /**
  * 빠른 메모 생성
  */
-export const createMemo = async (text: string, urls?: string[], ogDatas?: any[]): Promise<Memo> => {
+export const createMemo = async (
+  text: string,
+  urls?: string[],
+  ogDatas?: any[],
+  imageUris?: string[],
+  imageKeys?: string[],
+  videoUris?: string[],
+  videoKeys?: string[],
+  files?: any[]
+): Promise<Memo> => {
   try {
     const trimmedText = text.trim();
     const body: any = { text: trimmedText || ' ' };
@@ -24,6 +33,23 @@ export const createMemo = async (text: string, urls?: string[], ogDatas?: any[])
     if (ogDatas && ogDatas.length > 0) {
       body.ogDatas = ogDatas;
     }
+    if (imageUris && imageUris.length > 0) {
+      body.imageUris = imageUris;
+    }
+    if (imageKeys && imageKeys.length > 0) {
+      body.imageKeys = imageKeys;
+    }
+    if (videoUris && videoUris.length > 0) {
+      body.videoUris = videoUris;
+    }
+    if (videoKeys && videoKeys.length > 0) {
+      body.videoKeys = videoKeys;
+    }
+    if (files && files.length > 0) {
+      body.files = files;
+    }
+
+    console.log('Creating memo with body:', JSON.stringify(body));
 
     const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/memos`, {
       method: 'POST',
@@ -36,6 +62,14 @@ export const createMemo = async (text: string, urls?: string[], ogDatas?: any[])
 
     const apiResponse: ApiResponse<any> = await response.json();
     const memo = apiResponse.data;
+
+    const responseVideos = memo.videoUris && memo.videoKeys
+      ? memo.videoUris.map((uri: string, idx: number) => ({
+          uri,
+          key: memo.videoKeys[idx],
+        }))
+      : undefined;
+
     return {
       id: memo.uid,
       userId: memo.userId || '',
@@ -43,6 +77,10 @@ export const createMemo = async (text: string, urls?: string[], ogDatas?: any[])
       text: memo.text,
       urls: memo.urls || urls,
       ogDatas: memo.ogDatas || ogDatas,
+      imageUris: memo.imageUris || imageUris,
+      imageKeys: memo.imageKeys || imageKeys,
+      videos: responseVideos || (videoUris && videoKeys ? videoUris.map((uri: string, idx: number) => ({ uri, key: videoKeys[idx] })) : undefined),
+      files: memo.files || files,
       bookmarked: memo.bookmarked ?? false,
       createdAt: memo.createdAt,
     };
@@ -93,6 +131,10 @@ export const toggleMemoBookmark = async (memoUid: string, bookmarked?: boolean):
       text: memo.text,
       urls: memo.urls,
       ogDatas: memo.ogDatas,
+      imageUris: memo.imageUris,
+      imageKeys: memo.imageKeys,
+      videos: memo.videos,
+      files: memo.files,
       bookmarked: memo.bookmarked ?? false,
       createdAt: memo.createdAt,
     };

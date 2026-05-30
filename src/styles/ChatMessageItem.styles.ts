@@ -165,4 +165,139 @@ export const chatMessageItemStyles = StyleSheet.create({
     color: '#588DFF',
     fontFamily: 'PretendardVariable',
   },
+
+  // 미디어 컨테이너
+  'media-container': {
+    marginTop: 8,
+    alignSelf: 'flex-end',
+    maxWidth: CHAT_MESSAGE_MAX_WIDTH,
+  },
+
+  // 이미지 그리드 컨테이너
+  'image-grid': {
+    gap: 4,
+    alignSelf: 'flex-end',
+  },
+
+  // 이미지 한 줄 (2열)
+  'image-row': {
+    flexDirection: 'row',
+    gap: 4,
+  },
+
+  // 이미지 셀
+  'image-cell': {
+    flex: 1,
+    aspectRatio: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#F0F4FF',
+  },
+
+  'image-thumbnail': {
+    width: '100%',
+    height: '100%',
+    borderRadius: 12,
+  },
+
+  // 이미지 오버레이 (더보기 수)
+  'image-overlay': {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12,
+  },
+
+  'image-overlay-text': {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '700',
+    fontFamily: 'PretendardVariable',
+  },
+
+  // 동영상 컨테이너
+  'video-container': {
+    width: '100%',
+    aspectRatio: 16 / 9,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: '#1A1A1A',
+    position: 'relative',
+    marginTop: 8,
+    alignSelf: 'flex-end',
+    maxWidth: CHAT_MESSAGE_MAX_WIDTH,
+  },
+
+  'video-thumbnail': {
+    width: '100%',
+    height: '100%',
+  },
+
+  'video-play-icon': {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+
+  'video-play-button': {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  // 파일 카드
+  'file-container': {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#F8F9FB',
+    borderWidth: 1,
+    borderColor: '#E8EEF8',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 8,
+    alignSelf: 'flex-end',
+    maxWidth: CHAT_MESSAGE_MAX_WIDTH,
+  },
+
+  'file-icon-container': {
+    width: 36,
+    height: 36,
+    borderRadius: 6,
+    backgroundColor: '#EEF3FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  'file-info': {
+    flex: 1,
+  },
+
+  'file-name': {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: 'PretendardVariable',
+  },
+
+  'file-size': {
+    fontSize: 10,
+    color: '#9DAFC8',
+    marginTop: 2,
+    fontFamily: 'PretendardVariable',
+  },
 });

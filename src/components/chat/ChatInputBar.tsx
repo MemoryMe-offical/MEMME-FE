@@ -7,6 +7,7 @@ interface ChatInputBarProps {
   inputText: string;
   onChangeText: (text: string) => void;
   onSend: () => void;
+  onPlusPress?: () => void;
   bottomInset: number;
 }
 
@@ -14,6 +15,7 @@ const ChatInputBar: React.FC<ChatInputBarProps> = ({
   inputText,
   onChangeText,
   onSend,
+  onPlusPress,
   bottomInset,
 }) => {
   const paddingBottom = Math.max(bottomInset, 8);
@@ -25,7 +27,7 @@ const ChatInputBar: React.FC<ChatInputBarProps> = ({
         { paddingBottom },
       ]}
     >
-      <TouchableOpacity style={chatInputBarStyles.plusButton}>
+      <TouchableOpacity style={chatInputBarStyles.plusButton} onPress={onPlusPress}>
         <PlusIcon color="#000000" size={22} />
       </TouchableOpacity>
 

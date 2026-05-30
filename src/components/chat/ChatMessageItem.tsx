@@ -1,10 +1,20 @@
 // 채팅 아이템 컴포넌트
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Image, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Linking, ActivityIndicator, FlatList } from 'react-native';
 import { Memo } from '../../types';
 import { chatMessageItemStyles as styles, CHAT_MESSAGE_MAX_WIDTH, CHAT_LINK_CARD_MAX_WIDTH } from '../../styles/ChatMessageItem.styles';
 import { fetchOgData } from '../../services/ogService';
+import { FileIcon } from '../common/Icons';
+
+// 파일 크기 포맷팅
+const formatFileSize = (bytes: number): string => {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+};
 
 const formatTime = (isoString: string): string => {
   const date = new Date(isoString);
@@ -67,6 +77,195 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
     Linking.openURL(url).catch(() => {
       console.error('Failed to open URL:', url);
     });
+  };
+
+  // 이미지 그리드 렌더링 (1열 전체, 2열, 3열, 4열+ 2x2)
+  const renderImageGrid = () => {
+    if (!item.imageUris || item.imageUris.length === 0) return null;
+
+    const imageCount = item.imageUris.length;
+    const imageSize = (CHAT_MESSAGE_MAX_WIDTH - 4) / 2;
+
+    if (imageCount === 1) {
+      // 1장: 전체 너비
+      return (
+        <TouchableOpacity
+          onLongPress={() => onLongPress(item)}
+          delayLongPress={400}
+          style={[styles['media-container'], { width: CHAT_MESSAGE_MAX_WIDTH }]}>
+          <View style={{ width: '100%', aspectRatio: 1, borderRadius: 12, overflow: 'hidden' }}>
+            <Image
+              source={{ uri: item.imageUris[0] }}
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="cover"
+            />
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
+    if (imageCount === 2) {
+      // 2장: 나란히 2열
+      return (
+        <TouchableOpacity
+          onLongPress={() => onLongPress(item)}
+          delayLongPress={400}
+          style={[styles['media-container']]}>
+          <View style={styles['image-row']}>
+            {item.imageUris.slice(0, 2).map((uri, idx) => (
+              <View key={idx} style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
+                <Image
+                  source={{ uri }}
+                  style={styles['image-thumbnail']}
+                  resizeMode="cover"
+                />
+              </View>
+            ))}
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
+    if (imageCount === 3) {
+      // 3장: 상단 2열 + 하단 1열
+      return (
+        <TouchableOpacity
+          onLongPress={() => onLongPress(item)}
+          delayLongPress={400}
+          style={[styles['media-container']]}>
+          <View style={styles['image-grid']}>
+            {/* 첫 2장 */}
+            <View style={styles['image-row']}>
+              {item.imageUris.slice(0, 2).map((uri, idx) => (
+                <View key={idx} style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
+                  <Image
+                    source={{ uri }}
+                    style={styles['image-thumbnail']}
+                    resizeMode="cover"
+                  />
+                </View>
+              ))}
+            </View>
+            {/* 마지막 1장 (전체 너비) */}
+            <View style={{ width: '100%', aspectRatio: 2 / 1, borderRadius: 12, overflow: 'hidden' }}>
+              <Image
+                source={{ uri: item.imageUris[2] }}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode="cover"
+              />
+            </View>
+          </View>
+        </TouchableOpacity>
+      );
+    }
+
+    // 4장 이상: 2x2 그리드
+    const displayCount = Math.min(4, imageCount);
+    const showMore = imageCount > 4;
+
+    return (
+      <TouchableOpacity
+        onLongPress={() => onLongPress(item)}
+        delayLongPress={400}
+        style={[styles['media-container']]}>
+        <View style={styles['image-grid']}>
+          {/* 첫 번째 줄 */}
+          <View style={styles['image-row']}>
+            {item.imageUris.slice(0, 2).map((uri, idx) => (
+              <View key={idx} style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
+                <Image
+                  source={{ uri }}
+                  style={styles['image-thumbnail']}
+                  resizeMode="cover"
+                />
+              </View>
+            ))}
+          </View>
+          {/* 두 번째 줄 */}
+          <View style={styles['image-row']}>
+            {item.imageUris.slice(2, 4).map((uri, idx) => (
+              <View key={idx + 2} style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
+                <Image
+                  source={{ uri }}
+                  style={styles['image-thumbnail']}
+                  resizeMode="cover"
+                />
+                {showMore && idx === 1 && (
+                  <View style={styles['image-overlay']}>
+                    <Text style={styles['image-overlay-text']}>
+                      +{imageCount - 4}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  // 동영상 렌더링
+  const renderVideo = () => {
+    if (!item.videos || item.videos.length === 0) return null;
+    const video = item.videos[0];
+
+    return (
+      <TouchableOpacity
+        onLongPress={() => onLongPress(item)}
+        delayLongPress={400}
+        style={styles['video-container']}
+        onPress={() => {
+          Linking.openURL(video.url).catch(() => {
+            console.error('Failed to open video:', video.url);
+          });
+        }}>
+        {video.thumbnailUrl ? (
+          <Image
+            source={{ uri: video.thumbnailUrl }}
+            style={styles['video-thumbnail']}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={[styles['video-thumbnail'], { backgroundColor: '#1A1A1A' }]} />
+        )}
+        <View style={styles['video-play-icon']}>
+          <View style={styles['video-play-button']}>
+            <Text style={{ fontSize: 24 }}>▶</Text>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
+  // 파일 렌더링
+  const renderFile = () => {
+    if (!item.files || item.files.length === 0) return null;
+    const file = item.files[0];
+
+    return (
+      <TouchableOpacity
+        onLongPress={() => onLongPress(item)}
+        delayLongPress={400}
+        style={styles['file-container']}
+        onPress={() => {
+          Linking.openURL(file.url).catch(() => {
+            console.error('Failed to open file:', file.url);
+          });
+        }}>
+        <View style={styles['file-icon-container']}>
+          <FileIcon color="#588DFF" size={20} />
+        </View>
+        <View style={styles['file-info']}>
+          <Text style={styles['file-name']} numberOfLines={1}>
+            {file.name}
+          </Text>
+          <Text style={styles['file-size']}>
+            {formatFileSize(file.size)}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
   };
 
   return (
@@ -182,6 +381,15 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
           </TouchableOpacity>
         </View>
       )}
+
+      {/* 이미지 그리드 */}
+      {renderImageGrid()}
+
+      {/* 동영상 */}
+      {renderVideo()}
+
+      {/* 파일 */}
+      {renderFile()}
     </View>
   );
 };

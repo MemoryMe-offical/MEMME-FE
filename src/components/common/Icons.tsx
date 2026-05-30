@@ -103,3 +103,11 @@ export const ImageIcon = ({ color = '#1A1A1A', size = 18, style }: IconProps) =>
 export const AiIcon = ({ color = '#588DFF', size = 12, style }: IconProps) => (
   <MCI name="auto-fix" color={color} size={size} style={style} />
 );
+
+export const VideoIcon = ({ color = '#1A1A1A', size = 18, style }: IconProps) => (
+  <MCI name="video-outline" color={color} size={size} style={style} />
+);
+
+export const FileIcon = ({ color = '#1A1A1A', size = 18, style }: IconProps) => (
+  <MCI name="file-document-outline" color={color} size={size} style={style} />
+);

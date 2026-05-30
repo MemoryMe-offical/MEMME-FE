@@ -30,6 +30,8 @@ import { HamburgerIcon, PlusIcon, SearchIcon, ArrowLeftIcon } from '../component
 import Badge from '../components/common/Badge';
 import MemoConvertSheet from '../components/memo/MemoConvertSheet';
 import PendingLinksBottomSheet from '../components/pendingLinks/PendingLinksBottomSheet';
+import MediaPickerSheet from '../components/chat/MediaPickerSheet';
+import { uploadImages, uploadVideo, uploadFile } from '../services/uploadService';
 import { mainStyles as styles } from '../styles/MainScreen.styles';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { fetchOgData } from '../services/ogService';
@@ -86,6 +88,10 @@ const MainScreen = () => {
   // 메모→보드 변환 시트
   const [convertSheetVisible, setConvertSheetVisible] = useState(false); // TODO(P2): MemoConvertSheet 연결
   const [convertTargetMemo, setConvertTargetMemo] = useState<Memo | null>(null);
+
+  // 미디어 피커
+  const [mediaPickerVisible, setMediaPickerVisible] = useState(false);
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false);
 
   // 검색 & 필터
   const [isSearchMode, setIsSearchMode] = useState(false);
@@ -659,6 +665,52 @@ const MainScreen = () => {
     await createMemoWithoutLink(text);
   };
 
+  const handlePickImages = async (imageUris: string[]) => {
+    if (imageUris.length === 0) return;
+    setIsUploadingMedia(true);
+    try {
+      const { urls, keys } = await uploadImages(imageUris);
+      const newMemo = await memoService.createMemo('', undefined, undefined, urls, keys, undefined, undefined);
+      shouldScrollToEnd.current = true;
+      setItems(prev => [...prev, newMemo]);
+    } catch (error) {
+      console.error('Failed to upload images:', error);
+      Alert.alert('오류', '이미지 업로드에 실패했습니다.');
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  };
+
+  const handlePickVideo = async (videoUri: string) => {
+    setIsUploadingMedia(true);
+    try {
+      const uploadedVideo = await uploadVideo(videoUri);
+      const newMemo = await memoService.createMemo('', undefined, undefined, undefined, undefined, [uploadedVideo.url], [uploadedVideo.key]);
+      shouldScrollToEnd.current = true;
+      setItems(prev => [...prev, newMemo]);
+    } catch (error) {
+      console.error('Failed to upload video:', error);
+      Alert.alert('오류', '동영상 업로드에 실패했습니다.');
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  };
+
+  const handlePickFile = async (fileUri: string, fileName: string) => {
+    setIsUploadingMedia(true);
+    try {
+      const uploadedFile = await uploadFile(fileUri);
+      const newMemo = await memoService.createMemo('', undefined, undefined, undefined, undefined, undefined, undefined, [uploadedFile]);
+      shouldScrollToEnd.current = true;
+      setItems(prev => [...prev, newMemo]);
+    } catch (error) {
+      console.error('Failed to upload file:', error);
+      Alert.alert('오류', '파일 업로드에 실패했습니다.');
+    } finally {
+      setIsUploadingMedia(false);
+    }
+  };
+
   const handlePendingLinkAddToBoard = async (link: PendingLink, board: Board) => {
     try {
       // 1. 노트 생성
@@ -842,10 +894,21 @@ const MainScreen = () => {
             inputText={inputText}
             onChangeText={setInputText}
             onSend={handleSend}
+            onPlusPress={() => setMediaPickerVisible(true)}
             bottomInset={insets.bottom}
           />
         </View>
       </KeyboardAvoidingView>
+
+      {/* 미디어 피커 시트 */}
+      <MediaPickerSheet
+        visible={mediaPickerVisible}
+        onClose={() => setMediaPickerVisible(false)}
+        onPickImages={handlePickImages}
+        onPickVideo={handlePickVideo}
+        onPickFile={handlePickFile}
+        isLoading={isUploadingMedia}
+      />
 
       {/* 태그 필터 모달 */}
       <Modal
