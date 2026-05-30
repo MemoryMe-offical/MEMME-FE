@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Image, Linking, Modal, FlatList, Dimensions, StyleSheet, Pressable } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Linking, Modal, Pressable } from 'react-native';
 import { Board, OgData } from '../../types';
 import { boardCardStyles as styles } from '../../styles/BoardCard.styles';
-import { ChevronDownIcon, ChevronUpIcon, MoreIcon, LinkIcon } from '../common/Icons';
+import { ChevronDownIcon, ChevronUpIcon, MoreIcon, LinkIcon, FileIcon } from '../common/Icons';
+import ImageViewerModal from '../common/ImageViewerModal';
 import { fetchOgData } from '../../services/ogService';
 import LoadingImage from '../common/LoadingImage';
 
@@ -65,7 +66,6 @@ const BoardCard = ({
   const [imageViewerIndex, setImageViewerIndex] = useState(0);
   const [videoViewerVisible, setVideoViewerVisible] = useState(false);
   const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
-  const flatListRef = useRef<FlatList>(null);
 
   const toggleNote = (noteId: string) => {
     const isCurrentlyExpanded = displayExpandedNoteIds.includes(noteId);
@@ -298,7 +298,9 @@ const BoardCard = ({
                                                 });
                                               }}
                                               activeOpacity={0.7}>
-                                              <Text style={styles['card-file-icon']}>📄</Text>
+                                              <View style={styles['card-file-icon-container']}>
+                                                <FileIcon color="#588DFF" size={18} />
+                                              </View>
                                               <Text style={styles['card-file-name']} numberOfLines={1}>
                                                 {file.name || 'file'}
                                               </Text>
@@ -409,69 +411,12 @@ const BoardCard = ({
       </View>
 
       {/* 이미지 뷰어 모달 */}
-      <Modal
+      <ImageViewerModal
         visible={imageViewerVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setImageViewerVisible(false)}>
-        <View style={imageViewerStyles.container}>
-          <View style={imageViewerStyles.header}>
-            <TouchableOpacity
-              style={imageViewerStyles.closeButton}
-              onPress={() => setImageViewerVisible(false)}>
-              <Text style={imageViewerStyles.closeText}>✕</Text>
-            </TouchableOpacity>
-            <Text style={imageViewerStyles.fileName} numberOfLines={1}>
-              {imageViewerImages[imageViewerIndex]?.split('/').pop() || `이미지 ${imageViewerIndex + 1}`}
-            </Text>
-          </View>
-
-          <FlatList
-            ref={flatListRef}
-            data={imageViewerImages}
-            keyExtractor={(_, idx) => `image-${idx}`}
-            renderItem={({ item }) => (
-              <View style={imageViewerStyles.slide}>
-                <Image
-                  source={{ uri: item }}
-                  style={imageViewerStyles.image}
-                  resizeMode="contain"
-                />
-              </View>
-            )}
-            horizontal
-            pagingEnabled
-            scrollEventThrottle={16}
-            onMomentumScrollEnd={(event) => {
-              const index = Math.round(
-                event.nativeEvent.contentOffset.x / Dimensions.get('window').width
-              );
-              setImageViewerIndex(index);
-            }}
-            scrollIndicatorInsets={{ right: 1 }}
-            showsHorizontalScrollIndicator={false}
-          />
-
-          <View style={imageViewerStyles.indicatorContainer}>
-            {imageViewerImages.length > 1 && (
-              <>
-                {imageViewerImages.map((_, idx) => (
-                  <View
-                    key={idx}
-                    style={[
-                      imageViewerStyles.indicator,
-                      idx === imageViewerIndex && imageViewerStyles.indicatorActive,
-                    ]}
-                  />
-                ))}
-              </>
-            )}
-            <Text style={imageViewerStyles.imageCounter}>
-              {imageViewerIndex + 1} / {imageViewerImages.length}
-            </Text>
-          </View>
-        </View>
-      </Modal>
+        imageUris={imageViewerImages}
+        initialIndex={imageViewerIndex}
+        onClose={() => setImageViewerVisible(false)}
+      />
 
       {/* 동영상 뷰어 모달 */}
       <Modal
@@ -479,17 +424,12 @@ const BoardCard = ({
         transparent
         animationType="fade"
         onRequestClose={() => setVideoViewerVisible(false)}>
-        <View style={imageViewerStyles.container}>
-          <View style={imageViewerStyles.header}>
-            <TouchableOpacity
-              style={imageViewerStyles.closeButton}
-              onPress={() => setVideoViewerVisible(false)}>
-              <Text style={imageViewerStyles.closeText}>✕</Text>
-            </TouchableOpacity>
-            <Text style={imageViewerStyles.fileName} numberOfLines={1}>
-              동영상
-            </Text>
-          </View>
+        <View style={{ flex: 1, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' }}>
+          <TouchableOpacity
+            style={{ position: 'absolute', top: 20, left: 16, padding: 8 }}
+            onPress={() => setVideoViewerVisible(false)}>
+            <Text style={{ fontSize: 28, color: '#FFFFFF', fontWeight: '600' }}>✕</Text>
+          </TouchableOpacity>
 
           {selectedVideoUrl && (
             <TouchableOpacity
@@ -508,81 +448,5 @@ const BoardCard = ({
     </View>
   );
 };
-
-const imageViewerStyles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    paddingBottom: 12,
-    zIndex: 10,
-  },
-  closeButton: {
-    padding: 8,
-  },
-  closeText: {
-    fontSize: 28,
-    color: '#FFFFFF',
-    fontWeight: '600',
-  },
-  fileName: {
-    flex: 1,
-    fontSize: 14,
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontFamily: 'PretendardVariable',
-    textAlign: 'center',
-    marginHorizontal: 12,
-  },
-  slide: {
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  indicatorContainer: {
-    position: 'absolute',
-    bottom: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  indicator: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-  },
-  indicatorActive: {
-    backgroundColor: '#FFFFFF',
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  imageCounter: {
-    fontSize: 13,
-    color: '#FFFFFF',
-    fontWeight: '600',
-    marginLeft: 12,
-    fontFamily: 'PretendardVariable',
-  },
-});
 
 export default BoardCard;

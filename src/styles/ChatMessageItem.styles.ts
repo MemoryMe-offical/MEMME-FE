@@ -9,6 +9,7 @@ export const chatMessageItemStyles = StyleSheet.create({
   'container': {
     width: '100%',
     alignSelf: 'flex-end',
+    marginBottom: 12,
   },
 
   // 메시지 + 시간 행
@@ -17,6 +18,15 @@ export const chatMessageItemStyles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: 6,
     justifyContent: 'flex-end',
+  },
+
+  // 미디어 + 시간 행 (미디어만 있을 때)
+  'media-row': {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    gap: 6,
+    justifyContent: 'flex-end',
+    alignSelf: 'flex-end',
   },
 
   // 시간 텍스트
@@ -177,6 +187,7 @@ export const chatMessageItemStyles = StyleSheet.create({
   'image-grid': {
     gap: 4,
     alignSelf: 'flex-end',
+    marginTop: 8,
   },
 
   // 이미지 한 줄 (2열)

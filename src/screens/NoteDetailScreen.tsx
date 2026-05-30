@@ -27,6 +27,7 @@ import {
   TrashIcon,
   PlusIcon,
   AiIcon,
+  FileIcon,
 } from '../components/common/Icons';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { pick, types, isErrorWithCode, errorCodes } from '@react-native-documents/picker';
@@ -756,7 +757,9 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                 <>
                   {editFiles.map(file => (
                     <View key={file.uid} style={styles['file-row']}>
-                      <Text style={styles['file-icon']}>📄</Text>
+                      <View style={styles['file-icon-container']}>
+                        <FileIcon color="#588DFF" size={20} />
+                      </View>
                       <Text style={styles['file-name']} numberOfLines={1}>{file.name}</Text>
                       <TouchableOpacity onPress={() => handleRemoveFile(file.uid)} hitSlop={8}>
                         <CloseIcon color="#9DAFC8" size={16} />
@@ -1205,20 +1208,28 @@ const styles = StyleSheet.create({
   'file-row': {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 10,
+    backgroundColor: '#F8F9FB',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     borderWidth: 1,
-    borderColor: '#E4ECFF',
+    borderColor: '#E8EEF8',
     gap: 10,
   },
-  'file-icon': { fontSize: 14 },
+  'file-icon-container': {
+    width: 36,
+    height: 36,
+    borderRadius: 6,
+    backgroundColor: '#EEF3FF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   'file-name': {
     flex: 1,
-    fontSize: 10,
+    fontSize: 12,
+    fontWeight: '600',
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
-    lineHeight: 20,
   },
   'add-attach-btn': {
     flexDirection: 'row',

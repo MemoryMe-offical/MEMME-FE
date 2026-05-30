@@ -28,10 +28,11 @@ import ContextMenu from '../components/common/ContextMenu';
 import SideMenu from '../components/common/SideMenu';
 import { HamburgerIcon, PlusIcon, SearchIcon, ArrowLeftIcon } from '../components/common/Icons';
 import Badge from '../components/common/Badge';
+import ImageViewerModal from '../components/common/ImageViewerModal';
 import MemoConvertSheet from '../components/memo/MemoConvertSheet';
 import PendingLinksBottomSheet from '../components/pendingLinks/PendingLinksBottomSheet';
 import MediaPickerSheet from '../components/chat/MediaPickerSheet';
-import { uploadImages, uploadVideo, uploadFile } from '../services/uploadService';
+import { createMemoWithImage, createMemoWithVideo, createMemoWithFile } from '../services/uploadService';
 import { mainStyles as styles } from '../styles/MainScreen.styles';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { fetchOgData } from '../services/ogService';
@@ -112,6 +113,11 @@ const MainScreen = () => {
     noteExpandMode: 'none' as 'none' | 'first' | 'all',
   });
   const [expandModalVisible, setExpandModalVisible] = useState(false);
+
+  // 이미지 뷰어
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const [imageViewerUris, setImageViewerUris] = useState<string[]>([]);
+  const [imageViewerIndex, setImageViewerIndex] = useState(0);
 
   // 초기 설정 로드
   useEffect(() => {
@@ -472,6 +478,13 @@ const MainScreen = () => {
     }
   };
 
+  const handleImagePress = (imageUri: string, imageUris: string[]) => {
+    const index = imageUris.indexOf(imageUri);
+    setImageViewerUris(imageUris);
+    setImageViewerIndex(Math.max(0, index));
+    setImageViewerVisible(true);
+  };
+
   const handleContextConvert = () => {
     if (!contextMenuItem) return;
 
@@ -669,10 +682,24 @@ const MainScreen = () => {
     if (imageUris.length === 0) return;
     setIsUploadingMedia(true);
     try {
-      const { urls, keys } = await uploadImages(imageUris);
-      const newMemo = await memoService.createMemo('', undefined, undefined, urls, keys, undefined, undefined);
-      shouldScrollToEnd.current = true;
+      // 여러 이미지를 한 번의 요청으로 전송하면 하나의 메모에 함께 묶임
+      const memoData = await createMemoWithImage(imageUris);
+      const newMemo: Memo = {
+        id: memoData.uid,
+        userId: memoData.userId || '',
+        type: 'memo',
+        text: memoData.text,
+        urls: memoData.urls,
+        ogDatas: memoData.ogDatas,
+        imageUris: memoData.imageUris,
+        imageKeys: memoData.imageKeys,
+        videos: memoData.videos,
+        files: memoData.files,
+        bookmarked: memoData.bookmarked ?? false,
+        createdAt: memoData.createdAt,
+      };
       setItems(prev => [...prev, newMemo]);
+      shouldScrollToEnd.current = true;
     } catch (error) {
       console.error('Failed to upload images:', error);
       Alert.alert('오류', '이미지 업로드에 실패했습니다.');
@@ -684,10 +711,23 @@ const MainScreen = () => {
   const handlePickVideo = async (videoUri: string) => {
     setIsUploadingMedia(true);
     try {
-      const uploadedVideo = await uploadVideo(videoUri);
-      const newMemo = await memoService.createMemo('', undefined, undefined, undefined, undefined, [uploadedVideo.url], [uploadedVideo.key]);
-      shouldScrollToEnd.current = true;
+      const memoData = await createMemoWithVideo(videoUri);
+      const newMemo: Memo = {
+        id: memoData.uid,
+        userId: memoData.userId || '',
+        type: 'memo',
+        text: memoData.text,
+        urls: memoData.urls,
+        ogDatas: memoData.ogDatas,
+        imageUris: memoData.imageUris,
+        imageKeys: memoData.imageKeys,
+        videos: memoData.videos,
+        files: memoData.files,
+        bookmarked: memoData.bookmarked ?? false,
+        createdAt: memoData.createdAt,
+      };
       setItems(prev => [...prev, newMemo]);
+      shouldScrollToEnd.current = true;
     } catch (error) {
       console.error('Failed to upload video:', error);
       Alert.alert('오류', '동영상 업로드에 실패했습니다.');
@@ -699,10 +739,23 @@ const MainScreen = () => {
   const handlePickFile = async (fileUri: string, fileName: string) => {
     setIsUploadingMedia(true);
     try {
-      const uploadedFile = await uploadFile(fileUri);
-      const newMemo = await memoService.createMemo('', undefined, undefined, undefined, undefined, undefined, undefined, [uploadedFile]);
-      shouldScrollToEnd.current = true;
+      const memoData = await createMemoWithFile(fileUri);
+      const newMemo: Memo = {
+        id: memoData.uid,
+        userId: memoData.userId || '',
+        type: 'memo',
+        text: memoData.text,
+        urls: memoData.urls,
+        ogDatas: memoData.ogDatas,
+        imageUris: memoData.imageUris,
+        imageKeys: memoData.imageKeys,
+        videos: memoData.videos,
+        files: memoData.files,
+        bookmarked: memoData.bookmarked ?? false,
+        createdAt: memoData.createdAt,
+      };
       setItems(prev => [...prev, newMemo]);
+      shouldScrollToEnd.current = true;
     } catch (error) {
       console.error('Failed to upload file:', error);
       Alert.alert('오류', '파일 업로드에 실패했습니다.');
@@ -856,6 +909,7 @@ const MainScreen = () => {
                     onToggleExpand={(m) => setExpandedMemoId(expandedMemoId === m.id ? null : m.id)}
                     onLongPress={handleContextMenu}
                     onOpenLinkModal={handleOpenLinkModal}
+                    onImagePress={handleImagePress}
                   />
                 );
               }
@@ -1434,6 +1488,14 @@ const MainScreen = () => {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* 이미지 뷰어 모달 */}
+      <ImageViewerModal
+        visible={imageViewerVisible}
+        imageUris={imageViewerUris}
+        initialIndex={imageViewerIndex}
+        onClose={() => setImageViewerVisible(false)}
+      />
     </SafeAreaView>
   );
 };

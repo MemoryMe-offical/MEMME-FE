@@ -31,15 +31,18 @@ interface ChatMessageItemProps {
   onToggleExpand?: (item: Memo) => void;
   onLongPress: (item: Memo) => void;
   onOpenLinkModal?: (url: string, ogData?: any) => void;
+  onImagePress?: (imageUri: string, allImageUris: string[]) => void;
 }
 
-const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, onOpenLinkModal }: ChatMessageItemProps) => {
+const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, onOpenLinkModal, onImagePress }: ChatMessageItemProps) => {
   const maxChars = 500;
-  const isLong = item.text.length > maxChars;
-  const displayText = expanded ? item.text : item.text.substring(0, maxChars);
+  const text = item.text || '';
+  const isLong = text.length > maxChars;
+  const displayText = expanded ? text : text.substring(0, maxChars);
 
   const [detectedOgData, setDetectedOgData] = useState<any>(null);
   const [isLoadingOg, setIsLoadingOg] = useState(false);
+  const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
 
   const detectUrlFromText = (text: string): string | null => {
     const urlRegex = /https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z]{2,}(?:[^\s]*)?/g;
@@ -56,7 +59,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
 
   // 메모에 이미 링크 정보가 있으면 사용, 없으면 텍스트에서 감지
   const hasStoredLink = item.urls && item.urls.length > 0;
-  const firstLink = hasStoredLink ? item.urls?.[0] : detectUrlFromText(item.text);
+  const firstLink = hasStoredLink ? item.urls?.[0] : detectUrlFromText(text);
   const firstOgData = hasStoredLink && item.ogDatas && item.ogDatas.length > 0 ? item.ogDatas[0] : detectedOgData;
 
   // 텍스트에서 감지한 링크의 OG 데이터 조회
@@ -79,7 +82,49 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
     });
   };
 
-  // 이미지 그리드 렌더링 (1열 전체, 2열, 3열, 4열+ 2x2)
+  const handleImageLoadStart = (uri: string) => {
+    setLoadingImages(prev => new Set([...prev, uri]));
+  };
+
+  const handleImageLoadEnd = (uri: string) => {
+    setLoadingImages(prev => {
+      const next = new Set(prev);
+      next.delete(uri);
+      return next;
+    });
+  };
+
+  const renderImageWithLoader = (uri: string, imageStyle: any) => {
+    const isLoading = loadingImages.has(uri);
+    return (
+      <View style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <Image
+          source={{ uri }}
+          style={imageStyle}
+          resizeMode="cover"
+          onLoadStart={() => handleImageLoadStart(uri)}
+          onLoadEnd={() => handleImageLoadEnd(uri)}
+        />
+        {isLoading && (
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            }}>
+            <ActivityIndicator size="large" color="#588DFF" />
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  // 이미지 그리드 렌더링 (1열 전체, 2열, 3열, 4장+ 스크롤 2열 그리드)
   const renderImageGrid = () => {
     if (!item.imageUris || item.imageUris.length === 0) return null;
 
@@ -90,15 +135,12 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
       // 1장: 전체 너비
       return (
         <TouchableOpacity
+          onPress={() => onImagePress?.(item.imageUris![0], item.imageUris!)}
           onLongPress={() => onLongPress(item)}
           delayLongPress={400}
           style={[styles['media-container'], { width: CHAT_MESSAGE_MAX_WIDTH }]}>
           <View style={{ width: '100%', aspectRatio: 1, borderRadius: 12, overflow: 'hidden' }}>
-            <Image
-              source={{ uri: item.imageUris[0] }}
-              style={{ width: '100%', height: '100%' }}
-              resizeMode="cover"
-            />
+            {renderImageWithLoader(item.imageUris![0], { width: '100%', height: '100%' })}
           </View>
         </TouchableOpacity>
       );
@@ -112,14 +154,13 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
           delayLongPress={400}
           style={[styles['media-container']]}>
           <View style={styles['image-row']}>
-            {item.imageUris.slice(0, 2).map((uri, idx) => (
-              <View key={idx} style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
-                <Image
-                  source={{ uri }}
-                  style={styles['image-thumbnail']}
-                  resizeMode="cover"
-                />
-              </View>
+            {item.imageUris!.slice(0, 2).map((uri, idx) => (
+              <TouchableOpacity
+                key={idx}
+                onPress={() => onImagePress?.(uri, item.imageUris!)}
+                style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
+                {renderImageWithLoader(uri, styles['image-thumbnail'])}
+              </TouchableOpacity>
             ))}
           </View>
         </TouchableOpacity>
@@ -136,72 +177,57 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
           <View style={styles['image-grid']}>
             {/* 첫 2장 */}
             <View style={styles['image-row']}>
-              {item.imageUris.slice(0, 2).map((uri, idx) => (
-                <View key={idx} style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
-                  <Image
-                    source={{ uri }}
-                    style={styles['image-thumbnail']}
-                    resizeMode="cover"
-                  />
-                </View>
+              {item.imageUris!.slice(0, 2).map((uri, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  onPress={() => onImagePress?.(uri, item.imageUris!)}
+                  style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
+                  {renderImageWithLoader(uri, styles['image-thumbnail'])}
+                </TouchableOpacity>
               ))}
             </View>
             {/* 마지막 1장 (전체 너비) */}
-            <View style={{ width: '100%', aspectRatio: 2 / 1, borderRadius: 12, overflow: 'hidden' }}>
-              <Image
-                source={{ uri: item.imageUris[2] }}
-                style={{ width: '100%', height: '100%' }}
-                resizeMode="cover"
-              />
-            </View>
+            <TouchableOpacity
+              onPress={() => onImagePress?.(item.imageUris![2], item.imageUris!)}
+              style={{ width: '100%', aspectRatio: 2 / 1, borderRadius: 12, overflow: 'hidden' }}>
+              {renderImageWithLoader(item.imageUris![2], { width: '100%', height: '100%' })}
+            </TouchableOpacity>
           </View>
         </TouchableOpacity>
       );
     }
 
-    // 4장 이상: 2x2 그리드
-    const displayCount = Math.min(4, imageCount);
-    const showMore = imageCount > 4;
+    // 4장 이상: 스크롤 가능한 2열 그리드 (카카오톡 스타일)
+    const rowCount = Math.ceil(imageCount / 2);
+    const gridHeight = rowCount * imageSize + (rowCount - 1) * 4 + 16;
+    const maxGridHeight = Math.min(gridHeight, 800); // 최대 800px까지만 스크롤 가능하게 제한
 
     return (
-      <TouchableOpacity
-        onLongPress={() => onLongPress(item)}
-        delayLongPress={400}
-        style={[styles['media-container']]}>
-        <View style={styles['image-grid']}>
-          {/* 첫 번째 줄 */}
-          <View style={styles['image-row']}>
-            {item.imageUris.slice(0, 2).map((uri, idx) => (
-              <View key={idx} style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
-                <Image
-                  source={{ uri }}
-                  style={styles['image-thumbnail']}
-                  resizeMode="cover"
-                />
-              </View>
-            ))}
-          </View>
-          {/* 두 번째 줄 */}
-          <View style={styles['image-row']}>
-            {item.imageUris.slice(2, 4).map((uri, idx) => (
-              <View key={idx + 2} style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
-                <Image
-                  source={{ uri }}
-                  style={styles['image-thumbnail']}
-                  resizeMode="cover"
-                />
-                {showMore && idx === 1 && (
-                  <View style={styles['image-overlay']}>
-                    <Text style={styles['image-overlay-text']}>
-                      +{imageCount - 4}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            ))}
-          </View>
-        </View>
-      </TouchableOpacity>
+      <View style={[styles['media-container'], { marginBottom: 8 }]}>
+        <FlatList
+          data={item.imageUris}
+          numColumns={2}
+          keyExtractor={(_, idx) => idx.toString()}
+          scrollEnabled={true}
+          nestedScrollEnabled={true}
+          scrollEventThrottle={16}
+          style={{
+            width: CHAT_MESSAGE_MAX_WIDTH,
+            maxHeight: maxGridHeight,
+          }}
+          columnWrapperStyle={{ gap: 4 }}
+          contentContainerStyle={{ paddingBottom: 4 }}
+          renderItem={({ item: imageUri }) => (
+            <TouchableOpacity
+              onPress={() => onImagePress?.(imageUri, item.imageUris!)}
+              onLongPress={() => onLongPress(item)}
+              delayLongPress={400}
+              style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
+              {renderImageWithLoader(imageUri, styles['image-thumbnail'])}
+            </TouchableOpacity>
+          )}
+        />
+      </View>
     );
   };
 
@@ -221,11 +247,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
           });
         }}>
         {video.thumbnailUrl ? (
-          <Image
-            source={{ uri: video.thumbnailUrl }}
-            style={styles['video-thumbnail']}
-            resizeMode="cover"
-          />
+          renderImageWithLoader(video.thumbnailUrl, styles['video-thumbnail'])
         ) : (
           <View style={[styles['video-thumbnail'], { backgroundColor: '#1A1A1A' }]} />
         )}
@@ -268,18 +290,24 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
     );
   };
 
+  // 미디어가 있는지 확인
+  const hasMedia = (item.imageUris?.length ?? 0) > 0 || (item.videos?.length ?? 0) > 0 || (item.files?.length ?? 0) > 0;
+  const hasText = text.trim().length > 0;
+
   return (
     <View style={styles['container']}>
       {/* 메시지 + 시간 행 */}
       <View style={styles['message-row']}>
-        {/* 시간 */}
-        <Text style={styles['chatMessageItem-time']}>
-          {formatTime(item.createdAt)}
-        </Text>
+        {/* 시간 - 텍스트가 있을 때만 표시 */}
+        {hasText && (
+          <Text style={styles['chatMessageItem-time']}>
+            {formatTime(item.createdAt)}
+          </Text>
+        )}
 
         {/* 텍스트 메시지 (있으면 표시) */}
         <View style={styles['message-bubble-wrapper']}>
-          {item.text.trim().length > 0 && (
+          {hasText && (
             <TouchableOpacity
               style={styles['chatMessageItem-bubble']}
               onPress={() => {
@@ -312,7 +340,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
       <View style={styles['links-container']}>
           {/* OG 데이터 로딩 중 */}
           {firstLink && isLoadingOg && !firstOgData && (
-            <View style={[styles['og-loading'], { marginTop: item.text.trim().length > 0 ? 8 : 0, marginRight: 8 }]}>
+            <View style={[styles['og-loading'], { marginTop: text.trim().length > 0 ? 8 : 0, marginRight: 8 }]}>
               <ActivityIndicator size="small" color="#588DFF" />
               <Text style={styles['og-loading-text']}>
                 링크 정보 불러오는 중...
@@ -326,14 +354,12 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
               onPress={() => handleLinkPress(firstLink)}
               onLongPress={() => onLongPress(item)}
               delayLongPress={400}
-              style={[styles['link-card'], { marginTop: item.text.trim().length > 0 ? 8 : 0, marginRight: 8 }]}>
+              style={[styles['link-card'], { marginTop: text.trim().length > 0 ? 8 : 0, marginRight: 8 }]}>
               {/* 썸네일 */}
               {firstOgData.imageUrl && (
-                <Image
-                  source={{ uri: firstOgData.imageUrl }}
-                  style={styles['link-card-image']}
-                  resizeMode="cover"
-                />
+                <View style={{ width: '100%', height: 120, overflow: 'hidden' }}>
+                  {renderImageWithLoader(firstOgData.imageUrl, styles['link-card-image'])}
+                </View>
               )}
 
               {/* 내용 */}
@@ -361,7 +387,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
               onPress={() => handleLinkPress(firstLink)}
               onLongPress={() => onLongPress(item)}
               delayLongPress={400}
-              style={[styles['link-only-card'], { marginTop: item.text.trim().length > 0 ? 8 : 0, marginRight: 8 }]}>
+              style={[styles['link-only-card'], { marginTop: text.trim().length > 0 ? 8 : 0, marginRight: 8 }]}>
               <Text style={styles['link-only-text']} numberOfLines={1}>
                 🔗 {firstLink}
               </Text>
@@ -382,14 +408,29 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
         </View>
       )}
 
-      {/* 이미지 그리드 */}
-      {renderImageGrid()}
+      {/* 미디어만 있을 때 (텍스트 없음) - 시간 + 미디어 행 */}
+      {!hasText && hasMedia && (
+        <View style={styles['media-row']}>
+          {/* 시간 */}
+          <Text style={styles['chatMessageItem-time']}>
+            {formatTime(item.createdAt)}
+          </Text>
 
-      {/* 동영상 */}
-      {renderVideo()}
+          {/* 미디어 - 컨테이너 없이 직접 렌더링 */}
+          {renderImageGrid()}
+          {renderVideo()}
+          {renderFile()}
+        </View>
+      )}
 
-      {/* 파일 */}
-      {renderFile()}
+      {/* 텍스트가 있을 때만 미디어 표시 (시간은 텍스트와 함께) */}
+      {hasText && (
+        <>
+          {renderImageGrid()}
+          {renderVideo()}
+          {renderFile()}
+        </>
+      )}
     </View>
   );
 };

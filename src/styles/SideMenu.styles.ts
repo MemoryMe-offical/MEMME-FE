@@ -359,24 +359,31 @@ export const sideMenuStyles = StyleSheet.create({
   'sideMenu-fileItem': {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F7FAFF',
-    borderRadius: 7,
-    padding: 7,
-    gap: 5,
+    backgroundColor: '#F8F9FB',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    gap: 10,
     borderWidth: 1,
-    borderColor: '#E2EAFF',
+    borderColor: '#E8EEF8',
   },
 
-  'sideMenu-fileIcon': {
-    fontSize: 12,
+  'sideMenu-fileIconContainer': {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    backgroundColor: '#EEF3FF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   'sideMenu-fileName': {
     flex: 1,
-    fontSize: 10,
+    fontSize: 11,
+    fontWeight: '500',
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
-    lineHeight: 12,
+    lineHeight: 14,
   },
 
   // 더보기 버튼

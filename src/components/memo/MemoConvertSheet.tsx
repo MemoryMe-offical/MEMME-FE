@@ -75,8 +75,8 @@ const MemoConvertSheet = ({
       setBoardTitle('');
       setBoardTags([]);
       setBoardDescription('');
-      setNewNoteTitle(memo.text);
-      setAddNoteTitle(memo.text);
+      setNewNoteTitle(memo.text || '');
+      setAddNoteTitle(memo.text || '');
       setAddNoteContent('');
     }
   }, [visible, memo.text]);
@@ -95,13 +95,13 @@ const MemoConvertSheet = ({
     setBoardTitle('');
     setBoardTags([]);
     setBoardDescription('');
-    setNewNoteTitle(memo.text);
+    setNewNoteTitle(memo.text || '');
     setStep('new-board');
   };
 
   const handleSelectExistingBoard = (board: Board) => {
     setSelectedBoard(board);
-    setAddNoteTitle(memo.text);
+    setAddNoteTitle(memo.text || '');
     setAddNoteContent('');
     setStep('add-to-board');
   };
@@ -129,6 +129,7 @@ const MemoConvertSheet = ({
         description: boardDescription.trim() || undefined,
         tags: boardTags.length > 0 ? boardTags : undefined,
         noteTitle: newNoteTitle.trim() || undefined,
+        memoCreatedAt: memo.createdAt,
       });
 
       // 2. 메모 삭제 (백엔드에서 자동 삭제될 수 있으므로 에러 무시)
@@ -164,6 +165,7 @@ const MemoConvertSheet = ({
         {
           noteTitle: addNoteTitle.trim(),
           content: addNoteContent.trim() || undefined,
+          memoCreatedAt: memo.createdAt,
         }
       );
 

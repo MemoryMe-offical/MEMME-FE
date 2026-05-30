@@ -197,3 +197,132 @@ export const getUploadObject = async (key: string): Promise<any> => {
     throw error;
   }
 };
+
+/**
+ * 이미지 파일로 메모 직접 생성 (새로운 방식)
+ * 여러 이미지를 한 번에 보내면 하나의 메모에 함께 묶입니다 (카카오톡처럼)
+ */
+export const createMemoWithImage = async (fileUris: string | string[]): Promise<any> => {
+  try {
+    const formData = new FormData();
+
+    // 단일 이미지 또는 배열 처리
+    const uris = Array.isArray(fileUris) ? fileUris : [fileUris];
+
+    for (const fileUri of uris) {
+      const filename = fileUri.split('/').pop() || 'image.jpg';
+      const type = filename.endsWith('.png') ? 'image/png' : 'image/jpeg';
+
+      formData.append('files', {
+        uri: fileUri,
+        type,
+        name: filename,
+      } as any);
+    }
+
+    console.log(`📤 createMemoWithImage: ${uris.length} image(s)`);
+    console.log(`📤 Sending to ${BASE_URL}/memos/image`);
+
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/memos/image`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    console.log(`📥 Response status: ${response.status}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ API error response: ${errorText}`);
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const apiResponse: ApiResponse<any> = await response.json();
+    console.log(`✅ createMemoWithImage success:`, apiResponse.data);
+    return apiResponse.data;
+  } catch (error) {
+    console.error('Failed to create memo with image:', error);
+    throw error;
+  }
+};
+
+/**
+ * 영상 파일로 메모 직접 생성 (새로운 방식)
+ */
+export const createMemoWithVideo = async (fileUri: string): Promise<any> => {
+  try {
+    const formData = new FormData();
+
+    const filename = fileUri.split('/').pop() || 'video.mp4';
+
+    console.log(`📤 createMemoWithVideo: ${filename}`);
+
+    formData.append('file', {
+      uri: fileUri,
+      type: 'video/mp4',
+      name: filename,
+    } as any);
+
+    console.log(`📤 Sending to ${BASE_URL}/memos/video`);
+
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/memos/video`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    console.log(`📥 Response status: ${response.status}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ API error response: ${errorText}`);
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const apiResponse: ApiResponse<any> = await response.json();
+    console.log(`✅ createMemoWithVideo success:`, apiResponse.data);
+    return apiResponse.data;
+  } catch (error) {
+    console.error('Failed to create memo with video:', error);
+    throw error;
+  }
+};
+
+/**
+ * 일반 파일로 메모 직접 생성 (새로운 방식)
+ */
+export const createMemoWithFile = async (fileUri: string): Promise<any> => {
+  try {
+    const formData = new FormData();
+
+    const filename = fileUri.split('/').pop() || 'file';
+
+    console.log(`📤 createMemoWithFile: ${filename}`);
+
+    formData.append('file', {
+      uri: fileUri,
+      type: 'application/octet-stream',
+      name: filename,
+    } as any);
+
+    console.log(`📤 Sending to ${BASE_URL}/memos/file`);
+
+    const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/memos/file`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    console.log(`📥 Response status: ${response.status}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ API error response: ${errorText}`);
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    const apiResponse: ApiResponse<any> = await response.json();
+    console.log(`✅ createMemoWithFile success:`, apiResponse.data);
+    return apiResponse.data;
+  } catch (error) {
+    console.error('Failed to create memo with file:', error);
+    throw error;
+  }
+};

@@ -14,7 +14,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { Board, Note, FileAttachment, Memo } from '../types';
-import { ArrowLeftIcon } from '../components/common/Icons';
+import { ArrowLeftIcon, FileIcon } from '../components/common/Icons';
 import { fetchOgData } from '../services/ogService';
 import ImageViewerModal from '../components/common/ImageViewerModal';
 import LoadingImage from '../components/common/LoadingImage';
@@ -83,7 +83,9 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
     } else {
       // 다른 미디어 처리
       const boards = allItems.filter((item: any) => item.type === 'board') as Board[];
+      const memos = allItems.filter((item: any) => item.type === 'memo') as any[];
 
+      // 보드의 노트에서 미디어 처리
       boards.forEach(board => {
         (board.notes ?? []).forEach(note => {
           if (galleryType === 'images' && note.imageUris) {
@@ -160,6 +162,76 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
           }
         });
       });
+
+      // 메모에서 미디어 처리
+      memos.forEach((memo: any) => {
+        if (galleryType === 'images' && memo.imageUris) {
+          memo.imageUris.forEach((uri: string, idx: number) => {
+            items.push({
+              id: `memo-img-${memo.id}-${idx}`,
+              uri,
+              type: 'image',
+              createdAt: memo.updatedAt || memo.createdAt,
+              timelineItem: memo,
+            });
+          });
+        } else if (galleryType === 'videos' && (memo.videos || memo.videoUris)) {
+          const videoList = memo.videos || memo.videoUris || [];
+          videoList.forEach((video: any, idx: number) => {
+            const videoUrl = typeof video === 'string' ? video : video.url;
+            items.push({
+              id: `memo-video-${memo.id}-${idx}`,
+              uri: videoUrl,
+              title: `${idx + 1}`,
+              type: 'video',
+              createdAt: memo.updatedAt || memo.createdAt,
+              file: typeof video === 'string' ? undefined : video,
+              timelineItem: memo,
+            });
+          });
+        } else if (galleryType === 'files' && memo.files) {
+          memo.files.forEach((file: any, idx: number) => {
+            items.push({
+              id: `memo-file-${memo.id}-${idx}`,
+              uri: file.url,
+              title: file.name,
+              type: 'file',
+              createdAt: memo.updatedAt || memo.createdAt,
+              file,
+              timelineItem: memo,
+            });
+          });
+        } else if (galleryType === 'links') {
+          // 배열 형식의 URLs 처리
+          if (memo.urls && memo.urls.length > 0) {
+            memo.urls.forEach((url: string, idx: number) => {
+              const ogData = memo.ogDatas?.[idx];
+              const cachedOg = cachedOgData[`memo-link-${memo.id}-${idx}`];
+              items.push({
+                id: `memo-link-${memo.id}-${idx}`,
+                uri: url,
+                title: cachedOg?.title || ogData?.title || url,
+                type: 'link',
+                createdAt: memo.updatedAt || memo.createdAt,
+                ogData: cachedOg || ogData,
+                timelineItem: memo,
+              });
+            });
+          } else if (memo.url) {
+            // 레거시 단수 형식 호환
+            const cachedOg = cachedOgData[`memo-link-${memo.id}`];
+            items.push({
+              id: `memo-link-${memo.id}`,
+              uri: memo.url,
+              title: cachedOg?.title || memo.ogData?.title || memo.url,
+              type: 'link',
+              createdAt: memo.updatedAt || memo.createdAt,
+              ogData: cachedOg || memo.ogData,
+              timelineItem: memo,
+            });
+          }
+        }
+      });
     }
 
     // 최신순 정렬
@@ -192,8 +264,10 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
 
     const loadOgData = async () => {
       const boards = allItems.filter((item: any) => item.type === 'board') as Board[];
+      const memos = allItems.filter((item: any) => item.type === 'memo') as any[];
       const newCachedOgData = { ...cachedOgData };
 
+      // 보드의 노트에서 링크의 OG 데이터 로드
       for (const board of boards) {
         for (const note of (board.notes ?? [])) {
           // 배열 형식의 URLs 처리
@@ -225,6 +299,40 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
             } catch (error) {
               console.error(`Failed to fetch OG data for ${note.url}:`, error);
             }
+          }
+        }
+      }
+
+      // 메모에서 링크의 OG 데이터 로드
+      for (const memo of memos) {
+        // 배열 형식의 URLs 처리
+        if (memo.urls && memo.urls.length > 0) {
+          for (let idx = 0; idx < memo.urls.length; idx++) {
+            const url = memo.urls[idx];
+            const linkId = `memo-link-${memo.id}-${idx}`;
+            if (newCachedOgData[linkId] || memo.ogDatas?.[idx]) continue;
+
+            try {
+              const ogData = await fetchOgData(url);
+              if (ogData) {
+                newCachedOgData[linkId] = ogData;
+              }
+            } catch (error) {
+              console.error(`Failed to fetch OG data for ${url}:`, error);
+            }
+          }
+        } else if (memo.url) {
+          // 레거시 단수 형식 호환
+          const linkId = `memo-link-${memo.id}`;
+          if (newCachedOgData[linkId] || memo.ogData) continue;
+
+          try {
+            const ogData = await fetchOgData(memo.url);
+            if (ogData) {
+              newCachedOgData[linkId] = ogData;
+            }
+          } catch (error) {
+            console.error(`Failed to fetch OG data for ${memo.url}:`, error);
           }
         }
       }
@@ -315,8 +423,10 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
     return (
       <TouchableOpacity onPress={handleOpenFile}>
         <View style={[styles.fileItem, { width: THUMBNAIL_SIZE }]}>
-          <Text style={styles.fileIcon}>📄</Text>
-          <Text style={styles.fileName} numberOfLines={2}>{item.title}</Text>
+          <View style={styles.fileIconContainer}>
+            <FileIcon color="#588DFF" size={28} />
+          </View>
+          <Text style={styles.fileName} numberOfLines={2}>{decodeURIComponent(item.title)}</Text>
         </View>
       </TouchableOpacity>
     );
@@ -512,21 +622,27 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   fileItem: {
-    backgroundColor: '#F7FAFF',
+    backgroundColor: '#F8F9FB',
     borderRadius: 12,
     padding: 12,
     alignItems: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: '#E4ECFF',
+    borderColor: '#E8EEF8',
     height: THUMBNAIL_SIZE,
     justifyContent: 'center',
   },
-  fileIcon: {
-    fontSize: 28,
+  fileIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+    backgroundColor: '#EEF3FF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   fileName: {
     fontSize: 11,
+    fontWeight: '600',
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
     textAlign: 'center',
