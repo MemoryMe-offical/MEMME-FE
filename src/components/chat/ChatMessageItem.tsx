@@ -123,7 +123,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
     );
   };
 
-  // 이미지 그리드 렌더링 (1열 전체, 2열, 3열, 4열+ 2x2)
+  // 이미지 그리드 렌더링 (1열 전체, 2열, 3열, 4장+ 스크롤 2열 그리드)
   const renderImageGrid = () => {
     if (!item.imageUris || item.imageUris.length === 0) return null;
 
@@ -187,41 +187,36 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
       );
     }
 
-    // 4장 이상: 2x2 그리드
-    const displayCount = Math.min(4, imageCount);
-    const showMore = imageCount > 4;
+    // 4장 이상: 스크롤 가능한 2열 그리드 (카카오톡 스타일)
+    const rowCount = Math.ceil(imageCount / 2);
+    const gridHeight = rowCount * imageSize + (rowCount - 1) * 4 + 16;
+    const maxGridHeight = Math.min(gridHeight, 800); // 최대 800px까지만 스크롤 가능하게 제한
 
     return (
-      <TouchableOpacity
-        onLongPress={() => onLongPress(item)}
-        delayLongPress={400}
-        style={[styles['media-container']]}>
-        <View style={styles['image-grid']}>
-          {/* 첫 번째 줄 */}
-          <View style={styles['image-row']}>
-            {item.imageUris.slice(0, 2).map((uri, idx) => (
-              <View key={idx} style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
-                {renderImageWithLoader(uri, styles['image-thumbnail'])}
-              </View>
-            ))}
-          </View>
-          {/* 두 번째 줄 */}
-          <View style={styles['image-row']}>
-            {item.imageUris.slice(2, 4).map((uri, idx) => (
-              <View key={idx + 2} style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
-                {renderImageWithLoader(uri, styles['image-thumbnail'])}
-                {showMore && idx === 1 && (
-                  <View style={styles['image-overlay']}>
-                    <Text style={styles['image-overlay-text']}>
-                      +{imageCount - 4}
-                    </Text>
-                  </View>
-                )}
-              </View>
-            ))}
-          </View>
-        </View>
-      </TouchableOpacity>
+      <View style={[styles['media-container'], { marginBottom: 8 }]}>
+        <FlatList
+          data={item.imageUris}
+          numColumns={2}
+          keyExtractor={(_, idx) => idx.toString()}
+          scrollEnabled={true}
+          nestedScrollEnabled={true}
+          scrollEventThrottle={16}
+          style={{
+            width: CHAT_MESSAGE_MAX_WIDTH,
+            maxHeight: maxGridHeight,
+          }}
+          columnWrapperStyle={{ gap: 4 }}
+          contentContainerStyle={{ paddingBottom: 4 }}
+          renderItem={({ item: imageUri }) => (
+            <TouchableOpacity
+              onLongPress={() => onLongPress(item)}
+              delayLongPress={400}
+              style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
+              {renderImageWithLoader(imageUri, styles['image-thumbnail'])}
+            </TouchableOpacity>
+          )}
+        />
+      </View>
     );
   };
 

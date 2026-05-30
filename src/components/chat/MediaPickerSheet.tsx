@@ -148,7 +148,7 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
                 </View>
                 <View style={styles['picker-item-text-container']}>
                   <Text style={styles['picker-item-label']}>이미지</Text>
-                  <Text style={styles['picker-item-description']}>여러 장 선택 가능</Text>
+                  <Text style={styles['picker-item-description']}>최대 10장 선택 가능</Text>
                 </View>
               </TouchableOpacity>
 

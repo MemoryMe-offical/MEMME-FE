@@ -669,24 +669,23 @@ const MainScreen = () => {
     if (imageUris.length === 0) return;
     setIsUploadingMedia(true);
     try {
-      for (const uri of imageUris) {
-        const memoData = await createMemoWithImage(uri);
-        const newMemo: Memo = {
-          id: memoData.uid,
-          userId: memoData.userId || '',
-          type: 'memo',
-          text: memoData.text,
-          urls: memoData.urls,
-          ogDatas: memoData.ogDatas,
-          imageUris: memoData.imageUris,
-          imageKeys: memoData.imageKeys,
-          videos: memoData.videos,
-          files: memoData.files,
-          bookmarked: memoData.bookmarked ?? false,
-          createdAt: memoData.createdAt,
-        };
-        setItems(prev => [...prev, newMemo]);
-      }
+      // 여러 이미지를 한 번의 요청으로 전송하면 하나의 메모에 함께 묶임
+      const memoData = await createMemoWithImage(imageUris);
+      const newMemo: Memo = {
+        id: memoData.uid,
+        userId: memoData.userId || '',
+        type: 'memo',
+        text: memoData.text,
+        urls: memoData.urls,
+        ogDatas: memoData.ogDatas,
+        imageUris: memoData.imageUris,
+        imageKeys: memoData.imageKeys,
+        videos: memoData.videos,
+        files: memoData.files,
+        bookmarked: memoData.bookmarked ?? false,
+        createdAt: memoData.createdAt,
+      };
+      setItems(prev => [...prev, newMemo]);
       shouldScrollToEnd.current = true;
     } catch (error) {
       console.error('Failed to upload images:', error);

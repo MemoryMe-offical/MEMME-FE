@@ -200,22 +200,27 @@ export const getUploadObject = async (key: string): Promise<any> => {
 
 /**
  * 이미지 파일로 메모 직접 생성 (새로운 방식)
+ * 여러 이미지를 한 번에 보내면 하나의 메모에 함께 묶입니다 (카카오톡처럼)
  */
-export const createMemoWithImage = async (fileUri: string): Promise<any> => {
+export const createMemoWithImage = async (fileUris: string | string[]): Promise<any> => {
   try {
     const formData = new FormData();
 
-    const filename = fileUri.split('/').pop() || 'image.jpg';
-    const type = filename.endsWith('.png') ? 'image/png' : 'image/jpeg';
+    // 단일 이미지 또는 배열 처리
+    const uris = Array.isArray(fileUris) ? fileUris : [fileUris];
 
-    console.log(`📤 createMemoWithImage: ${filename} (${type})`);
+    for (const fileUri of uris) {
+      const filename = fileUri.split('/').pop() || 'image.jpg';
+      const type = filename.endsWith('.png') ? 'image/png' : 'image/jpeg';
 
-    formData.append('file', {
-      uri: fileUri,
-      type,
-      name: filename,
-    } as any);
+      formData.append('files', {
+        uri: fileUri,
+        type,
+        name: filename,
+      } as any);
+    }
 
+    console.log(`📤 createMemoWithImage: ${uris.length} image(s)`);
     console.log(`📤 Sending to ${BASE_URL}/memos/image`);
 
     const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/memos/image`, {
