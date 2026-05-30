@@ -635,7 +635,7 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                           }}
                         >
                           <Text style={styles['sideMenu-fileIcon']}>📄</Text>
-                          <Text style={styles['sideMenu-fileName']} numberOfLines={2}>{file.name}</Text>
+                          <Text style={styles['sideMenu-fileName']} numberOfLines={2}>{decodeURIComponent(file.name)}</Text>
                         </TouchableOpacity>
                       ))}
                       {mediaData.files.length > MAX_DISPLAY_ITEMS && (

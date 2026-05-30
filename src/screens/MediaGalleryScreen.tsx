@@ -424,7 +424,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
       <TouchableOpacity onPress={handleOpenFile}>
         <View style={[styles.fileItem, { width: THUMBNAIL_SIZE }]}>
           <Text style={styles.fileIcon}>📄</Text>
-          <Text style={styles.fileName} numberOfLines={2}>{item.title}</Text>
+          <Text style={styles.fileName} numberOfLines={2}>{decodeURIComponent(item.title)}</Text>
         </View>
       </TouchableOpacity>
     );
