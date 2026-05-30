@@ -28,6 +28,7 @@ import ContextMenu from '../components/common/ContextMenu';
 import SideMenu from '../components/common/SideMenu';
 import { HamburgerIcon, PlusIcon, SearchIcon, ArrowLeftIcon } from '../components/common/Icons';
 import Badge from '../components/common/Badge';
+import ImageViewerModal from '../components/common/ImageViewerModal';
 import MemoConvertSheet from '../components/memo/MemoConvertSheet';
 import PendingLinksBottomSheet from '../components/pendingLinks/PendingLinksBottomSheet';
 import MediaPickerSheet from '../components/chat/MediaPickerSheet';
@@ -1489,84 +1490,12 @@ const MainScreen = () => {
       </Modal>
 
       {/* 이미지 뷰어 모달 */}
-      <Modal
+      <ImageViewerModal
         visible={imageViewerVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setImageViewerVisible(false)}>
-        <View style={{ flex: 1, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' }}>
-          {/* 닫기 버튼 */}
-          <TouchableOpacity
-            style={{
-              position: 'absolute',
-              top: insets.top + 16,
-              right: 16,
-              zIndex: 10,
-              padding: 8,
-            }}
-            onPress={() => setImageViewerVisible(false)}>
-            <Text style={{ fontSize: 28, color: '#FFFFFF', fontWeight: '600' }}>✕</Text>
-          </TouchableOpacity>
-
-          {/* 이미지 */}
-          {imageViewerUris.length > 0 && (
-            <Image
-              source={{ uri: imageViewerUris[imageViewerIndex] }}
-              style={{ width: '100%', height: '100%' }}
-              resizeMode="contain"
-            />
-          )}
-
-          {/* 네비게이션 버튼 (이미지가 2개 이상일 때만) */}
-          {imageViewerUris.length > 1 && (
-            <>
-              {/* 이전 버튼 */}
-              {imageViewerIndex > 0 && (
-                <TouchableOpacity
-                  style={{
-                    position: 'absolute',
-                    left: 16,
-                    top: '50%',
-                    marginTop: -24,
-                    padding: 8,
-                  }}
-                  onPress={() => setImageViewerIndex(Math.max(0, imageViewerIndex - 1))}>
-                  <Text style={{ fontSize: 32, color: '#FFFFFF' }}>‹</Text>
-                </TouchableOpacity>
-              )}
-
-              {/* 다음 버튼 */}
-              {imageViewerIndex < imageViewerUris.length - 1 && (
-                <TouchableOpacity
-                  style={{
-                    position: 'absolute',
-                    right: 16,
-                    top: '50%',
-                    marginTop: -24,
-                    padding: 8,
-                  }}
-                  onPress={() => setImageViewerIndex(Math.min(imageViewerUris.length - 1, imageViewerIndex + 1))}>
-                  <Text style={{ fontSize: 32, color: '#FFFFFF' }}>›</Text>
-                </TouchableOpacity>
-              )}
-
-              {/* 인디케이터 */}
-              <View
-                style={{
-                  position: 'absolute',
-                  bottom: insets.bottom + 20,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 4,
-                }}>
-                <Text style={{ fontSize: 14, color: '#FFFFFF', fontFamily: 'PretendardVariable' }}>
-                  {imageViewerIndex + 1} / {imageViewerUris.length}
-                </Text>
-              </View>
-            </>
-          )}
-        </View>
-      </Modal>
+        imageUris={imageViewerUris}
+        initialIndex={imageViewerIndex}
+        onClose={() => setImageViewerVisible(false)}
+      />
     </SafeAreaView>
   );
 };
