@@ -31,7 +31,7 @@ import Badge from '../components/common/Badge';
 import MemoConvertSheet from '../components/memo/MemoConvertSheet';
 import PendingLinksBottomSheet from '../components/pendingLinks/PendingLinksBottomSheet';
 import MediaPickerSheet from '../components/chat/MediaPickerSheet';
-import { uploadImages, uploadVideo, uploadFile } from '../services/uploadService';
+import { createMemoWithImage, createMemoWithVideo, createMemoWithFile } from '../services/uploadService';
 import { mainStyles as styles } from '../styles/MainScreen.styles';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { fetchOgData } from '../services/ogService';
@@ -669,10 +669,25 @@ const MainScreen = () => {
     if (imageUris.length === 0) return;
     setIsUploadingMedia(true);
     try {
-      const { urls, keys } = await uploadImages(imageUris);
-      const newMemo = await memoService.createMemo('', undefined, undefined, urls, keys, undefined, undefined);
+      for (const uri of imageUris) {
+        const memoData = await createMemoWithImage(uri);
+        const newMemo: Memo = {
+          id: memoData.uid,
+          userId: memoData.userId || '',
+          type: 'memo',
+          text: memoData.text,
+          urls: memoData.urls,
+          ogDatas: memoData.ogDatas,
+          imageUris: memoData.imageUris,
+          imageKeys: memoData.imageKeys,
+          videos: memoData.videos,
+          files: memoData.files,
+          bookmarked: memoData.bookmarked ?? false,
+          createdAt: memoData.createdAt,
+        };
+        setItems(prev => [...prev, newMemo]);
+      }
       shouldScrollToEnd.current = true;
-      setItems(prev => [...prev, newMemo]);
     } catch (error) {
       console.error('Failed to upload images:', error);
       Alert.alert('오류', '이미지 업로드에 실패했습니다.');
@@ -684,10 +699,23 @@ const MainScreen = () => {
   const handlePickVideo = async (videoUri: string) => {
     setIsUploadingMedia(true);
     try {
-      const uploadedVideo = await uploadVideo(videoUri);
-      const newMemo = await memoService.createMemo('', undefined, undefined, undefined, undefined, [uploadedVideo.url], [uploadedVideo.key]);
-      shouldScrollToEnd.current = true;
+      const memoData = await createMemoWithVideo(videoUri);
+      const newMemo: Memo = {
+        id: memoData.uid,
+        userId: memoData.userId || '',
+        type: 'memo',
+        text: memoData.text,
+        urls: memoData.urls,
+        ogDatas: memoData.ogDatas,
+        imageUris: memoData.imageUris,
+        imageKeys: memoData.imageKeys,
+        videos: memoData.videos,
+        files: memoData.files,
+        bookmarked: memoData.bookmarked ?? false,
+        createdAt: memoData.createdAt,
+      };
       setItems(prev => [...prev, newMemo]);
+      shouldScrollToEnd.current = true;
     } catch (error) {
       console.error('Failed to upload video:', error);
       Alert.alert('오류', '동영상 업로드에 실패했습니다.');
@@ -699,10 +727,23 @@ const MainScreen = () => {
   const handlePickFile = async (fileUri: string, fileName: string) => {
     setIsUploadingMedia(true);
     try {
-      const uploadedFile = await uploadFile(fileUri);
-      const newMemo = await memoService.createMemo('', undefined, undefined, undefined, undefined, undefined, undefined, [uploadedFile]);
-      shouldScrollToEnd.current = true;
+      const memoData = await createMemoWithFile(fileUri);
+      const newMemo: Memo = {
+        id: memoData.uid,
+        userId: memoData.userId || '',
+        type: 'memo',
+        text: memoData.text,
+        urls: memoData.urls,
+        ogDatas: memoData.ogDatas,
+        imageUris: memoData.imageUris,
+        imageKeys: memoData.imageKeys,
+        videos: memoData.videos,
+        files: memoData.files,
+        bookmarked: memoData.bookmarked ?? false,
+        createdAt: memoData.createdAt,
+      };
       setItems(prev => [...prev, newMemo]);
+      shouldScrollToEnd.current = true;
     } catch (error) {
       console.error('Failed to upload file:', error);
       Alert.alert('오류', '파일 업로드에 실패했습니다.');
