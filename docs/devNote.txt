@@ -8,12 +8,8 @@
   npm run android:release
 
 [캐시 지운 후 시작]
-Metro 캐시 (JavaScript):
-  npx react-native start --reset-cache
-
-Gradle 캐시 (Android 빌드):
-  rmdir /s /q android\.gradle
-  rmdir /s /q android\app\build
+npx react-native start --reset-cache
+npm run android -- --clean
 
 [요소 확인 툴 켜기]
   터미널에 npx react-devtools@6 입력

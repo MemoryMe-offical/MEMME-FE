@@ -66,7 +66,9 @@ export const boardCardStyles = StyleSheet.create({
 
   // 내부 흰색 카드
   'card-inner-card': {
-    margin: 10,
+    marginTop: 0,
+    marginBottom: 10,
+    marginHorizontal: 10,
     borderRadius: 12,
     backgroundColor: '#cfdfff',
     overflow: 'hidden',
@@ -101,6 +103,14 @@ export const boardCardStyles = StyleSheet.create({
   'card-content-text': {
     fontSize: 11,
     color: '#333333',
+    fontFamily: 'PretendardVariable',
+    lineHeight: 18,
+  },
+
+  // 빈 본문 텍스트
+  'card-empty-content-text': {
+    fontSize: 11,
+    color: '#AABBCC',
     fontFamily: 'PretendardVariable',
     lineHeight: 18,
   },
@@ -178,7 +188,7 @@ export const boardCardStyles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 14,
     paddingTop: 8,
-    paddingBottom: 2,
+    paddingBottom: 10,
   },
 
   'card-tag-chip': {

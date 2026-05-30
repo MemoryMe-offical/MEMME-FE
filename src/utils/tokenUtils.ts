@@ -98,11 +98,55 @@ export const getStoredUserId = async (): Promise<string | null> => {
 };
 
 /**
+ * RefreshToken으로 새 AccessToken 발급받기
+ */
+export const refreshAccessToken = async (): Promise<boolean> => {
+  try {
+    console.log('🔄 [TokenRefresh] RefreshToken으로 토큰 갱신 중...');
+    const refreshToken = await getStoredRefreshToken();
+
+    if (!refreshToken) {
+      console.log('🔥 [TokenRefresh] RefreshToken 없음');
+      return false;
+    }
+
+    const response = await fetch('https://memme.o-r.kr/v1/auth/refresh', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      console.error(`🔥 [TokenRefresh] 토큰 갱신 실패 (${response.status})`);
+      await clearAutoLoginData();
+      return false;
+    }
+
+    const data = await response.json();
+    const newAccessToken = data?.data?.accessToken;
+
+    if (!newAccessToken) {
+      console.error('🔥 [TokenRefresh] 응답에 accessToken 없음');
+      await clearAutoLoginData();
+      return false;
+    }
+
+    // 새 토큰 저장
+    await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, newAccessToken);
+    console.log('✅ [TokenRefresh] 새 accessToken 저장 완료');
+    return true;
+  } catch (error) {
+    console.error('🔥 [TokenRefresh] 토큰 갱신 중 오류:', error);
+    return false;
+  }
+};
+
+/**
  * 자동로그인 데이터가 유효한지 확인
  * - AUTO_LOGIN이 true
  * - accessToken 존재
  * - userId 존재
- * - 토큰 만료되지 않음
+ * - 토큰 만료되지 않음 (만료되면 RefreshToken으로 갱신 시도)
  */
 export const isAutoLoginDataValid = async (): Promise<boolean> => {
   try {
@@ -134,9 +178,15 @@ export const isAutoLoginDataValid = async (): Promise<boolean> => {
 
     const expired = isTokenExpired(token);
     console.log(`📌 [AutoLogin] 토큰 만료됨: ${expired}`);
+
     if (expired) {
-      console.log('🔥 [AutoLogin] 토큰이 만료됨');
-      return false;
+      console.log('⚠️ [AutoLogin] 토큰이 만료됨 → RefreshToken으로 갱신 시도');
+      const refreshed = await refreshAccessToken();
+      if (!refreshed) {
+        console.log('🔥 [AutoLogin] 토큰 갱신 실패');
+        return false;
+      }
+      console.log('✅ [AutoLogin] 토큰 갱신 성공');
     }
 
     console.log('✅ [AutoLogin] 자동로그인 데이터 유효!');

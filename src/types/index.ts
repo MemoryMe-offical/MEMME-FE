@@ -12,6 +12,12 @@ export interface BaseItem {
 export interface Memo extends BaseItem {
   type: 'memo';
   text: string;
+  urls?: string[];
+  ogDatas?: OgData[];
+  imageUris?: string[];
+  imageKeys?: string[];
+  videos?: MediaAttachment[];
+  files?: FileAttachment[];
 }
 
 // ── 보드 ────────────────────────────────────

@@ -44,7 +44,7 @@ interface Props {
   onBookmarkPress: (item: TimelineItem) => void;
   isBookmarkFilterActive?: boolean;
   onBookmarkFilterToggle?: (active: boolean) => void;
-  onMediaGalleryPress?: (galleryType: 'images' | 'videos' | 'files' | 'links') => void;
+  onMediaGalleryPress?: (galleryType: 'images' | 'videos' | 'files' | 'links' | 'bookmarks') => void;
 }
 
 const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBookmarkPress, isBookmarkFilterActive, onBookmarkFilterToggle, onMediaGalleryPress }: Props) => {
@@ -82,19 +82,38 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
   // OG 데이터 자동 로드 (NoteDetailScreen과 동일한 방식)
   useEffect(() => {
     const loadOgDataForLinks = async () => {
-      const linksNeedingOgData = mediaData.links.filter(link => !link.hasOgData);
+      const boards = items.filter(i => i.type === 'board') as Board[];
 
-      for (const link of linksNeedingOgData) {
-        if (cachedOgData[link.url]) continue;
+      for (const board of boards) {
+        for (const note of (board.notes ?? [])) {
+          // 배열 형식의 URLs 처리
+          if (note.urls && note.urls.length > 0) {
+            for (let idx = 0; idx < note.urls.length; idx++) {
+              const url = note.urls[idx];
+              if (cachedOgData[url] || note.ogDatas?.[idx]) continue;
 
-        try {
-          const ogData = await fetchOgData(link.url);
-          setCachedOgData(prev => ({
-            ...prev,
-            [link.url]: ogData,
-          }));
-        } catch (error) {
-          console.error('Failed to fetch OG data for link:', link.url, error);
+              try {
+                const ogData = await fetchOgData(url);
+                setCachedOgData(prev => ({
+                  ...prev,
+                  [url]: ogData,
+                }));
+              } catch (error) {
+                console.error('Failed to fetch OG data for link:', url, error);
+              }
+            }
+          } else if (note.url && !cachedOgData[note.url] && !note.ogData) {
+            // 레거시 단수 형식 호환
+            try {
+              const ogData = await fetchOgData(note.url);
+              setCachedOgData(prev => ({
+                ...prev,
+                [note.url]: ogData,
+              }));
+            } catch (error) {
+              console.error('Failed to fetch OG data for link:', note.url, error);
+            }
+          }
         }
       }
     };
@@ -121,7 +140,19 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
         if (note.files) {
           files.push(...note.files);
         }
-        if (note.url) {
+        // 배열 형식의 URLs 처리
+        if (note.urls && note.urls.length > 0) {
+          note.urls.forEach((url, idx) => {
+            const ogData = (note.ogDatas?.[idx]) || cachedOgData[url];
+            links.push({
+              url,
+              title: ogData?.title || new URL(url).hostname,
+              imageUrl: ogData?.imageUrl,
+              hasOgData: !!(note.ogDatas?.[idx] || cachedOgData[url]),
+            });
+          });
+        } else if (note.url) {
+          // 레거시 단수 형식 호환
           const ogData = note.ogData || cachedOgData[note.url];
           links.push({
             url: note.url,
@@ -176,6 +207,11 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                   <CloseIcon color="rgba(255,255,255,0.85)" size={25} />
                 </TouchableOpacity>
 
+                <View>
+                  <Text style={styles['sideMenu-header-logo']}>MEMoryME</Text>
+                  <Text style={styles['sideMenu-header-subtitle']}>나를 기억하고 기록하는 공간</Text>
+                </View>
+
                 <TouchableOpacity
                   style={styles['sideMenu-header-btn']}
                   onPress={onSettings}
@@ -187,14 +223,9 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
 
             {/* 흰 프로필 영역 */}
             <View style={styles['sideMenu-profileSection']}>
-              <Image
-                source={require('../../assets/imgs/mainart.png')}
-                style={styles['sideMenu-profile-avatar']}
-              />
-
               <View style={styles['sideMenu-profile-nameRow']}>
                 <Text style={styles['sideMenu-profile-name']}>사용자 님</Text>
-                <EditIcon color="#9DAFC8" size={14} />
+                {/* <EditIcon color="#9DAFC8" size={14} /> */}
               </View>
 
               {/* 스토리지 */}
@@ -202,9 +233,9 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                 <View style={styles['sideMenu-storage-textRow']}>
                   <Text style={styles['sideMenu-storage-usedText']}>{storageUsed.toFixed(2)} GB</Text>
                   <Text style={styles['sideMenu-storage-totalText']}>/ 10 GB</Text>
-                  <TouchableOpacity style={styles['sideMenu-storage-detailBtn']}>
+                  {/* <TouchableOpacity style={styles['sideMenu-storage-detailBtn']}>
                     <Text style={styles['sideMenu-storage-detailText']}>자세히</Text>
-                  </TouchableOpacity>
+                  </TouchableOpacity> */}
                 </View>
 
                 <View style={styles['sideMenu-storage-barWrapper']}>
@@ -312,6 +343,18 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                         </TouchableOpacity>
                       );
                     })}
+                    {bookmarkedItems.length > MAX_DISPLAY_ITEMS && (
+                      <TouchableOpacity
+                        style={[styles['sideMenu-bookmark-card'], { justifyContent: 'center', alignItems: 'center', paddingVertical: 10 }]}
+                        activeOpacity={0.7}
+                        onPress={() => {
+                          handleClose();
+                          onMediaGalleryPress?.('bookmarks');
+                        }}>
+                        <Text style={{ fontSize: 12, color: '#FF9500', fontWeight: '600', marginRight: 4 }}>더보기</Text>
+                        <ChevronRightIcon color="#FF9500" size={14} />
+                      </TouchableOpacity>
+                    )}
                   </>
                 )}
               </View>
@@ -358,6 +401,19 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                           }}
                         />
                       ))}
+                      {mediaData.images.length > MAX_DISPLAY_ITEMS && (
+                        <TouchableOpacity
+                          style={[styles['sideMenu-mediaThumbnail'], { justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0F5FF' }]}
+                          onPress={() => {
+                            handleClose();
+                            onMediaGalleryPress?.('images');
+                          }}>
+                          <View style={{ alignItems: 'center', gap: 4 }}>
+                            <ChevronRightIcon color="#588DFF" size={16} />
+                            <Text style={{ fontSize: 10, color: '#588DFF', fontWeight: '600' }}>더보기</Text>
+                          </View>
+                        </TouchableOpacity>
+                      )}
                     </ScrollView>
                   </>
                 )}
@@ -408,6 +464,19 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                           </View>
                         </TouchableOpacity>
                       ))}
+                      {mediaData.videos.length > MAX_DISPLAY_ITEMS && (
+                        <TouchableOpacity
+                          style={[styles['sideMenu-mediaThumbnail'], { justifyContent: 'center', alignItems: 'center', backgroundColor: '#F0F5FF' }]}
+                          onPress={() => {
+                            handleClose();
+                            onMediaGalleryPress?.('videos');
+                          }}>
+                          <View style={{ alignItems: 'center', gap: 4 }}>
+                            <ChevronRightIcon color="#6B4DFF" size={16} />
+                            <Text style={{ fontSize: 10, color: '#6B4DFF', fontWeight: '600' }}>더보기</Text>
+                          </View>
+                        </TouchableOpacity>
+                      )}
                     </ScrollView>
                   </>
                 )}
@@ -469,6 +538,17 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                           </View>
                         </TouchableOpacity>
                       ))}
+                      {mediaData.links.length > MAX_DISPLAY_ITEMS && (
+                        <TouchableOpacity
+                          style={[styles['sideMenu-linkPreview'], { justifyContent: 'center', alignItems: 'center', paddingVertical: 8, backgroundColor: '#F7FAFF' }]}
+                          onPress={() => {
+                            handleClose();
+                            onMediaGalleryPress?.('links');
+                          }}>
+                          <Text style={{ fontSize: 12, color: '#00B386', fontWeight: '600' }}>더보기</Text>
+                          <ChevronRightIcon color="#00B386" size={14} />
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </>
                 )}
@@ -520,6 +600,17 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                           <Text style={styles['sideMenu-fileName']} numberOfLines={2}>{file.name}</Text>
                         </TouchableOpacity>
                       ))}
+                      {mediaData.files.length > MAX_DISPLAY_ITEMS && (
+                        <TouchableOpacity
+                          style={[styles['sideMenu-fileItem'], { justifyContent: 'center', alignItems: 'center', backgroundColor: '#F7FAFF' }]}
+                          onPress={() => {
+                            handleClose();
+                            onMediaGalleryPress?.('files');
+                          }}>
+                          <Text style={{ fontSize: 12, color: '#FF6B6B', fontWeight: '600' }}>더보기</Text>
+                          <ChevronRightIcon color="#FF6B6B" size={14} />
+                        </TouchableOpacity>
+                      )}
                     </View>
                   </>
                 )}

@@ -18,8 +18,8 @@ interface PendingLinksBottomSheetProps {
   visible: boolean;
   pendingLinks: PendingLink[];
   boards: Board[];
-  onAddToBoard: (pendingLink: PendingLink, targetBoard: Board) => void;
-  onDismiss: (pendingLinkId: string) => void;
+  onAddToBoard: (pendingLink: PendingLink, targetBoard: Board) => Promise<void>;
+  onDismiss: (pendingLinkId: string) => Promise<void>;
   onClose: () => void;
 }
 
@@ -91,11 +91,14 @@ const PendingLinksBottomSheet = ({
     setTimeout(() => setPickerVisible(true), 350); // 닫힘 애니메이션 끝나고 열기
   };
 
-  const handleBoardSelect = (board: Board) => {
+  const handleBoardSelect = async (board: Board) => {
     if (!activePendingLink) return;
-    onAddToBoard(activePendingLink, board);
-    setPickerVisible(false);
-    setActivePendingLink(null);
+    try {
+      await onAddToBoard(activePendingLink, board);
+    } finally {
+      setPickerVisible(false);
+      setActivePendingLink(null);
+    }
   };
 
   const handlePickerClose = () => {
@@ -158,7 +161,7 @@ const PendingLinksBottomSheet = ({
                         <View style={styles['link-actions']}>
                           <TouchableOpacity
                             style={styles['btn-dismiss']}
-                            onPress={() => onDismiss(link.id)}
+                            onPress={() => onDismiss && onDismiss(link.id)}
                             activeOpacity={0.7}>
                             <Text style={styles['btn-dismiss-text']}>무시</Text>
                           </TouchableOpacity>

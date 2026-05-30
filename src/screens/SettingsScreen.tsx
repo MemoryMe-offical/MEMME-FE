@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -67,6 +67,7 @@ const SettingsScreen = ({ navigation }: Props) => {
         style={styles.body}
         contentContainerStyle={styles.bodyContent}
       >
+
         {/* 계정 섹션 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>계정</Text>
@@ -163,6 +164,47 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9DAFC8',
     fontFamily: 'PretendardVariable',
+  },
+  optionGroupTitle: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1A1A1A',
+    fontFamily: 'PretendardVariable',
+    marginBottom: 10,
+  },
+  optionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E4ECFF',
+  },
+  optionItemSelected: {
+    borderColor: '#588DFF',
+    backgroundColor: '#F8FAFF',
+  },
+  radioButton: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    borderWidth: 2,
+    borderColor: '#C0CDD8',
+    marginRight: 12,
+  },
+  radioButtonSelected: {
+    borderColor: '#588DFF',
+    backgroundColor: '#588DFF',
+  },
+  optionText: {
+    fontSize: 14,
+    color: '#1A1A1A',
+    fontFamily: 'PretendardVariable',
+    fontWeight: '500',
+    flex: 1,
   },
 });
 

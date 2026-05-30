@@ -6,6 +6,14 @@ export const mainStyles = StyleSheet.create({
   // 메인 - 최상위 SafeArea
   'main-safeArea': {
     flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+
+  'main-topSafeAreaFill': {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
     backgroundColor: '#EEF3FF',
   },
 
@@ -41,17 +49,33 @@ export const mainStyles = StyleSheet.create({
 
   // 메인 - 헤더 - 타이틀
   'main-header-title': {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    textAlign: 'center',
     fontSize: 15,
     fontWeight: '600',
-    color: '#1A1A1A',
-    fontFamily: 'PretendardVariable',
+    color: '#588DFF',
+  },
+
+  // 메인 - 헤더 - 좌측 버튼 컨테이너
+  'main-header-leftButtons': {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    justifyContent: 'flex-start',
+    zIndex: 1,
   },
 
   // 메인 - 헤더 - 우측 버튼 컨테이너
   'main-header-rightButtons': {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+    justifyContent: 'flex-end',
+    zIndex: 1,
   },
 
   // 메인 - 헤더 - 아이콘 버튼
@@ -62,12 +86,13 @@ export const mainStyles = StyleSheet.create({
   // 메인 - 바디
   'main-body': {
     flex: 1,
-    backgroundColor: '#EEF3FF',
+    backgroundColor: '#FFFFFF',
   },
 
   // 메인 - 컨텐츠 영역
   'main-content': {
     flex: 1,
+    backgroundColor: '#EEF3FF',
   },
 
   // 메인 - 워터마크 컨테이너
@@ -94,52 +119,5 @@ export const mainStyles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 0,
     paddingBottom: 8,
-  },
-
-  // 메인 - 입력 바
-  'main-inputBar': {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingTop: 8,
-    backgroundColor: '#FFFFFF',
-    gap: 8,
-    borderTopLeftRadius: 25,
-    borderTopRightRadius: 25,
-  },
-
-  // 메인 - 입력 바 - 플러스 버튼
-  'main-inputBar-plusButton': {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  // 메인 - 입력 바 - 입력창
-'main-inputBar-input': {
-  flex: 1,
-  backgroundColor: '#F0F4FF',
-  borderRadius: 22,
-  paddingHorizontal: 14,
-  paddingTop: 10,
-  paddingBottom: 10,
-  fontSize: 13,
-  lineHeight: 16,
-  color: '#1A1A1A',
-  fontFamily: 'PretendardVariable',
-  maxHeight: 100,
-  minHeight: 40,
-  textAlignVertical: 'top',
-},
-
-  // 메인 - 입력 바 - 전송 버튼
-  'main-inputBar-sendButton': {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#588DFF',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

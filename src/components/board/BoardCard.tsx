@@ -37,14 +37,28 @@ interface BoardCardProps {
   onContextMenu: (board: Board) => void;
   onDetailPress: (board: Board, noteId?: string) => void;
   onPress?: (board: Board) => void;
+  isExpanded?: boolean;
+  onExpandChange?: (id: string, expanded: boolean) => void;
+  expandedNoteIds?: string[];
+  onNoteExpandChange?: (noteId: string, expanded: boolean) => void;
 }
 
-const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
+const BoardCard = ({
+  item,
+  onContextMenu,
+  onDetailPress,
+  isExpanded: propsIsExpanded,
+  onExpandChange,
+  expandedNoteIds: propsExpandedNoteIds,
+  onNoteExpandChange,
+}: BoardCardProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const hasNotes = Array.isArray(item.notes) && item.notes.length > 0;
-  const [expandedNoteId, setExpandedNoteId] = useState<string | null>(
-    hasNotes ? item.notes![0].id : null,
-  );
+  const [expandedNoteIds, setExpandedNoteIds] = useState<string[]>([]);
+
+  // 부모로부터 받은 상태 사용 (있으면) 또는 로컬 상태 사용
+  const displayIsExpanded = propsIsExpanded !== undefined ? propsIsExpanded : isExpanded;
+  const displayExpandedNoteIds = propsExpandedNoteIds !== undefined ? propsExpandedNoteIds : expandedNoteIds;
   const [ogDataCache, setOgDataCache] = useState<Record<string, OgData>>({});
   const [imageViewerVisible, setImageViewerVisible] = useState(false);
   const [imageViewerImages, setImageViewerImages] = useState<string[]>([]);
@@ -54,7 +68,16 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
   const flatListRef = useRef<FlatList>(null);
 
   const toggleNote = (noteId: string) => {
-    setExpandedNoteId(prev => (prev === noteId ? null : noteId));
+    const isCurrentlyExpanded = displayExpandedNoteIds.includes(noteId);
+    if (onNoteExpandChange) {
+      onNoteExpandChange(noteId, !isCurrentlyExpanded);
+    } else {
+      setExpandedNoteIds(prev =>
+        isCurrentlyExpanded
+          ? prev.filter(id => id !== noteId)
+          : [...prev, noteId]
+      );
+    }
   };
 
   const openImageViewer = (images: string[]) => {
@@ -111,8 +134,16 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
             <TouchableOpacity onPress={() => onContextMenu(item)} hitSlop={8}>
               <MoreIcon color="#FFFFFF" size={20} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setIsExpanded(prev => !prev)} hitSlop={8}>
-              {isExpanded
+            <TouchableOpacity
+              onPress={() => {
+                if (onExpandChange) {
+                  onExpandChange(item.id, !displayIsExpanded);
+                } else {
+                  setIsExpanded(prev => !prev);
+                }
+              }}
+              hitSlop={8}>
+              {displayIsExpanded
                 ? <ChevronUpIcon color="#FFFFFF" size={20} />
                 : <ChevronDownIcon color="#FFFFFF" size={20} />}
             </TouchableOpacity>
@@ -130,27 +161,20 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
           </View>
         )}
 
-        {/* 접힌 상태 */}
-        {!isExpanded && hasNotes && (
-          <View style={styles['card-collapsed-subtitle-row']}>
-            <Text style={styles['card-collapsed-subtitle-text']} numberOfLines={1}>
-              {expandedNoteId
-                ? item.notes!.find(n => n.id === expandedNoteId)?.title ?? item.notes![0].title
-                : item.notes![0].title}
-            </Text>
-          </View>
-        )}
-
         {/* 펼쳐진 상태 */}
-        {isExpanded && (
-          <View style={styles['card-inner-card']}>
+        {displayIsExpanded && (
+          <View style={[
+            styles['card-inner-card'],
+            (!item.tags || item.tags.length === 0) && { marginTop: 10 }
+          ]}>
             {hasNotes
               ? (
                 <View>
                   {item.notes!.slice(0, 3).map((note, idx) => {
-                    const isNoteExpanded = expandedNoteId === note.id;
+                    const isNoteExpanded = displayExpandedNoteIds.includes(note.id);
+                    const isLastNote = idx === Math.min(2, item.notes!.length - 1);
                     return (
-                      <View key={note.id} style={styles['note-card-wrapper']}>
+                      <View key={note.id} style={[styles['note-card-wrapper'], isLastNote && { marginBottom: 0 }]}>
                         <TouchableOpacity
                           style={styles['sub-accordion-header']}
                           onPress={() => toggleNote(note.id)}
@@ -168,12 +192,16 @@ const BoardCard = ({ item, onContextMenu, onDetailPress }: BoardCardProps) => {
                             onPress={() => onDetailPress(item, note.id)}
                             activeOpacity={0.7}
                             style={{ paddingVertical: 8 }}>
-                            {!!note.content && (
+                            {note.content ? (
                               <View style={styles['card-section-row']}>
                                 <Text style={styles['card-section-label']}>내용</Text>
                                 <Text style={styles['card-content-text']} numberOfLines={10}>
                                   {note.content}
                                 </Text>
+                              </View>
+                            ) : !((note.imageUris?.length ?? 0) > 0 || (note.videos?.length ?? 0) > 0 || note.url || (note.files?.length ?? 0) > 0) && (
+                              <View style={styles['card-section-row']}>
+                                <Text style={styles['card-empty-content-text']}>아직 내용이 없습니다</Text>
                               </View>
                             )}
                             {((note.imageUris?.length ?? 0) > 0 || (note.videos?.length ?? 0) > 0 || note.url || (note.files?.length ?? 0) > 0) && (
