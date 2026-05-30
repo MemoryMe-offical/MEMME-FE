@@ -433,21 +433,28 @@ export const boardCardStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: '#F0F4FF',
-    borderRadius: 6,
-    borderWidth: 0,
-    gap: 6,
+    paddingVertical: 8,
+    backgroundColor: '#F8F9FB',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E8EEF8',
+    gap: 10,
   },
 
-  'card-file-icon': {
-    fontSize: 12,
+  'card-file-icon-container': {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    backgroundColor: '#EEF3FF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 
   'card-file-name': {
     flex: 1,
-    fontSize: 10,
-    color: '#4A5568',
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
   },
 

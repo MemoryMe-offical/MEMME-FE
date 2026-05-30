@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Board, TimelineItem, Memo, FileAttachment, OgData } from '../../types';
-import { CloseIcon, EditIcon, SettingsIcon, ChevronRightIcon } from './Icons';
+import { CloseIcon, EditIcon, SettingsIcon, ChevronRightIcon, FileIcon } from './Icons';
 import { SIDE_MENU_WIDTH, sideMenuStyles as styles } from '../../styles/SideMenu.styles';
 import { fetchOgData } from '../../services/ogService';
 import ImageViewerModal from './ImageViewerModal';
@@ -634,7 +634,9 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                             }
                           }}
                         >
-                          <Text style={styles['sideMenu-fileIcon']}>📄</Text>
+                          <View style={styles['sideMenu-fileIconContainer']}>
+                            <FileIcon color="#588DFF" size={18} />
+                          </View>
                           <Text style={styles['sideMenu-fileName']} numberOfLines={2}>{decodeURIComponent(file.name)}</Text>
                         </TouchableOpacity>
                       ))}

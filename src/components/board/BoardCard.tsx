@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Linking, Modal, Pressable } from 'react-native';
 import { Board, OgData } from '../../types';
 import { boardCardStyles as styles } from '../../styles/BoardCard.styles';
-import { ChevronDownIcon, ChevronUpIcon, MoreIcon, LinkIcon } from '../common/Icons';
+import { ChevronDownIcon, ChevronUpIcon, MoreIcon, LinkIcon, FileIcon } from '../common/Icons';
 import ImageViewerModal from '../common/ImageViewerModal';
 import { fetchOgData } from '../../services/ogService';
 import LoadingImage from '../common/LoadingImage';
@@ -298,7 +298,9 @@ const BoardCard = ({
                                                 });
                                               }}
                                               activeOpacity={0.7}>
-                                              <Text style={styles['card-file-icon']}>📄</Text>
+                                              <View style={styles['card-file-icon-container']}>
+                                                <FileIcon color="#588DFF" size={18} />
+                                              </View>
                                               <Text style={styles['card-file-name']} numberOfLines={1}>
                                                 {file.name || 'file'}
                                               </Text>
