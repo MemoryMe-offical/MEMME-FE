@@ -121,14 +121,16 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
     loadOgDataForLinks();
   }, [items]);
 
-  // 모든 노트에서 이미지, 동영상, 파일, 링크 수집
+  // 모든 노트와 메모에서 이미지, 동영상, 파일, 링크 수집
   const mediaData = useMemo(() => {
     const boards = items.filter(i => i.type === 'board') as Board[];
+    const memos = items.filter(i => i.type === 'memo') as any[];
     const images: string[] = [];
     const videos: string[] = [];
     const files: FileAttachment[] = [];
     const links: { url: string; title: string; imageUrl?: string; hasOgData?: boolean }[] = [];
 
+    // 보드의 노트에서 미디어 수집
     boards.forEach(board => {
       (board.notes ?? []).forEach(note => {
         if (note.imageUris) {
@@ -162,6 +164,42 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
           });
         }
       });
+    });
+
+    // 메모에서 미디어 수집
+    memos.forEach((memo: any) => {
+      if (memo.imageUris) {
+        images.push(...memo.imageUris);
+      }
+      if (memo.videoUris) {
+        videos.push(...memo.videoUris);
+      }
+      if (memo.files) {
+        files.push(...memo.files);
+      }
+      // 배열 형식의 URLs 처리
+      if (memo.urls && memo.urls.length > 0) {
+        memo.urls.forEach((url: string, idx: number) => {
+          const ogData = (memo.ogDatas?.[idx]) || cachedOgData[url];
+          const hostname = url.replace(/^https?:\/\//, '').split('/')[0];
+          links.push({
+            url,
+            title: ogData?.title || hostname,
+            imageUrl: ogData?.imageUrl,
+            hasOgData: !!(memo.ogDatas?.[idx] || cachedOgData[url]),
+          });
+        });
+      } else if (memo.url) {
+        // 레거시 단수 형식 호환
+        const ogData = memo.ogData || cachedOgData[memo.url];
+        const hostname = memo.url.replace(/^https?:\/\//, '').split('/')[0];
+        links.push({
+          url: memo.url,
+          title: ogData?.title || hostname,
+          imageUrl: ogData?.imageUrl,
+          hasOgData: !!(memo.ogData || cachedOgData[memo.url]),
+        });
+      }
     });
 
     return { images, videos, files, links };
