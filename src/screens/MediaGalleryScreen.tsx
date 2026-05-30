@@ -14,7 +14,7 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { Board, Note, FileAttachment, Memo } from '../types';
-import { ArrowLeftIcon } from '../components/common/Icons';
+import { ArrowLeftIcon, FileIcon } from '../components/common/Icons';
 import { fetchOgData } from '../services/ogService';
 import ImageViewerModal from '../components/common/ImageViewerModal';
 import LoadingImage from '../components/common/LoadingImage';
@@ -423,7 +423,9 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
     return (
       <TouchableOpacity onPress={handleOpenFile}>
         <View style={[styles.fileItem, { width: THUMBNAIL_SIZE }]}>
-          <Text style={styles.fileIcon}>📄</Text>
+          <View style={styles.fileIconContainer}>
+            <FileIcon color="#588DFF" size={28} />
+          </View>
           <Text style={styles.fileName} numberOfLines={2}>{decodeURIComponent(item.title)}</Text>
         </View>
       </TouchableOpacity>
@@ -620,21 +622,27 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   fileItem: {
-    backgroundColor: '#F7FAFF',
+    backgroundColor: '#F8F9FB',
     borderRadius: 12,
     padding: 12,
     alignItems: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: '#E4ECFF',
+    borderColor: '#E8EEF8',
     height: THUMBNAIL_SIZE,
     justifyContent: 'center',
   },
-  fileIcon: {
-    fontSize: 28,
+  fileIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 8,
+    backgroundColor: '#EEF3FF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   fileName: {
     fontSize: 11,
+    fontWeight: '600',
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
     textAlign: 'center',

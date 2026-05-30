@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, Linking, StyleSheet, Modal, FlatList, Dimensions, Pressable, ActivityIndicator, useWindowDimensions, ScrollView } from 'react-native';
 import { Note, OgData } from '../../types';
-import { LinkIcon } from '../common/Icons';
+import { LinkIcon, FileIcon } from '../common/Icons';
 import ImageViewerModal from '../common/ImageViewerModal';
 import { fetchOgData } from '../../services/ogService';
 import LoadingImage from '../common/LoadingImage';
@@ -205,7 +205,9 @@ const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: Not
                         });
                       }}
                       activeOpacity={0.7}>
-                      <Text style={styles['file-icon']}>📄</Text>
+                      <View style={styles['file-icon-container']}>
+                        <FileIcon color="#588DFF" size={20} />
+                      </View>
                       <Text style={styles['file-name']} numberOfLines={1}>
                         {file.name || 'file'}
                       </Text>
@@ -556,19 +558,27 @@ const styles = StyleSheet.create({
   'file-item': {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    backgroundColor: '#F0F4FF',
-    borderRadius: 6,
-    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    backgroundColor: '#F8F9FB',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E8EEF8',
+    gap: 10,
   },
-  'file-icon': {
-    fontSize: 14,
+  'file-icon-container': {
+    width: 36,
+    height: 36,
+    borderRadius: 6,
+    backgroundColor: '#EEF3FF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   'file-name': {
     flex: 1,
-    fontSize: 10,
-    color: '#4A5568',
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
   },
   'file-more': {
