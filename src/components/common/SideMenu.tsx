@@ -12,6 +12,7 @@ import {
   StatusBar,
   Dimensions,
   Linking,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Board, TimelineItem, Memo, FileAttachment, OgData } from '../../types';
@@ -50,6 +51,10 @@ interface Props {
 const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBookmarkPress, isBookmarkFilterActive, onBookmarkFilterToggle, onMediaGalleryPress }: Props) => {
   const slideAnim = useRef(new Animated.Value(SIDE_MENU_WIDTH)).current;
   const insets = useSafeAreaInsets();
+  const panelTopInset =
+    Platform.OS === 'android'
+      ? Math.max(insets.top, StatusBar.currentHeight ?? 0)
+      : insets.top;
   const [cachedOgData, setCachedOgData] = useState<{ [url: string]: OgData }>({});
   const [imageViewerState, setImageViewerState] = useState({
     visible: false,
@@ -228,8 +233,8 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
           style={[
             styles['sideMenu-panel'],
             {
-              marginTop: insets.top,
-              height: SCREEN_HEIGHT - insets.top - insets.bottom,
+              marginTop: panelTopInset,
+              height: SCREEN_HEIGHT - panelTopInset - insets.bottom,
               transform: [{ translateX: slideAnim }],
             },
           ]}

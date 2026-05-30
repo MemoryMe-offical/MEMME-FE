@@ -19,6 +19,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
+import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Board, Memo, PendingLink, TimelineItem } from '../types';
 import ChatMessageItem from '../components/chat/ChatMessageItem';
@@ -28,7 +29,6 @@ import ContextMenu from '../components/common/ContextMenu';
 import SideMenu from '../components/common/SideMenu';
 import { HamburgerIcon, PlusIcon, SearchIcon, ArrowLeftIcon } from '../components/common/Icons';
 import Badge from '../components/common/Badge';
-import ImageViewerModal from '../components/common/ImageViewerModal';
 import MemoConvertSheet from '../components/memo/MemoConvertSheet';
 import PendingLinksBottomSheet from '../components/pendingLinks/PendingLinksBottomSheet';
 import MediaPickerSheet from '../components/chat/MediaPickerSheet';
@@ -42,12 +42,10 @@ import * as memoService from '../services/memoService';
 import * as boardService from '../services/boardService';
 import * as noteService from '../services/noteService';
 
-const ANDROID_KEYBOARD_EXTRA_OFFSET = 50;
-
 const MainScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Main'>>();
-  const route = useRoute();
+  const route = useRoute<RouteProp<RootStackParamList, 'Main'>>();
   const [userId, setUserId] = useState<string>('');
   const [items, setItems] = useState<TimelineItem[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -56,12 +54,45 @@ const MainScreen = () => {
   const [contextMenuItem, setContextMenuItem] = useState<TimelineItem | null>(null);
   const [sideMenuVisible, setSideMenuVisible] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [watermarkFrame, setWatermarkFrame] = useState<{ width: number; height: number } | null>(null);
   const flatListRef = useRef<FlatList<TimelineItem>>(null);
   const shouldScrollToEnd = useRef(false);
-  const androidInputOffset = Platform.OS === 'android' && keyboardVisible
-    ? keyboardHeight + Math.max(insets.bottom, ANDROID_KEYBOARD_EXTRA_OFFSET)
-    : 0;
+  const scrollRetryTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const clearScrollRetryTimers = useCallback(() => {
+    scrollRetryTimers.current.forEach(timer => clearTimeout(timer));
+    scrollRetryTimers.current = [];
+  }, []);
+
+  const scrollToLatest = useCallback((animated = false) => {
+    clearScrollRetryTimers();
+
+    requestAnimationFrame(() => {
+      flatListRef.current?.scrollToOffset({ offset: 0, animated });
+    });
+
+    if (Platform.OS === 'ios') {
+      return;
+    }
+
+    [80, 180, 360, 600].forEach(delay => {
+      const timer = setTimeout(() => {
+        flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+      }, delay);
+      scrollRetryTimers.current.push(timer);
+    });
+  }, [clearScrollRetryTimers]);
+
+  const scrollToLatestIfNeeded = useCallback(() => {
+    if (!shouldScrollToEnd.current) return;
+
+    shouldScrollToEnd.current = false;
+    if (Platform.OS === 'ios') return;
+
+    scrollToLatest(false);
+  }, [scrollToLatest]);
+
+  useEffect(() => clearScrollRetryTimers, [clearScrollRetryTimers]);
 
   // 링크 감지 관련 state
   const [detectedLink, setDetectedLink] = useState<string | null>(null);
@@ -113,11 +144,6 @@ const MainScreen = () => {
     noteExpandMode: 'none' as 'none' | 'first' | 'all',
   });
   const [expandModalVisible, setExpandModalVisible] = useState(false);
-
-  // 이미지 뷰어
-  const [imageViewerVisible, setImageViewerVisible] = useState(false);
-  const [imageViewerUris, setImageViewerUris] = useState<string[]>([]);
-  const [imageViewerIndex, setImageViewerIndex] = useState(0);
 
   // 초기 설정 로드
   useEffect(() => {
@@ -218,7 +244,7 @@ const MainScreen = () => {
         result = result.filter(i => {
           if (i.type === 'board') {
             const board = i as Board;
-            return (board.tags ?? []).some(tag => tag.toLowerCase().includes(tagQuery));
+            return (board.tags ?? []).some(tag => (tag ?? '').toLowerCase().includes(tagQuery));
           }
           return false;
         });
@@ -226,11 +252,11 @@ const MainScreen = () => {
         // 일반 텍스트 검색
         result = result.filter(i => {
           if (i.type === 'memo') {
-            return (i as Memo).text.toLowerCase().includes(query);
+            return ((i as Memo).text ?? '').toLowerCase().includes(query);
           } else {
             const board = i as Board;
             // 보드 제목 검색
-            if (board.title.toLowerCase().includes(query)) {
+            if ((board.title ?? '').toLowerCase().includes(query)) {
               return true;
             }
             // 보드 내 노트 제목, 내용 검색
@@ -245,6 +271,8 @@ const MainScreen = () => {
 
     return result;
   }, [items, filterType, filterBookmarkOnly, searchText, selectedTags]);
+
+  const timelineItems = useMemo(() => [...filteredItems].reverse(), [filteredItems]);
 
   const nativeShareModule =
     Platform.OS === 'ios'
@@ -276,6 +304,9 @@ const MainScreen = () => {
         sort: 'createdAt',
         limit: 50,
       });
+      if (response.items.length > 0 && !route.params?.scrollToItemId) {
+        shouldScrollToEnd.current = true;
+      }
       setItems(response.items);
     } catch (error) {
       console.error('Failed to load timeline:', error);
@@ -283,7 +314,7 @@ const MainScreen = () => {
     } finally {
       setLoaded(true);
     }
-  }, []);
+  }, [route.params?.scrollToItemId]);
 
   useEffect(() => {
     loadTimeline();
@@ -362,12 +393,12 @@ const MainScreen = () => {
 
   useEffect(() => {
     if (route.params?.scrollToItemId) {
-      const index = items.findIndex(i => i.id === route.params.scrollToItemId);
+      const index = timelineItems.findIndex(i => i.id === route.params?.scrollToItemId);
       if (index !== -1) {
         flatListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
       }
     }
-  }, [route.params?.scrollToItemId, items]);
+  }, [route.params?.scrollToItemId, timelineItems]);
 
   useEffect(() => {
     const getShared = async () => {
@@ -401,13 +432,14 @@ const MainScreen = () => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
-    const showSub = Keyboard.addListener(showEvent, (event) => {
+    const showSub = Keyboard.addListener(showEvent, () => {
       setKeyboardVisible(true);
-      setKeyboardHeight(event.endCoordinates.height);
+      if (Platform.OS === 'android') {
+        shouldScrollToEnd.current = true;
+      }
     });
     const hideSub = Keyboard.addListener(hideEvent, () => {
       setKeyboardVisible(false);
-      setKeyboardHeight(0);
     });
 
     return () => {
@@ -476,13 +508,6 @@ const MainScreen = () => {
       console.error('Failed to toggle bookmark:', error);
       Alert.alert('오류', '북마크 설정에 실패했습니다.');
     }
-  };
-
-  const handleImagePress = (imageUri: string, imageUris: string[]) => {
-    const index = imageUris.indexOf(imageUri);
-    setImageViewerUris(imageUris);
-    setImageViewerIndex(Math.max(0, index));
-    setImageViewerVisible(true);
   };
 
   const handleContextConvert = () => {
@@ -682,24 +707,18 @@ const MainScreen = () => {
     if (imageUris.length === 0) return;
     setIsUploadingMedia(true);
     try {
-      // 여러 이미지를 한 번의 요청으로 전송하면 하나의 메모에 함께 묶임
-      const memoData = await createMemoWithImage(imageUris);
+      const raw = await createMemoWithImage(imageUris);
       const newMemo: Memo = {
-        id: memoData.uid,
-        userId: memoData.userId || '',
+        id: raw.uid,
+        userId: raw.userId || '',
         type: 'memo',
-        text: memoData.text,
-        urls: memoData.urls,
-        ogDatas: memoData.ogDatas,
-        imageUris: memoData.imageUris,
-        imageKeys: memoData.imageKeys,
-        videos: memoData.videos,
-        files: memoData.files,
-        bookmarked: memoData.bookmarked ?? false,
-        createdAt: memoData.createdAt,
+        text: raw.text || '',
+        images: raw.images,
+        bookmarked: raw.bookmarked ?? false,
+        createdAt: raw.createdAt,
       };
-      setItems(prev => [...prev, newMemo]);
       shouldScrollToEnd.current = true;
+      setItems(prev => [...prev, newMemo]);
     } catch (error) {
       console.error('Failed to upload images:', error);
       Alert.alert('오류', '이미지 업로드에 실패했습니다.');
@@ -711,23 +730,18 @@ const MainScreen = () => {
   const handlePickVideo = async (videoUri: string) => {
     setIsUploadingMedia(true);
     try {
-      const memoData = await createMemoWithVideo(videoUri);
+      const raw = await createMemoWithVideo(videoUri);
       const newMemo: Memo = {
-        id: memoData.uid,
-        userId: memoData.userId || '',
+        id: raw.uid,
+        userId: raw.userId || '',
         type: 'memo',
-        text: memoData.text,
-        urls: memoData.urls,
-        ogDatas: memoData.ogDatas,
-        imageUris: memoData.imageUris,
-        imageKeys: memoData.imageKeys,
-        videos: memoData.videos,
-        files: memoData.files,
-        bookmarked: memoData.bookmarked ?? false,
-        createdAt: memoData.createdAt,
+        text: raw.text || '',
+        videos: raw.videos,
+        bookmarked: raw.bookmarked ?? false,
+        createdAt: raw.createdAt,
       };
-      setItems(prev => [...prev, newMemo]);
       shouldScrollToEnd.current = true;
+      setItems(prev => [...prev, newMemo]);
     } catch (error) {
       console.error('Failed to upload video:', error);
       Alert.alert('오류', '동영상 업로드에 실패했습니다.');
@@ -736,26 +750,21 @@ const MainScreen = () => {
     }
   };
 
-  const handlePickFile = async (fileUri: string, fileName: string) => {
+  const handlePickFile = async (fileUri: string, _fileName: string) => {
     setIsUploadingMedia(true);
     try {
-      const memoData = await createMemoWithFile(fileUri);
+      const raw = await createMemoWithFile(fileUri);
       const newMemo: Memo = {
-        id: memoData.uid,
-        userId: memoData.userId || '',
+        id: raw.uid,
+        userId: raw.userId || '',
         type: 'memo',
-        text: memoData.text,
-        urls: memoData.urls,
-        ogDatas: memoData.ogDatas,
-        imageUris: memoData.imageUris,
-        imageKeys: memoData.imageKeys,
-        videos: memoData.videos,
-        files: memoData.files,
-        bookmarked: memoData.bookmarked ?? false,
-        createdAt: memoData.createdAt,
+        text: raw.text || '',
+        files: raw.files,
+        bookmarked: raw.bookmarked ?? false,
+        createdAt: raw.createdAt,
       };
-      setItems(prev => [...prev, newMemo]);
       shouldScrollToEnd.current = true;
+      setItems(prev => [...prev, newMemo]);
     } catch (error) {
       console.error('Failed to upload file:', error);
       Alert.alert('오류', '파일 업로드에 실패했습니다.');
@@ -847,13 +856,15 @@ const MainScreen = () => {
               <TouchableOpacity
                 style={styles['main-header-iconButton']}
                 onPress={() => setExpandModalVisible(true)}>
-                <Text style={[{ fontSize: 10, fontWeight: '600', color: '#1A1A1A' }]}>
+                <Text style={styles['main-header-expandText']}>
                   접기/펼치기
                 </Text>
               </TouchableOpacity>
             </View>
 
-            <Text style={styles['main-header-title']} pointerEvents="none">MEMoryMe</Text>
+            <View style={styles['main-header-titleWrapper']} pointerEvents="none">
+              <Text style={styles['main-header-title']}>MEMoryMe</Text>
+            </View>
 
             <View style={styles['main-header-rightButtons']}>
               <TouchableOpacity
@@ -875,30 +886,53 @@ const MainScreen = () => {
 
       <KeyboardAvoidingView
         style={styles['main-body']}
-        behavior={Platform.OS === 'ios' ? 'height' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={0}
       >
-        <View style={styles['main-content']}>
-          <View style={styles['main-watermark']} pointerEvents="none">
-            <Image
-              source={require('../assets/imgs/mainlogo.png')}
-              style={styles['main-watermark-image']}
-            />
-          </View>
+        <View
+          style={styles['main-content']}
+          onLayout={({ nativeEvent }) => {
+            if (watermarkFrame) return;
+
+            const { width, height } = nativeEvent.layout;
+            setWatermarkFrame({ width, height });
+          }}>
+          {watermarkFrame ? (
+            <View
+              style={[
+                styles['main-watermark'],
+                {
+                  top: (watermarkFrame.height - watermarkFrame.width * 0.55) / 2,
+                  height: watermarkFrame.width * 0.55,
+                },
+              ]}
+              pointerEvents="none">
+              <Image
+                source={require('../assets/imgs/mainlogo.png')}
+                style={[
+                  styles['main-watermark-image'],
+                  {
+                    width: watermarkFrame.width * 0.55,
+                    height: watermarkFrame.width * 0.55,
+                  },
+                ]}
+              />
+            </View>
+          ) : null}
 
           <FlatList<TimelineItem>
             ref={flatListRef}
-            data={filteredItems}
+            data={timelineItems}
             keyExtractor={item => item.id}
+            style={styles['main-list']}
             contentContainerStyle={styles['main-listContent']}
+            inverted
             keyboardDismissMode="interactive"
             keyboardShouldPersistTaps="handled"
             onContentSizeChange={() => {
-              if (shouldScrollToEnd.current) {
-                shouldScrollToEnd.current = false;
-                flatListRef.current?.scrollToEnd({ animated: false });
-              }
+              scrollToLatestIfNeeded();
             }}
+            onLayout={scrollToLatestIfNeeded}
             renderItem={({ item }) => {
               if (item.type === 'memo') {
                 const memo = item as Memo;
@@ -909,7 +943,6 @@ const MainScreen = () => {
                     onToggleExpand={(m) => setExpandedMemoId(expandedMemoId === m.id ? null : m.id)}
                     onLongPress={handleContextMenu}
                     onOpenLinkModal={handleOpenLinkModal}
-                    onImagePress={handleImagePress}
                   />
                 );
               }
@@ -943,13 +976,13 @@ const MainScreen = () => {
           />
         </View>
 
-        <View style={Platform.OS === 'android' ? { marginBottom: androidInputOffset } : null}>
+        <View style={styles['main-inputBarWrapper']}>
           <ChatInputBar
             inputText={inputText}
             onChangeText={setInputText}
             onSend={handleSend}
             onPlusPress={() => setMediaPickerVisible(true)}
-            bottomInset={insets.bottom}
+            bottomInset={Platform.OS === 'ios' && keyboardVisible ? 0 : insets.bottom}
           />
         </View>
       </KeyboardAvoidingView>
@@ -1488,14 +1521,6 @@ const MainScreen = () => {
           </View>
         </TouchableOpacity>
       </Modal>
-
-      {/* 이미지 뷰어 모달 */}
-      <ImageViewerModal
-        visible={imageViewerVisible}
-        imageUris={imageViewerUris}
-        initialIndex={imageViewerIndex}
-        onClose={() => setImageViewerVisible(false)}
-      />
     </SafeAreaView>
   );
 };

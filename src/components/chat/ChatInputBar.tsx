@@ -44,7 +44,7 @@ const ChatInputBar: React.FC<ChatInputBarProps> = ({
         style={chatInputBarStyles.sendButton}
         onPress={onSend}
       >
-        <SendIcon color="#FFFFFF" size={17} />
+        <SendIcon color="#FFFFFF" size={17} style={chatInputBarStyles.sendIcon} />
       </TouchableOpacity>
     </View>
   );

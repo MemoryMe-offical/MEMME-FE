@@ -370,8 +370,8 @@ const styles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
     textAlign: 'center',
   },
-  cancelText: { fontSize: 13, color: '#9DAFC8', fontFamily: 'PretendardVariable' },
-  saveText: { fontSize: 13, fontWeight: '600', color: '#588DFF', fontFamily: 'PretendardVariable' },
+  cancelText: { fontSize: 15, color: '#9DAFC8', fontFamily: 'PretendardVariable' },
+  saveText: { fontSize: 15, fontWeight: '600', color: '#588DFF', fontFamily: 'PretendardVariable' },
   saveTextDisabled: { color: '#C0CDD8' },
   dateBadgeRow: {
     flexDirection: 'row',

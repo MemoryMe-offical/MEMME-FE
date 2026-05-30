@@ -9,6 +9,8 @@ import {
   Modal,
   StyleSheet,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Board, Memo } from '../../types';
@@ -193,13 +195,16 @@ const MemoConvertSheet = ({
       animationType="slide"
       onRequestClose={handleClose}>
       {/* 배경 오버레이 — Step 1에서만 탭하여 닫기 */}
-      <TouchableOpacity
-        style={styles['modal-overlay']}
-        activeOpacity={1}
-        onPress={step === 'list' ? handleClose : undefined}>
-        <View
-          style={[styles['modal-sheet'], { paddingBottom: insets.bottom + 20 }]}
-          onStartShouldSetResponder={() => true}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <TouchableOpacity
+          style={styles['modal-overlay']}
+          activeOpacity={1}
+          onPress={step === 'list' ? handleClose : undefined}>
+          <View
+            style={[styles['modal-sheet'], { paddingBottom: insets.bottom + 20 }]}
+            onStartShouldSetResponder={() => true}>
           <View style={styles['modal-handle']} />
 
           {/* ── Step 1: 목적지 선택 ── */}
@@ -401,8 +406,9 @@ const MemoConvertSheet = ({
               </ScrollView>
             </>
           )}
-        </View>
-      </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };
