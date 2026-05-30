@@ -35,8 +35,9 @@ interface ChatMessageItemProps {
 
 const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, onOpenLinkModal }: ChatMessageItemProps) => {
   const maxChars = 500;
-  const isLong = item.text.length > maxChars;
-  const displayText = expanded ? item.text : item.text.substring(0, maxChars);
+  const text = item.text || '';
+  const isLong = text.length > maxChars;
+  const displayText = expanded ? text : text.substring(0, maxChars);
 
   const [detectedOgData, setDetectedOgData] = useState<any>(null);
   const [isLoadingOg, setIsLoadingOg] = useState(false);
@@ -56,7 +57,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
 
   // 메모에 이미 링크 정보가 있으면 사용, 없으면 텍스트에서 감지
   const hasStoredLink = item.urls && item.urls.length > 0;
-  const firstLink = hasStoredLink ? item.urls?.[0] : detectUrlFromText(item.text);
+  const firstLink = hasStoredLink ? item.urls?.[0] : detectUrlFromText(text);
   const firstOgData = hasStoredLink && item.ogDatas && item.ogDatas.length > 0 ? item.ogDatas[0] : detectedOgData;
 
   // 텍스트에서 감지한 링크의 OG 데이터 조회
@@ -268,18 +269,24 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
     );
   };
 
+  // 미디어가 있는지 확인
+  const hasMedia = (item.imageUris?.length ?? 0) > 0 || (item.videos?.length ?? 0) > 0 || (item.files?.length ?? 0) > 0;
+  const hasText = text.trim().length > 0;
+
   return (
     <View style={styles['container']}>
       {/* 메시지 + 시간 행 */}
       <View style={styles['message-row']}>
-        {/* 시간 */}
-        <Text style={styles['chatMessageItem-time']}>
-          {formatTime(item.createdAt)}
-        </Text>
+        {/* 시간 - 텍스트가 있을 때만 표시 */}
+        {hasText && (
+          <Text style={styles['chatMessageItem-time']}>
+            {formatTime(item.createdAt)}
+          </Text>
+        )}
 
         {/* 텍스트 메시지 (있으면 표시) */}
         <View style={styles['message-bubble-wrapper']}>
-          {item.text.trim().length > 0 && (
+          {hasText && (
             <TouchableOpacity
               style={styles['chatMessageItem-bubble']}
               onPress={() => {
@@ -312,7 +319,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
       <View style={styles['links-container']}>
           {/* OG 데이터 로딩 중 */}
           {firstLink && isLoadingOg && !firstOgData && (
-            <View style={[styles['og-loading'], { marginTop: item.text.trim().length > 0 ? 8 : 0, marginRight: 8 }]}>
+            <View style={[styles['og-loading'], { marginTop: text.trim().length > 0 ? 8 : 0, marginRight: 8 }]}>
               <ActivityIndicator size="small" color="#588DFF" />
               <Text style={styles['og-loading-text']}>
                 링크 정보 불러오는 중...
@@ -326,7 +333,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
               onPress={() => handleLinkPress(firstLink)}
               onLongPress={() => onLongPress(item)}
               delayLongPress={400}
-              style={[styles['link-card'], { marginTop: item.text.trim().length > 0 ? 8 : 0, marginRight: 8 }]}>
+              style={[styles['link-card'], { marginTop: text.trim().length > 0 ? 8 : 0, marginRight: 8 }]}>
               {/* 썸네일 */}
               {firstOgData.imageUrl && (
                 <Image
@@ -361,7 +368,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
               onPress={() => handleLinkPress(firstLink)}
               onLongPress={() => onLongPress(item)}
               delayLongPress={400}
-              style={[styles['link-only-card'], { marginTop: item.text.trim().length > 0 ? 8 : 0, marginRight: 8 }]}>
+              style={[styles['link-only-card'], { marginTop: text.trim().length > 0 ? 8 : 0, marginRight: 8 }]}>
               <Text style={styles['link-only-text']} numberOfLines={1}>
                 🔗 {firstLink}
               </Text>
@@ -382,14 +389,29 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
         </View>
       )}
 
-      {/* 이미지 그리드 */}
-      {renderImageGrid()}
+      {/* 미디어만 있을 때 (텍스트 없음) - 시간 + 미디어 행 */}
+      {!hasText && hasMedia && (
+        <View style={styles['media-row']}>
+          {/* 시간 */}
+          <Text style={styles['chatMessageItem-time']}>
+            {formatTime(item.createdAt)}
+          </Text>
 
-      {/* 동영상 */}
-      {renderVideo()}
+          {/* 미디어 - 컨테이너 없이 직접 렌더링 */}
+          {renderImageGrid()}
+          {renderVideo()}
+          {renderFile()}
+        </View>
+      )}
 
-      {/* 파일 */}
-      {renderFile()}
+      {/* 텍스트가 있을 때만 미디어 표시 (시간은 텍스트와 함께) */}
+      {hasText && (
+        <>
+          {renderImageGrid()}
+          {renderVideo()}
+          {renderFile()}
+        </>
+      )}
     </View>
   );
 };
