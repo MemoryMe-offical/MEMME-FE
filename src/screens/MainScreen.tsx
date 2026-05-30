@@ -22,10 +22,11 @@ import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/nativ
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Board, Memo, PendingLink, TimelineItem } from '../types';
 import ChatMessageItem from '../components/chat/ChatMessageItem';
+import ChatInputBar from '../components/chat/ChatInputBar';
 import BoardCard from '../components/board/BoardCard';
 import ContextMenu from '../components/common/ContextMenu';
 import SideMenu from '../components/common/SideMenu';
-import { HamburgerIcon, PlusIcon, SearchIcon, SendIcon, ArrowLeftIcon } from '../components/common/Icons';
+import { HamburgerIcon, PlusIcon, SearchIcon, ArrowLeftIcon } from '../components/common/Icons';
 import Badge from '../components/common/Badge';
 import MemoConvertSheet from '../components/memo/MemoConvertSheet';
 import PendingLinksBottomSheet from '../components/pendingLinks/PendingLinksBottomSheet';
@@ -820,32 +821,13 @@ const MainScreen = () => {
           />
         </View>
 
-        <View
-          style={[
-            styles['main-inputBar'],
-            { paddingBottom: keyboardVisible ? 8 : Math.max(insets.bottom, 8) },
-          ]}
-        >
-          <TouchableOpacity style={styles['main-inputBar-plusButton']}>
-            <PlusIcon color="#000000" size={22} />
-          </TouchableOpacity>
-
-          <TextInput
-            style={styles['main-inputBar-input']}
-            value={inputText}
-            onChangeText={setInputText}
-            placeholder="나를 기억하고 기록하는 공간"
-            placeholderTextColor="#AABBCC"
-            multiline
-          />
-
-          <TouchableOpacity
-            style={styles['main-inputBar-sendButton']}
-            onPress={handleSend}
-          >
-            <SendIcon color="#FFFFFF" size={17} />
-          </TouchableOpacity>
-        </View>
+        <ChatInputBar
+          inputText={inputText}
+          onChangeText={setInputText}
+          onSend={handleSend}
+          keyboardVisible={keyboardVisible}
+          bottomInset={insets.bottom}
+        />
       </KeyboardAvoidingView>
 
       {/* 태그 필터 모달 */}
