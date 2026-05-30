@@ -16,8 +16,13 @@ export interface Memo extends BaseItem {
   ogDatas?: OgData[];
   imageUris?: string[];
   imageKeys?: string[];
+  images?: MediaAttachment[];
+  videoUris?: string[];
+  videoKeys?: string[];
   videos?: MediaAttachment[];
   files?: FileAttachment[];
+  url?: string;
+  ogData?: OgData;
 }
 
 // ── 보드 ────────────────────────────────────

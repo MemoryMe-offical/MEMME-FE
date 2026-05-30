@@ -30,12 +30,30 @@ const transformTimelineItem = (item: any): TimelineItem => {
   };
 
   if (item.type === 'memo') {
+    // videoUris가 있지만 videos가 없으면 videos 생성
+    const videos = item.videos || (item.videoUris?.map((uri: string, idx: number) => ({
+      uid: `video-${idx}`,
+      url: uri,
+      key: item.videoKeys?.[idx] || '',
+      mimeType: 'video/mp4',
+      size: 0,
+    })) ?? []);
+
     return {
       ...base,
       type: 'memo' as const,
       text: item.text,
       urls: item.urls,
       ogDatas: item.ogDatas,
+      imageUris: item.imageUris,
+      imageKeys: item.imageKeys,
+      images: item.images,
+      videoUris: item.videoUris,
+      videoKeys: item.videoKeys,
+      videos: videos,
+      files: item.files,
+      url: item.url,
+      ogData: item.ogData,
     };
   }
 

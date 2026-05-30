@@ -75,8 +75,8 @@ const MemoConvertSheet = ({
       setBoardTitle('');
       setBoardTags([]);
       setBoardDescription('');
-      setNewNoteTitle(memo.text);
-      setAddNoteTitle(memo.text);
+      setNewNoteTitle(memo.text || '');
+      setAddNoteTitle(memo.text || '');
       setAddNoteContent('');
     }
   }, [visible, memo.text]);
@@ -95,13 +95,13 @@ const MemoConvertSheet = ({
     setBoardTitle('');
     setBoardTags([]);
     setBoardDescription('');
-    setNewNoteTitle(memo.text);
+    setNewNoteTitle(memo.text || '');
     setStep('new-board');
   };
 
   const handleSelectExistingBoard = (board: Board) => {
     setSelectedBoard(board);
-    setAddNoteTitle(memo.text);
+    setAddNoteTitle(memo.text || '');
     setAddNoteContent('');
     setStep('add-to-board');
   };
