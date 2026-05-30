@@ -31,9 +31,10 @@ interface ChatMessageItemProps {
   onToggleExpand?: (item: Memo) => void;
   onLongPress: (item: Memo) => void;
   onOpenLinkModal?: (url: string, ogData?: any) => void;
+  onImagePress?: (imageUri: string, allImageUris: string[]) => void;
 }
 
-const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, onOpenLinkModal }: ChatMessageItemProps) => {
+const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, onOpenLinkModal, onImagePress }: ChatMessageItemProps) => {
   const maxChars = 500;
   const text = item.text || '';
   const isLong = text.length > maxChars;
@@ -134,11 +135,12 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
       // 1장: 전체 너비
       return (
         <TouchableOpacity
+          onPress={() => onImagePress?.(item.imageUris![0], item.imageUris!)}
           onLongPress={() => onLongPress(item)}
           delayLongPress={400}
           style={[styles['media-container'], { width: CHAT_MESSAGE_MAX_WIDTH }]}>
           <View style={{ width: '100%', aspectRatio: 1, borderRadius: 12, overflow: 'hidden' }}>
-            {renderImageWithLoader(item.imageUris[0], { width: '100%', height: '100%' })}
+            {renderImageWithLoader(item.imageUris![0], { width: '100%', height: '100%' })}
           </View>
         </TouchableOpacity>
       );
@@ -152,10 +154,13 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
           delayLongPress={400}
           style={[styles['media-container']]}>
           <View style={styles['image-row']}>
-            {item.imageUris.slice(0, 2).map((uri, idx) => (
-              <View key={idx} style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
+            {item.imageUris!.slice(0, 2).map((uri, idx) => (
+              <TouchableOpacity
+                key={idx}
+                onPress={() => onImagePress?.(uri, item.imageUris!)}
+                style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
                 {renderImageWithLoader(uri, styles['image-thumbnail'])}
-              </View>
+              </TouchableOpacity>
             ))}
           </View>
         </TouchableOpacity>
@@ -172,16 +177,21 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
           <View style={styles['image-grid']}>
             {/* 첫 2장 */}
             <View style={styles['image-row']}>
-              {item.imageUris.slice(0, 2).map((uri, idx) => (
-                <View key={idx} style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
+              {item.imageUris!.slice(0, 2).map((uri, idx) => (
+                <TouchableOpacity
+                  key={idx}
+                  onPress={() => onImagePress?.(uri, item.imageUris!)}
+                  style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
                   {renderImageWithLoader(uri, styles['image-thumbnail'])}
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
             {/* 마지막 1장 (전체 너비) */}
-            <View style={{ width: '100%', aspectRatio: 2 / 1, borderRadius: 12, overflow: 'hidden' }}>
-              {renderImageWithLoader(item.imageUris[2], { width: '100%', height: '100%' })}
-            </View>
+            <TouchableOpacity
+              onPress={() => onImagePress?.(item.imageUris![2], item.imageUris!)}
+              style={{ width: '100%', aspectRatio: 2 / 1, borderRadius: 12, overflow: 'hidden' }}>
+              {renderImageWithLoader(item.imageUris![2], { width: '100%', height: '100%' })}
+            </TouchableOpacity>
           </View>
         </TouchableOpacity>
       );
@@ -209,6 +219,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
           contentContainerStyle={{ paddingBottom: 4 }}
           renderItem={({ item: imageUri }) => (
             <TouchableOpacity
+              onPress={() => onImagePress?.(imageUri, item.imageUris!)}
               onLongPress={() => onLongPress(item)}
               delayLongPress={400}
               style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>

@@ -113,6 +113,11 @@ const MainScreen = () => {
   });
   const [expandModalVisible, setExpandModalVisible] = useState(false);
 
+  // 이미지 뷰어
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const [imageViewerUris, setImageViewerUris] = useState<string[]>([]);
+  const [imageViewerIndex, setImageViewerIndex] = useState(0);
+
   // 초기 설정 로드
   useEffect(() => {
     const loadExpandSettings = async () => {
@@ -470,6 +475,13 @@ const MainScreen = () => {
       console.error('Failed to toggle bookmark:', error);
       Alert.alert('오류', '북마크 설정에 실패했습니다.');
     }
+  };
+
+  const handleImagePress = (imageUri: string, imageUris: string[]) => {
+    const index = imageUris.indexOf(imageUri);
+    setImageViewerUris(imageUris);
+    setImageViewerIndex(Math.max(0, index));
+    setImageViewerVisible(true);
   };
 
   const handleContextConvert = () => {
@@ -896,6 +908,7 @@ const MainScreen = () => {
                     onToggleExpand={(m) => setExpandedMemoId(expandedMemoId === m.id ? null : m.id)}
                     onLongPress={handleContextMenu}
                     onOpenLinkModal={handleOpenLinkModal}
+                    onImagePress={handleImagePress}
                   />
                 );
               }
@@ -1473,6 +1486,86 @@ const MainScreen = () => {
             </View>
           </View>
         </TouchableOpacity>
+      </Modal>
+
+      {/* 이미지 뷰어 모달 */}
+      <Modal
+        visible={imageViewerVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setImageViewerVisible(false)}>
+        <View style={{ flex: 1, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' }}>
+          {/* 닫기 버튼 */}
+          <TouchableOpacity
+            style={{
+              position: 'absolute',
+              top: insets.top + 16,
+              right: 16,
+              zIndex: 10,
+              padding: 8,
+            }}
+            onPress={() => setImageViewerVisible(false)}>
+            <Text style={{ fontSize: 28, color: '#FFFFFF', fontWeight: '600' }}>✕</Text>
+          </TouchableOpacity>
+
+          {/* 이미지 */}
+          {imageViewerUris.length > 0 && (
+            <Image
+              source={{ uri: imageViewerUris[imageViewerIndex] }}
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="contain"
+            />
+          )}
+
+          {/* 네비게이션 버튼 (이미지가 2개 이상일 때만) */}
+          {imageViewerUris.length > 1 && (
+            <>
+              {/* 이전 버튼 */}
+              {imageViewerIndex > 0 && (
+                <TouchableOpacity
+                  style={{
+                    position: 'absolute',
+                    left: 16,
+                    top: '50%',
+                    marginTop: -24,
+                    padding: 8,
+                  }}
+                  onPress={() => setImageViewerIndex(Math.max(0, imageViewerIndex - 1))}>
+                  <Text style={{ fontSize: 32, color: '#FFFFFF' }}>‹</Text>
+                </TouchableOpacity>
+              )}
+
+              {/* 다음 버튼 */}
+              {imageViewerIndex < imageViewerUris.length - 1 && (
+                <TouchableOpacity
+                  style={{
+                    position: 'absolute',
+                    right: 16,
+                    top: '50%',
+                    marginTop: -24,
+                    padding: 8,
+                  }}
+                  onPress={() => setImageViewerIndex(Math.min(imageViewerUris.length - 1, imageViewerIndex + 1))}>
+                  <Text style={{ fontSize: 32, color: '#FFFFFF' }}>›</Text>
+                </TouchableOpacity>
+              )}
+
+              {/* 인디케이터 */}
+              <View
+                style={{
+                  position: 'absolute',
+                  bottom: insets.bottom + 20,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 4,
+                }}>
+                <Text style={{ fontSize: 14, color: '#FFFFFF', fontFamily: 'PretendardVariable' }}>
+                  {imageViewerIndex + 1} / {imageViewerUris.length}
+                </Text>
+              </View>
+            </>
+          )}
+        </View>
       </Modal>
     </SafeAreaView>
   );
