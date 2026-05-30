@@ -41,6 +41,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
 
   const [detectedOgData, setDetectedOgData] = useState<any>(null);
   const [isLoadingOg, setIsLoadingOg] = useState(false);
+  const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
 
   const detectUrlFromText = (text: string): string | null => {
     const urlRegex = /https?:\/\/[^\s]+|www\.[^\s]+|[a-zA-Z0-9][a-zA-Z0-9-]*\.[a-zA-Z]{2,}(?:[^\s]*)?/g;
@@ -80,6 +81,48 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
     });
   };
 
+  const handleImageLoadStart = (uri: string) => {
+    setLoadingImages(prev => new Set([...prev, uri]));
+  };
+
+  const handleImageLoadEnd = (uri: string) => {
+    setLoadingImages(prev => {
+      const next = new Set(prev);
+      next.delete(uri);
+      return next;
+    });
+  };
+
+  const renderImageWithLoader = (uri: string, imageStyle: any) => {
+    const isLoading = loadingImages.has(uri);
+    return (
+      <View style={{ position: 'relative', width: '100%', height: '100%' }}>
+        <Image
+          source={{ uri }}
+          style={imageStyle}
+          resizeMode="cover"
+          onLoadStart={() => handleImageLoadStart(uri)}
+          onLoadEnd={() => handleImageLoadEnd(uri)}
+        />
+        {isLoading && (
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+            }}>
+            <ActivityIndicator size="large" color="#588DFF" />
+          </View>
+        )}
+      </View>
+    );
+  };
+
   // 이미지 그리드 렌더링 (1열 전체, 2열, 3열, 4열+ 2x2)
   const renderImageGrid = () => {
     if (!item.imageUris || item.imageUris.length === 0) return null;
@@ -95,11 +138,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
           delayLongPress={400}
           style={[styles['media-container'], { width: CHAT_MESSAGE_MAX_WIDTH }]}>
           <View style={{ width: '100%', aspectRatio: 1, borderRadius: 12, overflow: 'hidden' }}>
-            <Image
-              source={{ uri: item.imageUris[0] }}
-              style={{ width: '100%', height: '100%' }}
-              resizeMode="cover"
-            />
+            {renderImageWithLoader(item.imageUris[0], { width: '100%', height: '100%' })}
           </View>
         </TouchableOpacity>
       );
@@ -115,11 +154,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
           <View style={styles['image-row']}>
             {item.imageUris.slice(0, 2).map((uri, idx) => (
               <View key={idx} style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
-                <Image
-                  source={{ uri }}
-                  style={styles['image-thumbnail']}
-                  resizeMode="cover"
-                />
+                {renderImageWithLoader(uri, styles['image-thumbnail'])}
               </View>
             ))}
           </View>
@@ -139,21 +174,13 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
             <View style={styles['image-row']}>
               {item.imageUris.slice(0, 2).map((uri, idx) => (
                 <View key={idx} style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
-                  <Image
-                    source={{ uri }}
-                    style={styles['image-thumbnail']}
-                    resizeMode="cover"
-                  />
+                  {renderImageWithLoader(uri, styles['image-thumbnail'])}
                 </View>
               ))}
             </View>
             {/* 마지막 1장 (전체 너비) */}
             <View style={{ width: '100%', aspectRatio: 2 / 1, borderRadius: 12, overflow: 'hidden' }}>
-              <Image
-                source={{ uri: item.imageUris[2] }}
-                style={{ width: '100%', height: '100%' }}
-                resizeMode="cover"
-              />
+              {renderImageWithLoader(item.imageUris[2], { width: '100%', height: '100%' })}
             </View>
           </View>
         </TouchableOpacity>
@@ -174,11 +201,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
           <View style={styles['image-row']}>
             {item.imageUris.slice(0, 2).map((uri, idx) => (
               <View key={idx} style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
-                <Image
-                  source={{ uri }}
-                  style={styles['image-thumbnail']}
-                  resizeMode="cover"
-                />
+                {renderImageWithLoader(uri, styles['image-thumbnail'])}
               </View>
             ))}
           </View>
@@ -186,11 +209,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
           <View style={styles['image-row']}>
             {item.imageUris.slice(2, 4).map((uri, idx) => (
               <View key={idx + 2} style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
-                <Image
-                  source={{ uri }}
-                  style={styles['image-thumbnail']}
-                  resizeMode="cover"
-                />
+                {renderImageWithLoader(uri, styles['image-thumbnail'])}
                 {showMore && idx === 1 && (
                   <View style={styles['image-overlay']}>
                     <Text style={styles['image-overlay-text']}>
@@ -222,11 +241,7 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
           });
         }}>
         {video.thumbnailUrl ? (
-          <Image
-            source={{ uri: video.thumbnailUrl }}
-            style={styles['video-thumbnail']}
-            resizeMode="cover"
-          />
+          renderImageWithLoader(video.thumbnailUrl, styles['video-thumbnail'])
         ) : (
           <View style={[styles['video-thumbnail'], { backgroundColor: '#1A1A1A' }]} />
         )}
@@ -336,11 +351,9 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
               style={[styles['link-card'], { marginTop: text.trim().length > 0 ? 8 : 0, marginRight: 8 }]}>
               {/* 썸네일 */}
               {firstOgData.imageUrl && (
-                <Image
-                  source={{ uri: firstOgData.imageUrl }}
-                  style={styles['link-card-image']}
-                  resizeMode="cover"
-                />
+                <View style={{ width: '100%', height: 120, overflow: 'hidden' }}>
+                  {renderImageWithLoader(firstOgData.imageUrl, styles['link-card-image'])}
+                </View>
               )}
 
               {/* 내용 */}
