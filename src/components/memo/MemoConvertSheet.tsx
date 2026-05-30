@@ -129,6 +129,7 @@ const MemoConvertSheet = ({
         description: boardDescription.trim() || undefined,
         tags: boardTags.length > 0 ? boardTags : undefined,
         noteTitle: newNoteTitle.trim() || undefined,
+        memoCreatedAt: memo.createdAt,
       });
 
       // 2. 메모 삭제 (백엔드에서 자동 삭제될 수 있으므로 에러 무시)
@@ -164,6 +165,7 @@ const MemoConvertSheet = ({
         {
           noteTitle: addNoteTitle.trim(),
           content: addNoteContent.trim() || undefined,
+          memoCreatedAt: memo.createdAt,
         }
       );
 

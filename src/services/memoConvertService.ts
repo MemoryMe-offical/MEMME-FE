@@ -14,6 +14,7 @@ export const convertMemoToNewBoard = async (
     tags?: string[];
     noteTitle?: string;
     content?: string;
+    memoCreatedAt?: string;
   }
 ): Promise<Board> => {
   try {
@@ -23,6 +24,7 @@ export const convertMemoToNewBoard = async (
       tags: boardData?.tags,
       noteTitle: boardData?.noteTitle,
       content: boardData?.content,
+      createdAt: boardData?.memoCreatedAt,
     };
     console.log('convertMemoToNewBoard request:', memoUid, JSON.stringify(requestBody, null, 2));
 
@@ -82,12 +84,14 @@ export const convertMemoToExistingBoard = async (
   noteData?: {
     noteTitle?: string;
     content?: string;
+    memoCreatedAt?: string;
   }
 ): Promise<Board> => {
   try {
     const requestBody = {
       noteTitle: noteData?.noteTitle,
       content: noteData?.content,
+      createdAt: noteData?.memoCreatedAt,
     };
 
     const response = await fetchWithAutoLogoutHandler(
