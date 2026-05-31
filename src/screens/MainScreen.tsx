@@ -927,7 +927,7 @@ const MainScreen = () => {
             style={styles['main-list']}
             contentContainerStyle={styles['main-listContent']}
             inverted
-            keyboardDismissMode="interactive"
+            keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             keyboardShouldPersistTaps="handled"
             onContentSizeChange={() => {
               scrollToLatestIfNeeded();
