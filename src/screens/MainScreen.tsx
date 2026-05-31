@@ -976,7 +976,11 @@ const MainScreen = () => {
           />
         </View>
 
-        <View style={styles['main-inputBarWrapper']}>
+        <View
+          style={[
+            styles['main-inputBarWrapper'],
+            Platform.OS === 'android' && keyboardVisible && styles['main-inputBarWrapper-keyboardVisible'],
+          ]}>
           <ChatInputBar
             inputText={inputText}
             onChangeText={setInputText}

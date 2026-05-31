@@ -166,4 +166,9 @@ export const mainStyles = StyleSheet.create({
     zIndex: 2,
     elevation: 2,
   },
+
+  // 메인 - 입력바 래퍼 - 키보드 표시 중
+  'main-inputBarWrapper-keyboardVisible': {
+    paddingBottom: 6,
+  },
 });
