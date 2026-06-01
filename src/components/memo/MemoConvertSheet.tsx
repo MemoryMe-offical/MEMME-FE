@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Alert,
   Modal,
   StyleSheet,
   ActivityIndicator,
@@ -18,6 +17,7 @@ import TagInput from '../common/TagInput';
 import { ArrowLeftIcon, CloseIcon, SearchIcon, PlusCircleIcon } from '../common/Icons';
 import * as memoConvertService from '../../services/memoConvertService';
 import * as memoService from '../../services/memoService';
+import { useAlert } from '../../context/AlertContext';
 
 type Step = 'list' | 'new-board' | 'add-to-board';
 
@@ -52,6 +52,7 @@ const MemoConvertSheet = ({
   onClose,
 }: MemoConvertSheetProps) => {
   const insets = useSafeAreaInsets();
+  const { showAlert } = useAlert();
 
   const [step, setStep] = useState<Step>('list');
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
@@ -115,11 +116,11 @@ const MemoConvertSheet = ({
 
   const handleCreateNewBoard = async () => {
     if (!boardTitle.trim()) {
-      Alert.alert('알림', '보드 제목을 입력해주세요.');
+      showAlert({ title: '알림', message: '보드 제목을 입력해주세요.' });
       return;
     }
     if (!newNoteTitle.trim()) {
-      Alert.alert('알림', '노트 이름을 입력해주세요.');
+      showAlert({ title: '알림', message: '노트 이름을 입력해주세요.' });
       return;
     }
 
@@ -145,7 +146,7 @@ const MemoConvertSheet = ({
       handleClose();
     } catch (error) {
       console.error('Failed to convert memo to new board:', error);
-      Alert.alert('오류', '변환 중 문제가 발생했습니다. 다시 시도해주세요.');
+      showAlert({ title: '오류', message: '변환 중 문제가 발생했습니다. 다시 시도해주세요.', type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -154,7 +155,7 @@ const MemoConvertSheet = ({
   const handleAddToBoard = async () => {
     if (!selectedBoard) return;
     if (!addNoteTitle.trim()) {
-      Alert.alert('알림', '노트 이름을 입력해주세요.');
+      showAlert({ title: '알림', message: '노트 이름을 입력해주세요.' });
       return;
     }
 
@@ -182,7 +183,7 @@ const MemoConvertSheet = ({
       handleClose();
     } catch (error) {
       console.error('Failed to convert memo to existing board:', error);
-      Alert.alert('오류', '추가 중 문제가 발생했습니다. 다시 시도해주세요.');
+      showAlert({ title: '오류', message: '추가 중 문제가 발생했습니다. 다시 시도해주세요.', type: 'error' });
     } finally {
       setIsLoading(false);
     }

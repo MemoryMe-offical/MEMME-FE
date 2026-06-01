@@ -4,7 +4,6 @@ import {
   Modal,
   TouchableOpacity,
   Text,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +11,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { pick, types, isErrorWithCode, errorCodes } from '@react-native-documents/picker';
 import { ImageIcon, VideoIcon, FileIcon, CloseIcon } from '../common/Icons';
 import { mediaPickerSheetStyles as styles } from '../../styles/MediaPickerSheet.styles';
+import { useAlert } from '../../context/AlertContext';
 
 interface MediaPickerSheetProps {
   visible: boolean;
@@ -31,6 +31,7 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
   isLoading = false,
 }) => {
   const insets = useSafeAreaInsets();
+  const { showAlert } = useAlert();
 
   const handlePickImages = useCallback(async () => {
     try {
@@ -48,9 +49,9 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
       }
     } catch (error) {
       console.error('Failed to pick images:', error);
-      Alert.alert('오류', '이미지 선택에 실패했습니다.');
+      showAlert({ title: '오류', message: '이미지 선택에 실패했습니다.', type: 'error' });
     }
-  }, [onPickImages, onClose]);
+  }, [onPickImages, onClose, showAlert]);
 
   const handlePickVideo = useCallback(async () => {
     try {
@@ -65,9 +66,9 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
       }
     } catch (error) {
       console.error('Failed to pick video:', error);
-      Alert.alert('오류', '동영상 선택에 실패했습니다.');
+      showAlert({ title: '오류', message: '동영상 선택에 실패했습니다.', type: 'error' });
     }
-  }, [onPickVideo, onClose]);
+  }, [onPickVideo, onClose, showAlert]);
 
   const handlePickFile = useCallback(async () => {
     try {

@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   TouchableWithoutFeedback,
   Keyboard,
   ScrollView,
@@ -19,6 +18,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { signupStyles as styles } from '../styles/SignupScreen.styles';
+import { useAlert } from '../context/AlertContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -28,6 +28,7 @@ const SignupScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const scrollViewRef = useRef<ScrollView>(null);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const { showAlert, showConfirm } = useAlert();
 
   const [email, setEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
@@ -169,12 +170,12 @@ const SignupScreen = () => {
 
   const handleSendCode = async () => {
     if (!email) {
-      Alert.alert('알림', '이메일을 입력해주세요.');
+      showAlert({ title: '알림', message: '이메일을 입력해주세요.' });
       return;
     }
 
     if (!validateEmail(email)) {
-      Alert.alert('알림', '올바른 이메일 형식을 입력해주세요.');
+      showAlert({ title: '알림', message: '올바른 이메일 형식을 입력해주세요.' });
       return;
     }
 
@@ -188,7 +189,7 @@ const SignupScreen = () => {
       setIsVerified(false);
       startTimer();
 
-      Alert.alert('인증번호 발송', '이메일로 인증번호가 발송되었습니다.');
+      showAlert({ title: '인증번호 발송', message: '이메일로 인증번호가 발송되었습니다.', type: 'success' });
 
       setTimeout(() => {
         verificationCodeInputRef.current?.focus();
@@ -198,7 +199,7 @@ const SignupScreen = () => {
         error instanceof Error
           ? error.message
           : '인증번호 발송 중 오류가 발생했습니다.';
-      Alert.alert('오류', message);
+      showAlert({ title: '오류', message, type: 'error' });
     } finally {
       setSendCodeLoading(false);
       setLoading(false);
@@ -207,12 +208,12 @@ const SignupScreen = () => {
 
   const handleVerifyCode = async () => {
     if (!verificationCode) {
-      Alert.alert('알림', '인증번호를 입력해주세요.');
+      showAlert({ title: '알림', message: '인증번호를 입력해주세요.' });
       return;
     }
 
     if (verificationCode.length !== 6) {
-      Alert.alert('알림', '인증번호 6자리를 입력해주세요.');
+      showAlert({ title: '알림', message: '인증번호 6자리를 입력해주세요.' });
       return;
     }
 
@@ -228,13 +229,13 @@ const SignupScreen = () => {
         clearInterval(timerIntervalRef.current);
       }
 
-      Alert.alert('인증 완료', '이메일 인증이 완료되었습니다.');
+      showAlert({ title: '인증 완료', message: '이메일 인증이 완료되었습니다.', type: 'success' });
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
           : '인증번호 확인 중 오류가 발생했습니다.';
-      Alert.alert('오류', message);
+      showAlert({ title: '오류', message, type: 'error' });
     } finally {
       setVerifyCodeLoading(false);
       setLoading(false);
@@ -242,48 +243,45 @@ const SignupScreen = () => {
   };
 
   const handleChangeEmail = () => {
-    Alert.alert(
-      '이메일 변경',
-      '이메일을 변경하면 인증을 다시 진행해야 합니다.',
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '변경',
-          onPress: () => {
-            setIsVerified(false);
-            setIsCodeSent(false);
-            setVerificationCode('');
-            setTimer(0);
+    showConfirm({
+      title: '이메일 변경',
+      message: '이메일을 변경하면 인증을 다시 진행해야 합니다.',
+      confirmText: '변경',
+      cancelText: '취소',
+      destructive: false,
+      onConfirm: () => {
+        setIsVerified(false);
+        setIsCodeSent(false);
+        setVerificationCode('');
+        setTimer(0);
 
-            if (timerIntervalRef.current) {
-              clearInterval(timerIntervalRef.current);
-            }
+        if (timerIntervalRef.current) {
+          clearInterval(timerIntervalRef.current);
+        }
 
-            emailInputRef.current?.focus();
-          },
-        },
-      ]
-    );
+        emailInputRef.current?.focus();
+      },
+    });
   };
 
   const handleSignup = async () => {
     if (!email || !password || !passwordConfirm || !userName) {
-      Alert.alert('알림', '모든 항목을 입력해주세요.');
+      showAlert({ title: '알림', message: '모든 항목을 입력해주세요.' });
       return;
     }
 
     if (!isVerified) {
-      Alert.alert('알림', '이메일 인증을 완료해주세요.');
+      showAlert({ title: '알림', message: '이메일 인증을 완료해주세요.' });
       return;
     }
 
     if (password !== passwordConfirm) {
-      Alert.alert('알림', '비밀번호가 일치하지 않습니다.');
+      showAlert({ title: '알림', message: '비밀번호가 일치하지 않습니다.' });
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('알림', '비밀번호는 6자 이상이어야 합니다.');
+      showAlert({ title: '알림', message: '비밀번호는 6자 이상이어야 합니다.' });
       return;
     }
 
@@ -293,18 +291,20 @@ const SignupScreen = () => {
 
       await registerUser();
 
-      Alert.alert('가입 완료', '회원가입이 완료되었습니다.', [
-        {
-          text: '확인',
-          onPress: () => navigation.replace('Login'),
-        },
-      ]);
+      showConfirm({
+        title: '가입 완료',
+        message: '회원가입이 완료되었습니다.',
+        confirmText: '확인',
+        cancelText: undefined,
+        destructive: false,
+        onConfirm: () => navigation.replace('Login'),
+      });
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
           : '회원가입 중 오류가 발생했습니다.';
-      Alert.alert('오류', message);
+      showAlert({ title: '오류', message, type: 'error' });
     } finally {
       setSignupLoading(false);
       setLoading(false);

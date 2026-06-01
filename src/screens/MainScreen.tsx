@@ -8,7 +8,6 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   AppState,
   NativeModules,
   StatusBar,
@@ -19,6 +18,7 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
+import { useAlert } from '../context/AlertContext';
 import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Board, Memo, PendingLink, TimelineItem } from '../types';
@@ -48,6 +48,7 @@ const MainScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Main'>>();
   const route = useRoute<RouteProp<RootStackParamList, 'Main'>>();
+  const { showAlert, showConfirm } = useAlert();
   const [userId, setUserId] = useState<string>('');
   const [items, setItems] = useState<TimelineItem[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -488,7 +489,7 @@ const MainScreen = () => {
       contextMenuItem.type === 'memo'
         ? contextMenuItem.text
         : contextMenuItem.title;
-    Alert.alert('복사됨', text);
+    showAlert({ title: '복사됨', message: text, type: 'success' });
   };
 
   const handleContextBookmark = async () => {
@@ -513,7 +514,7 @@ const MainScreen = () => {
       }
     } catch (error) {
       console.error('Failed to toggle bookmark:', error);
-      Alert.alert('오류', '북마크 설정에 실패했습니다.');
+      showAlert({ title: '오류', message: '북마크 설정에 실패했습니다.', type: 'error' });
     }
   };
 
@@ -534,24 +535,24 @@ const MainScreen = () => {
         ? `이 보드 안의 노트 ${noteCount}개가 모두 삭제됩니다. 메모로 변환하시겠습니까?`
         : '메모로 변환하시겠습니까?';
 
-      Alert.alert('메모로 변환', warningMsg, [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '변환',
-          style: 'destructive',
-          onPress: () => {
-            const newMemo: Memo = {
-              id: board.id,
-              userId: board.userId,
-              type: 'memo',
-              bookmarked: board.bookmarked,
-              text: board.title,
-              createdAt: board.createdAt,
-            };
-            setItems(prev => prev.map(i => i.id === board.id ? newMemo : i));
-          },
+      showConfirm({
+        title: '메모로 변환',
+        message: warningMsg,
+        confirmText: '변환',
+        cancelText: '취소',
+        destructive: true,
+        onConfirm: () => {
+          const newMemo: Memo = {
+            id: board.id,
+            userId: board.userId,
+            type: 'memo',
+            bookmarked: board.bookmarked,
+            text: board.title,
+            createdAt: board.createdAt,
+          };
+          setItems(prev => prev.map(i => i.id === board.id ? newMemo : i));
         },
-      ]);
+      });
     }
   };
 
@@ -585,7 +586,7 @@ const MainScreen = () => {
       setInputText('');
     } catch (error) {
       console.error('Failed to create memo:', error);
-      Alert.alert('오류', '메모 저장에 실패했습니다.');
+      showAlert({ title: '오류', message: '메모 저장에 실패했습니다.', type: 'error' });
       setInputText(text);
     }
   };
@@ -623,7 +624,7 @@ const MainScreen = () => {
       }
     } catch (error) {
       console.error('Failed to handle link:', error);
-      Alert.alert('오류', '링크 처리에 실패했습니다.');
+      showAlert({ title: '오류', message: '링크 처리에 실패했습니다.', type: 'error' });
     }
 
     setLinkDetectionModalVisible(false);
@@ -636,27 +637,27 @@ const MainScreen = () => {
     const id = contextMenuItem.id;
     const item = contextMenuItem;
 
-    Alert.alert('삭제', '정말 삭제하시겠습니까?', [
-      { text: '취소', style: 'cancel' },
-      {
-        text: '삭제',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            if (item.type === 'memo') {
-              await memoService.deleteMemo(id);
-            } else {
-              await boardService.deleteBoard(id);
-            }
-            setItems(prev => prev.filter(i => i.id !== id));
-            handleCloseContextMenu();
-          } catch (error) {
-            console.error('Failed to delete item:', error);
-            Alert.alert('오류', '삭제에 실패했습니다.');
+    showConfirm({
+      title: '삭제',
+      message: '정말 삭제하시겠습니까?',
+      confirmText: '삭제',
+      cancelText: '취소',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          if (item.type === 'memo') {
+            await memoService.deleteMemo(id);
+          } else {
+            await boardService.deleteBoard(id);
           }
-        },
+          setItems(prev => prev.filter(i => i.id !== id));
+          handleCloseContextMenu();
+        } catch (error) {
+          console.error('Failed to delete item:', error);
+          showAlert({ title: '오류', message: '삭제에 실패했습니다.', type: 'error' });
+        }
       },
-    ]);
+    });
   };
 
   const handleDetailPress = (board: Board, noteId?: string) => {
@@ -735,7 +736,7 @@ const MainScreen = () => {
       setItems(prev => [...prev, newMemo]);
     } catch (error) {
       console.error('Failed to upload images:', error);
-      Alert.alert('오류', '이미지 업로드에 실패했습니다.');
+      showAlert({ title: '오류', message: '이미지 업로드에 실패했습니다.', type: 'error' });
     } finally {
       setIsUploadingMedia(false);
     }
@@ -759,7 +760,7 @@ const MainScreen = () => {
       setItems(prev => [...prev, newMemo]);
     } catch (error) {
       console.error('Failed to upload video:', error);
-      Alert.alert('오류', '동영상 업로드에 실패했습니다.');
+      showAlert({ title: '오류', message: '동영상 업로드에 실패했습니다.', type: 'error' });
     } finally {
       setIsUploadingMedia(false);
     }
@@ -782,7 +783,7 @@ const MainScreen = () => {
       setItems(prev => [...prev, newMemo]);
     } catch (error) {
       console.error('Failed to upload file:', error);
-      Alert.alert('오류', '파일 업로드에 실패했습니다.');
+      showAlert({ title: '오류', message: '파일 업로드에 실패했습니다.', type: 'error' });
     } finally {
       setIsUploadingMedia(false);
     }
@@ -811,7 +812,7 @@ const MainScreen = () => {
       setPendingLinks(prev => prev.filter(l => l.id !== link.id));
     } catch (error) {
       console.error('Failed to add note to board:', error);
-      Alert.alert('오류', '노트 추가에 실패했습니다.');
+      showAlert({ title: '오류', message: '노트 추가에 실패했습니다.', type: 'error' });
     }
   };
 
@@ -821,7 +822,7 @@ const MainScreen = () => {
       setPendingLinks(prev => prev.filter(l => l.id !== linkId));
     } catch (error) {
       console.error('Failed to dismiss pending link:', error);
-      Alert.alert('오류', '링크 삭제에 실패했습니다.');
+      showAlert({ title: '오류', message: '링크 삭제에 실패했습니다.', type: 'error' });
     }
   };
 

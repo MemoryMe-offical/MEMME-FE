@@ -8,7 +8,6 @@ import {
   Platform,
   ScrollView,
   Image,
-  Alert,
   TouchableWithoutFeedback,
   Keyboard,
   ActivityIndicator,
@@ -27,6 +26,7 @@ import { loginStyles as styles } from '../styles/LoginScreen.styles';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { KAKAO_REST_API_KEY, KAKAO_REDIRECT_URI } from '@env';
 import { extractUserIdFromJWT } from '../utils/tokenUtils';
+import { useAlert } from '../context/AlertContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -46,6 +46,7 @@ const KAKAO_AUTH_URL =
 const LoginScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const passwordInputRef = useRef<RNTextInput>(null);
+  const { showAlert } = useAlert();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -76,12 +77,12 @@ const LoginScreen = () => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('알림', '이메일과 비밀번호를 입력해주세요.');
+      showAlert({ title: '알림', message: '이메일과 비밀번호를 입력해주세요.' });
       return;
     }
 
     if (!validateEmail(email)) {
-      Alert.alert('알림', '올바른 이메일 형식을 입력해주세요.');
+      showAlert({ title: '알림', message: '올바른 이메일 형식을 입력해주세요.' });
       return;
     }
 
@@ -149,7 +150,7 @@ const LoginScreen = () => {
         error instanceof Error
           ? error.message
           : '로그인 중 오류가 발생했습니다.';
-      Alert.alert('로그인 실패', message);
+      showAlert({ title: '로그인 실패', message, type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -169,17 +170,16 @@ const LoginScreen = () => {
     const error = errorMatch ? decodeURIComponent(errorMatch[1]) : null;
 
     if (error) {
-      Alert.alert('카카오 로그인 실패', `인증 오류: ${error}`);
+      showAlert({ title: '카카오 로그인 실패', message: `인증 오류: ${error}`, type: 'error' });
       return true;
     }
 
     if (!code) {
-      Alert.alert('카카오 로그인 실패', '인가코드를 받지 못했습니다.');
+      showAlert({ title: '카카오 로그인 실패', message: '인가코드를 받지 못했습니다.', type: 'error' });
       return true;
     }
 
     console.log('카카오 인가코드:', code);
-    Alert.alert('인가코드 수신 성공', code);
     return true;
   };
 

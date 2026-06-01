@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Alert,
   StyleSheet,
   ActivityIndicator,
   BackHandler,
@@ -24,6 +23,7 @@ import TagInput from '../components/common/TagInput';
 import NoteCard from '../components/note/NoteCard';
 import NoteActionBar from '../components/board/NoteActionBar';
 import * as boardService from '../services/boardService';
+import { useAlert } from '../context/AlertContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'BoardDetail'>;
 
@@ -37,6 +37,7 @@ const formatFullTime = (iso: string) => {
 const BoardDetailScreen = ({ route, navigation }: Props) => {
   const { board: initialBoard, onSave, startEditing } = route.params;
   const insets = useSafeAreaInsets();
+  const { showAlert, showConfirm } = useAlert();
 
   const [board, setBoard] = useState<Board>(initialBoard);
   const [isEditing, setIsEditing] = useState(startEditing ?? false);
@@ -65,10 +66,14 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
 
   const cancelEdit = () => {
     if (isDirty()) {
-      Alert.alert('편집 취소', '수정사항이 사라집니다. 나가시겠습니까?', [
-        { text: '계속 편집', style: 'cancel' },
-        { text: '나가기', style: 'destructive', onPress: () => setIsEditing(false) },
-      ]);
+      showConfirm({
+        title: '편집 취소',
+        message: '수정사항이 사라집니다. 나가시겠습니까?',
+        confirmText: '나가기',
+        cancelText: '계속 편집',
+        destructive: true,
+        onConfirm: () => setIsEditing(false),
+      });
     } else {
       setIsEditing(false);
     }
@@ -89,7 +94,7 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
       onSave?.(updated);
     } catch (error) {
       console.error('Failed to save board:', error);
-      Alert.alert('오류', '보드 저장에 실패했습니다.');
+      showAlert({ title: '오류', message: '보드 저장에 실패했습니다.', type: 'error' });
     } finally {
       setIsSaving(false);
     }
