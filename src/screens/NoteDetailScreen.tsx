@@ -379,6 +379,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           const responses = await Promise.all(uploadPromises);
           const newVideos: MediaAttachment[] = responses.map((r, idx) => ({
             uid: `video-${Date.now()}-${idx}`,
+            name: r.name,
             url: r.url,
             key: r.key,
             mimeType: 'video/mp4',

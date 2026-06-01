@@ -42,8 +42,8 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
       if (result.assets && result.assets.length > 0) {
         const uris = result.assets.map(asset => asset.uri).filter((uri): uri is string => !!uri);
         if (uris.length > 0) {
-          onClose();
           onPickImages(uris);
+          onClose();
         }
       }
     } catch (error) {
@@ -60,8 +60,8 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
       });
 
       if (result.assets && result.assets[0]?.uri) {
-        onClose();
         onPickVideo(result.assets[0].uri);
+        onClose();
       }
     } catch (error) {
       console.error('Failed to pick video:', error);
@@ -80,8 +80,8 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
         // 한 개씩 처리 (여러 개는 UI에서 마지막 하나만 사용)
         const file = result[result.length - 1];
         if (file.uri && file.name) {
-          onClose();
           onPickFile(file.uri, file.name);
+          onClose();
         }
       }
     } catch (err: any) {

@@ -32,6 +32,7 @@ import Badge from '../components/common/Badge';
 import MemoConvertSheet from '../components/memo/MemoConvertSheet';
 import PendingLinksBottomSheet from '../components/pendingLinks/PendingLinksBottomSheet';
 import MediaPickerSheet from '../components/chat/MediaPickerSheet';
+import ImageViewerModal from '../components/common/ImageViewerModal';
 import { createMemoWithImage, createMemoWithVideo, createMemoWithFile } from '../services/uploadService';
 import { mainStyles as styles } from '../styles/MainScreen.styles';
 import type { RootStackParamList } from '../navigation/RootNavigator';
@@ -124,6 +125,11 @@ const MainScreen = () => {
   // 미디어 피커
   const [mediaPickerVisible, setMediaPickerVisible] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
+
+  // 이미지 뷰어
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+  const [allImageUris, setAllImageUris] = useState<string[]>([]);
 
   // 검색 & 필터
   const [isSearchMode, setIsSearchMode] = useState(false);
@@ -695,6 +701,12 @@ const MainScreen = () => {
     }
   };
 
+  const handleImagePress = (imageUri: string, allUris: string[]) => {
+    setSelectedImageUri(imageUri);
+    setAllImageUris(allUris);
+    setImageViewerVisible(true);
+  };
+
   const handleSend = async () => {
     if (!inputText.trim()) return;
     const text = inputText.trim();
@@ -713,6 +725,7 @@ const MainScreen = () => {
         userId: raw.userId || '',
         type: 'memo',
         text: raw.text || '',
+        imageUris: raw.imageUris || (raw.images && raw.images.length > 0 ? raw.images.map((img: any) => img.url) : []),
         images: raw.images,
         bookmarked: raw.bookmarked ?? false,
         createdAt: raw.createdAt,
@@ -736,6 +749,7 @@ const MainScreen = () => {
         userId: raw.userId || '',
         type: 'memo',
         text: raw.text || '',
+        videoUris: raw.videoUris || (raw.videos && raw.videos.length > 0 ? raw.videos.map((vid: any) => vid.url) : []),
         videos: raw.videos,
         bookmarked: raw.bookmarked ?? false,
         createdAt: raw.createdAt,
@@ -943,6 +957,7 @@ const MainScreen = () => {
                     onToggleExpand={(m) => setExpandedMemoId(expandedMemoId === m.id ? null : m.id)}
                     onLongPress={handleContextMenu}
                     onOpenLinkModal={handleOpenLinkModal}
+                    onImagePress={handleImagePress}
                   />
                 );
               }
@@ -1525,6 +1540,14 @@ const MainScreen = () => {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      {/* 이미지 뷰어 모달 */}
+      <ImageViewerModal
+        visible={imageViewerVisible}
+        imageUris={allImageUris}
+        initialIndex={allImageUris.indexOf(selectedImageUri || '')}
+        onClose={() => setImageViewerVisible(false)}
+      />
     </SafeAreaView>
   );
 };
