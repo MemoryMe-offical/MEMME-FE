@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, TouchableOpacity, TextInput } from 'react-native';
 import { PlusIcon, SendIcon } from '../common/Icons';
 import { chatInputBarStyles } from '../../styles/ChatInputBar.styles';
@@ -6,7 +6,7 @@ import { chatInputBarStyles } from '../../styles/ChatInputBar.styles';
 interface ChatInputBarProps {
   inputText: string;
   onChangeText: (text: string) => void;
-  onSend: () => void;
+  onSend: () => Promise<void> | void;
   onPlusPress?: () => void;
   bottomInset: number;
 }
@@ -18,7 +18,19 @@ const ChatInputBar: React.FC<ChatInputBarProps> = ({
   onPlusPress,
   bottomInset,
 }) => {
+  const [isSending, setIsSending] = useState(false);
   const paddingBottom = Math.max(bottomInset, 8);
+
+  const handleSend = async () => {
+    if (isSending || !inputText.trim()) return;
+
+    setIsSending(true);
+    try {
+      await onSend();
+    } finally {
+      setIsSending(false);
+    }
+  };
 
   return (
     <View
@@ -42,7 +54,8 @@ const ChatInputBar: React.FC<ChatInputBarProps> = ({
 
       <TouchableOpacity
         style={chatInputBarStyles.sendButton}
-        onPress={onSend}
+        onPress={handleSend}
+        disabled={isSending || !inputText.trim()}
       >
         <SendIcon color="#FFFFFF" size={17} style={chatInputBarStyles.sendIcon} />
       </TouchableOpacity>
