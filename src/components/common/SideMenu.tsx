@@ -65,6 +65,9 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
   useEffect(() => {
     if (visible) {
       slideAnim.setValue(SIDE_MENU_WIDTH);
+      if (Platform.OS === 'android') {
+        StatusBar.setBackgroundColor('transparent');
+      }
       Animated.spring(slideAnim, {
         toValue: 0,
         bounciness: 3,
@@ -75,9 +78,10 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
   }, [visible, slideAnim]);
 
   const handleClose = () => {
-    Animated.timing(slideAnim, {
+    Animated.spring(slideAnim, {
       toValue: SIDE_MENU_WIDTH,
-      duration: 220,
+      bounciness: 3,
+      speed: 14,
       useNativeDriver: true,
     }).start(() => onClose());
   };
@@ -215,10 +219,10 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
       visible={visible}
       transparent
       animationType="none"
-      statusBarTranslucent
+      statusBarTranslucent={false}
       onRequestClose={handleClose}
     >
-      <StatusBar barStyle="light-content" backgroundColor="rgba(0, 0, 0, 0.38)" />
+      <StatusBar barStyle="light-content" backgroundColor="transparent" />
 
       <View style={styles['sideMenu-overlay']}>
         {/* 백드롭 */}
