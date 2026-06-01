@@ -306,16 +306,22 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
           </View>
 
           {hasNotes
-            ? (board.notes!.map(note => (
-              <NoteCard
-                key={note.id}
-                note={note}
-                onPress={() => handleNotePress(note)}
-                onLongPress={() => handleNoteLongPress(note)}
-                isSelected={selectedNotes.includes(note.id)}
-                selectionMode={selectionMode}
-              />
-            )))
+            ? ([...board.notes!]
+                .sort((a, b) => {
+                  const timeA = new Date(a.createdAt ?? a.id).getTime();
+                  const timeB = new Date(b.createdAt ?? b.id).getTime();
+                  return timeB - timeA;
+                })
+                .map(note => (
+                  <NoteCard
+                    key={note.id}
+                    note={note}
+                    onPress={() => handleNotePress(note)}
+                    onLongPress={() => handleNoteLongPress(note)}
+                    isSelected={selectedNotes.includes(note.id)}
+                    selectionMode={selectionMode}
+                  />
+                )))
             : (
               <TouchableOpacity style={styles.emptyState} onPress={handleAddNote} activeOpacity={0.7}>
                 <Text style={styles.emptyStateTitle}>아직 노트가 없어요.</Text>
