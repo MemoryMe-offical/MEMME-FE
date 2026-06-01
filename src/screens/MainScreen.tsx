@@ -37,6 +37,7 @@ import { createMemoWithImage, createMemoWithVideo, createMemoWithFile } from '..
 import { mainStyles as styles } from '../styles/MainScreen.styles';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { fetchOgData } from '../services/ogService';
+import { getHourMinute } from '../utils/date';
 import * as pendingLinkService from '../services/pendingLinkService';
 import * as timelineService from '../services/timelineService';
 import * as memoService from '../services/memoService';
@@ -947,13 +948,20 @@ const MainScreen = () => {
               scrollToLatestIfNeeded();
             }}
             onLayout={scrollToLatestIfNeeded}
-            renderItem={({ item }) => {
+            renderItem={({ item, index }) => {
+              // 다음 아이템의 시간과 비교하여 같은 시간에 보낸 것인지 확인
+              const currentTime = getHourMinute(item.createdAt);
+              const nextItem = index > 0 ? timelineItems[index - 1] : null;
+              const nextTime = nextItem ? getHourMinute(nextItem.createdAt) : null;
+              const isLastInTime = !nextTime || currentTime !== nextTime;
+
               if (item.type === 'memo') {
                 const memo = item as Memo;
                 return (
                   <ChatMessageItem
                     item={memo}
                     expanded={expandedMemoId === memo.id}
+                    showTime={isLastInTime}
                     onToggleExpand={(m) => setExpandedMemoId(expandedMemoId === m.id ? null : m.id)}
                     onLongPress={handleContextMenu}
                     onOpenLinkModal={handleOpenLinkModal}
@@ -968,6 +976,7 @@ const MainScreen = () => {
                   onContextMenu={handleContextMenu}
                   onDetailPress={handleDetailPress}
                   onPress={handleDetailPress}
+                  showTime={isLastInTime}
                   isExpanded={boardExpandStates[(item as Board).id] ?? true}
                   onExpandChange={(id, expanded) => setBoardExpandStates(prev => ({ ...prev, [id]: expanded }))}
                   expandedNoteIds={Object.keys(noteExpandStates).filter(key => {
