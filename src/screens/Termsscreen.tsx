@@ -5,18 +5,19 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { termsStyles as styles } from '../styles/TermsScreen.styles';
+import { useAlert } from '../context/AlertContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const TermsScreen = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { showAlert } = useAlert();
   const [allChecked, setAllChecked] = useState(false);
   const [terms, setTerms] = useState({
     service: false,
@@ -84,7 +85,7 @@ const TermsScreen = () => {
 
   const handleNext = () => {
     if (!terms.service || !terms.privacy || !terms.age) {
-      Alert.alert('알림', '필수 약관에 모두 동의해주세요.');
+      showAlert({ title: '알림', message: '필수 약관에 모두 동의해주세요.' });
       return;
     }
     navigation.navigate('Signup');

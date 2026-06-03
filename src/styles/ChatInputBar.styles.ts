@@ -1,4 +1,4 @@
-import { StyleSheet } from 'react-native';
+import { Platform, StyleSheet } from 'react-native';
 
 export const chatInputBarStyles = StyleSheet.create({
   // 입력 바 - 컨테이너
@@ -28,7 +28,8 @@ export const chatInputBarStyles = StyleSheet.create({
     backgroundColor: '#F0F4FF',
     borderRadius: 22,
     paddingHorizontal: 14,
-    paddingVertical: 10,
+    paddingTop: Platform.OS === 'ios' ? 12 : 10,
+    paddingBottom: Platform.OS === 'ios' ? 8 : 10,
     fontSize: 13,
     lineHeight: 16,
     color: '#1A1A1A',
@@ -46,5 +47,19 @@ export const chatInputBarStyles = StyleSheet.create({
     backgroundColor: '#588DFF',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+
+  // 입력 바 - 전송 아이콘
+  sendIcon: {
+    width: 17,
+    height: 17,
+    lineHeight: 17,
+    textAlign: 'center',
+    includeFontPadding: false,
+    transform: [
+      { rotate: '-30deg' },
+      { translateX: 1 },
+      { translateY: Platform.OS === 'ios' ? 0 : -1 },
+    ],
   },
 });

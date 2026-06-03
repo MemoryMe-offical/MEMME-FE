@@ -11,7 +11,6 @@ import BoardDetailScreen from '../screens/BoardDetailScreen';
 import NoteDetailScreen from '../screens/NoteDetailScreen';
 import MediaGalleryScreen from '../screens/MediaGalleryScreen';
 import SettingsScreen from '../screens/SettingsScreen';
-import DevicePairingScreen from '../screens/DevicePairingScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import { Board, Note, TimelineItem } from '../types';
 
@@ -19,7 +18,7 @@ import { Board, Note, TimelineItem } from '../types';
 export type RootStackParamList = {
     Splash: undefined;
     Onboarding: undefined;
-    Main: undefined;
+    Main: { scrollToItemId?: string } | undefined;
     Login: undefined;
     Signup: undefined;
     Terms: undefined;
@@ -75,7 +74,6 @@ const RootNavigator = () => {
             {/* 설정 화면 */}
             <Stack.Screen name="Settings" component={SettingsScreen} />
 
-            <Stack.Screen name="DevicePairing" component={DevicePairingScreen} options={{ title: '기기 페어링' }} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} options={{ title: '비밀번호 찾기' }} />
         </Stack.Navigator>
     );

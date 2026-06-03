@@ -28,13 +28,14 @@ const formatTime = (isoString: string): string => {
 interface ChatMessageItemProps {
   item: Memo;
   expanded?: boolean;
+  showTime?: boolean;
   onToggleExpand?: (item: Memo) => void;
   onLongPress: (item: Memo) => void;
   onOpenLinkModal?: (url: string, ogData?: any) => void;
   onImagePress?: (imageUri: string, allImageUris: string[]) => void;
 }
 
-const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, onOpenLinkModal, onImagePress }: ChatMessageItemProps) => {
+const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpand, onLongPress, onOpenLinkModal, onImagePress }: ChatMessageItemProps) => {
   const maxChars = 500;
   const text = item.text || '';
   const isLong = text.length > maxChars;
@@ -298,8 +299,8 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
     <View style={styles['container']}>
       {/* 메시지 + 시간 행 */}
       <View style={styles['message-row']}>
-        {/* 시간 - 텍스트가 있을 때만 표시 */}
-        {hasText && (
+        {/* 시간 - 텍스트가 있고 showTime이 true일 때만 표시 */}
+        {hasText && showTime && (
           <Text style={styles['chatMessageItem-time']}>
             {formatTime(item.createdAt)}
           </Text>
@@ -411,10 +412,12 @@ const ChatMessageItem = ({ item, expanded = false, onToggleExpand, onLongPress, 
       {/* 미디어만 있을 때 (텍스트 없음) - 시간 + 미디어 행 */}
       {!hasText && hasMedia && (
         <View style={styles['media-row']}>
-          {/* 시간 */}
-          <Text style={styles['chatMessageItem-time']}>
-            {formatTime(item.createdAt)}
-          </Text>
+          {/* 시간 - showTime이 true일 때만 표시 */}
+          {showTime && (
+            <Text style={styles['chatMessageItem-time']}>
+              {formatTime(item.createdAt)}
+            </Text>
+          )}
 
           {/* 미디어 - 컨테이너 없이 직접 렌더링 */}
           {renderImageGrid()}

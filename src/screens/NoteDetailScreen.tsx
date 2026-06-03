@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Alert,
   StyleSheet,
   Platform,
   Modal,
@@ -36,6 +35,7 @@ import { uploadImages, uploadFile, uploadVideo, MAX_UPLOAD_SIZE } from '../servi
 import OgPreviewCard from '../components/note/OgPreviewCard';
 import LoadingImage from '../components/common/LoadingImage';
 import * as noteService from '../services/noteService';
+import { useAlert } from '../context/AlertContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NoteDetail'>;
 
@@ -62,6 +62,7 @@ const ImagePreview = ({ imageUrl, onRemove }: { imageUrl: string; onRemove: () =
 const NoteDetailScreen = ({ route, navigation }: Props) => {
   const { note, boardId, boardTitle, isNew } = route.params;
   const insets = useSafeAreaInsets();
+  const { showAlert, showConfirm } = useAlert();
 
   const [editTitle, setEditTitle] = useState(note?.title ?? '');
   const [editContent, setEditContent] = useState(note?.content ?? '');
@@ -206,25 +207,21 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
       if (!isDirty() || isSavingRef.current) return;
       e.preventDefault();
-      Alert.alert(
-        '나가기',
-        '저장하지 않은 변경사항이 있습니다. 나가시겠습니까?',
-        [
-          { text: '계속 편집', style: 'cancel' },
-          {
-            text: '나가기',
-            style: 'destructive',
-            onPress: () => navigation.dispatch(e.data.action),
-          },
-        ],
-      );
+      showConfirm({
+        title: '나가기',
+        message: '저장하지 않은 변경사항이 있습니다. 나가시겠습니까?',
+        confirmText: '나가기',
+        cancelText: '계속 편집',
+        destructive: true,
+        onConfirm: () => navigation.dispatch(e.data.action),
+      });
     });
     return unsubscribe;
   }, [navigation, isDirty]);
 
   const handleSave = async () => {
     if (!editTitle.trim()) {
-      Alert.alert('알림', '노트 이름을 입력해주세요.');
+      showAlert({ title: '알림', message: '노트 이름을 입력해주세요.' });
       return;
     }
 
@@ -252,7 +249,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       navigation.goBack();
     } catch (error) {
       console.error('Failed to save note:', error);
-      Alert.alert('오류', '노트 저장에 실패했습니다.');
+      showAlert({ title: '오류', message: '노트 저장에 실패했습니다.', type: 'error' });
       isSavingRef.current = false;
     } finally {
       setIsSaving(false);
@@ -260,32 +257,32 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
   };
 
   const handleDelete = () => {
-    Alert.alert('노트 삭제', '이 노트를 삭제하시겠습니까?', [
-      { text: '취소', style: 'cancel' },
-      {
-        text: '삭제',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            setIsSaving(true);
-            if (note) {
-              await noteService.deleteNote(boardId, note.id);
-            }
-            navigation.goBack();
-          } catch (error) {
-            Alert.alert('오류', '노트 삭제에 실패했습니다.');
-            console.error('Failed to delete note:', error);
-          } finally {
-            setIsSaving(false);
+    showConfirm({
+      title: '노트 삭제',
+      message: '이 노트를 삭제하시겠습니까?',
+      confirmText: '삭제',
+      cancelText: '취소',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          setIsSaving(true);
+          if (note) {
+            await noteService.deleteNote(boardId, note.id);
           }
-        },
+          navigation.goBack();
+        } catch (error) {
+          showAlert({ title: '오류', message: '노트 삭제에 실패했습니다.', type: 'error' });
+          console.error('Failed to delete note:', error);
+        } finally {
+          setIsSaving(false);
+        }
       },
-    ]);
+    });
   };
 
   const handleAddImage = async () => {
     if (editImageUris.length >= 10) {
-      Alert.alert('알림', '이미지는 최대 10개까지 추가할 수 있습니다.');
+      showAlert({ title: '알림', message: '이미지는 최대 10개까지 추가할 수 있습니다.' });
       return;
     }
 
@@ -309,10 +306,11 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         }
 
         if (hasOversized || totalSize > MAX_UPLOAD_SIZE) {
-          Alert.alert(
-            '용량 초과',
-            `최대 100MB까지 업로드할 수 있습니다.\n현재 선택 크기: ${(totalSize / (1024 * 1024)).toFixed(2)}MB`,
-          );
+          showAlert({
+            title: '용량 초과',
+            message: `최대 100MB까지 업로드할 수 있습니다.\n현재 선택 크기: ${(totalSize / (1024 * 1024)).toFixed(2)}MB`,
+            type: 'error',
+          });
           return;
         }
 
@@ -324,7 +322,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           // presigned URLs를 저장 (화면 렌더링용)
           setEditImageUris(prev => [...prev, ...response.urls]);
         } catch (error) {
-          Alert.alert('오류', '이미지 업로드에 실패했습니다.');
+          showAlert({ title: '오류', message: '이미지 업로드에 실패했습니다.', type: 'error' });
           console.error('Image upload error:', error);
         } finally {
           setIsUploading(false);
@@ -341,7 +339,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
 
   const handleAddVideo = async () => {
     if (editVideos.length >= 10) {
-      Alert.alert('알림', '동영상은 최대 10개까지 추가할 수 있습니다.');
+      showAlert({ title: '알림', message: '동영상은 최대 10개까지 추가할 수 있습니다.' });
       return;
     }
 
@@ -365,10 +363,11 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         }
 
         if (hasOversized || totalSize > MAX_UPLOAD_SIZE) {
-          Alert.alert(
-            '용량 초과',
-            `최대 100MB까지 업로드할 수 있습니다.\n현재 선택 크기: ${(totalSize / (1024 * 1024)).toFixed(2)}MB`,
-          );
+          showAlert({
+            title: '용량 초과',
+            message: `최대 100MB까지 업로드할 수 있습니다.\n현재 선택 크기: ${(totalSize / (1024 * 1024)).toFixed(2)}MB`,
+            type: 'error',
+          });
           return;
         }
 
@@ -379,6 +378,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           const responses = await Promise.all(uploadPromises);
           const newVideos: MediaAttachment[] = responses.map((r, idx) => ({
             uid: `video-${Date.now()}-${idx}`,
+            name: r.name,
             url: r.url,
             key: r.key,
             mimeType: 'video/mp4',
@@ -388,7 +388,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           }));
           setEditVideos(prev => [...prev, ...newVideos]);
         } catch (error) {
-          Alert.alert('오류', '동영상 업로드에 실패했습니다.');
+          showAlert({ title: '오류', message: '동영상 업로드에 실패했습니다.', type: 'error' });
           console.error('Video upload error:', error);
         } finally {
           setIsUploading(false);
@@ -405,7 +405,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
 
   const handleOpenLinkModal = () => {
     if (editUrls.length >= 10) {
-      Alert.alert('알림', '링크는 최대 10개까지 추가할 수 있습니다.');
+      showAlert({ title: '알림', message: '링크는 최대 10개까지 추가할 수 있습니다.' });
       return;
     }
     setLinkInput('');
@@ -420,7 +420,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
     try {
       new URL(trimmedUrl.startsWith('http') ? trimmedUrl : `https://${trimmedUrl}`);
     } catch {
-      Alert.alert('알림', '올바른 URL을 입력해주세요.');
+      showAlert({ title: '알림', message: '올바른 URL을 입력해주세요.' });
       return;
     }
 
@@ -433,7 +433,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       setIsLinkModalVisible(false);
       setLinkInput('');
     } catch {
-      Alert.alert('오류', '링크를 가져오는 데 실패했습니다. URL을 확인해주세요.');
+      showAlert({ title: '오류', message: '링크를 가져오는 데 실패했습니다. URL을 확인해주세요.', type: 'error' });
     } finally {
       setIsFetchingOg(false);
     }
@@ -457,9 +457,9 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       });
     } catch (error) {
       if (error instanceof OgSummaryError) {
-        Alert.alert('AI 요약 실패', 'AI 요약을 생성할 수 없습니다. 잠시 후 다시 시도해주세요.');
+        showAlert({ title: 'AI 요약 실패', message: 'AI 요약을 생성할 수 없습니다. 잠시 후 다시 시도해주세요.', type: 'error' });
       } else {
-        Alert.alert('오류', 'AI 요약 요청 중 문제가 발생했습니다.');
+        showAlert({ title: '오류', message: 'AI 요약 요청 중 문제가 발생했습니다.', type: 'error' });
       }
     } finally {
       setLoadingSummaryIndexes(prev => {
@@ -487,7 +487,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       if (Platform.OS === 'android') {
         ToastAndroid.show('요약이 내용에 추가되었습니다', ToastAndroid.SHORT);
       } else {
-        Alert.alert('', '요약이 내용에 추가되었습니다', [{ text: '확인', onPress: () => { } }]);
+        showAlert({ message: '요약이 내용에 추가되었습니다' });
       }
 
       // 3초 후에 버튼으로 복구
@@ -522,9 +522,9 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       addToNoteAndShowToast(summary);
     } catch (error) {
       if (error instanceof OgSummaryError) {
-        Alert.alert('AI 요약 실패', 'AI 요약을 생성할 수 없습니다. 잠시 후 다시 시도해주세요.');
+        showAlert({ title: 'AI 요약 실패', message: 'AI 요약을 생성할 수 없습니다. 잠시 후 다시 시도해주세요.', type: 'error' });
       } else {
-        Alert.alert('오류', 'AI 요약 요청 중 문제가 발생했습니다.');
+        showAlert({ title: '오류', message: 'AI 요약 요청 중 문제가 발생했습니다.', type: 'error' });
       }
     } finally {
       setLoadingSummaryIndexes(prev => {
@@ -555,7 +555,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
 
   const handleAddFile = async () => {
     if (editFiles.length >= 10) {
-      Alert.alert('알림', '파일은 최대 10개까지 추가할 수 있습니다.');
+      showAlert({ title: '알림', message: '파일은 최대 10개까지 추가할 수 있습니다.' });
       return;
     }
 
@@ -568,7 +568,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       // 최대 개수 제한 확인
       if (editFiles.length + results.length > 10) {
         const remainingSlots = 10 - editFiles.length;
-        Alert.alert('알림', `파일은 최대 10개까지 추가할 수 있습니다. (${remainingSlots}개 더 추가 가능)`);
+        showAlert({ title: '알림', message: `파일은 최대 10개까지 추가할 수 있습니다. (${remainingSlots}개 더 추가 가능)` });
         return;
       }
 
@@ -613,7 +613,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         const newFiles = await Promise.all(uploadPromises);
         setEditFiles(prev => [...prev, ...newFiles]);
       } catch (error) {
-        Alert.alert('오류', '파일 업로드에 실패했습니다.');
+        showAlert({ title: '오류', message: '파일 업로드에 실패했습니다.', type: 'error' });
         console.error('File upload error:', error);
       } finally {
         setIsUploading(false);
@@ -622,7 +622,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       if (isErrorWithCode(e) && e.code === errorCodes.OPERATION_CANCELED) {
         // 사용자 취소 — 무시
       } else {
-        Alert.alert('오류', '파일을 가져오는 데 실패했습니다.');
+        showAlert({ title: '오류', message: '파일을 가져오는 데 실패했습니다.', type: 'error' });
       }
     }
   };

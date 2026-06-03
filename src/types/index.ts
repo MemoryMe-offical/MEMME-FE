@@ -38,6 +38,7 @@ export interface Board extends BaseItem {
 // ── 미디어 첨부 (이미지/영상) ──────────────────
 export interface MediaAttachment {
   uid: string;
+  name?: string;            // 파일명
   url: string;              // presigned URL (화면 렌더링용)
   key: string;              // S3 key (삭제/관리용)
   mimeType: string;
@@ -61,6 +62,8 @@ export interface Note {
   id: string;
   title: string;
   content?: string;
+  createdAt?: string;
+  updatedAt?: string;
   // 기존 호환용
   imageUris?: string[];
   videoUris?: string[];

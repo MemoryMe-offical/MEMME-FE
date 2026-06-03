@@ -15,11 +15,13 @@ interface ApiResponse<T> {
 interface ImageUploadResponse {
   urls: string[];
   keys: string[];
+  names?: string[];
 }
 
 interface VideoUploadResponse {
   url: string;
   key: string;
+  name?: string;
   thumbnailUrl?: string;
   duration: number;
   size: number;

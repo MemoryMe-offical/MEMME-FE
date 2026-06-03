@@ -8,7 +8,6 @@ import {
   Image,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   AppState,
   NativeModules,
   StatusBar,
@@ -19,6 +18,8 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
+import { useAlert } from '../context/AlertContext';
+import type { RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Board, Memo, PendingLink, TimelineItem } from '../types';
 import ChatMessageItem from '../components/chat/ChatMessageItem';
@@ -28,26 +29,26 @@ import ContextMenu from '../components/common/ContextMenu';
 import SideMenu from '../components/common/SideMenu';
 import { HamburgerIcon, PlusIcon, SearchIcon, ArrowLeftIcon } from '../components/common/Icons';
 import Badge from '../components/common/Badge';
-import ImageViewerModal from '../components/common/ImageViewerModal';
 import MemoConvertSheet from '../components/memo/MemoConvertSheet';
 import PendingLinksBottomSheet from '../components/pendingLinks/PendingLinksBottomSheet';
 import MediaPickerSheet from '../components/chat/MediaPickerSheet';
+import ImageViewerModal from '../components/common/ImageViewerModal';
 import { createMemoWithImage, createMemoWithVideo, createMemoWithFile } from '../services/uploadService';
 import { mainStyles as styles } from '../styles/MainScreen.styles';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { fetchOgData } from '../services/ogService';
+import { getHourMinute } from '../utils/date';
 import * as pendingLinkService from '../services/pendingLinkService';
 import * as timelineService from '../services/timelineService';
 import * as memoService from '../services/memoService';
 import * as boardService from '../services/boardService';
 import * as noteService from '../services/noteService';
 
-const ANDROID_KEYBOARD_EXTRA_OFFSET = 50;
-
 const MainScreen = () => {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Main'>>();
-  const route = useRoute();
+  const route = useRoute<RouteProp<RootStackParamList, 'Main'>>();
+  const { showAlert, showConfirm } = useAlert();
   const [userId, setUserId] = useState<string>('');
   const [items, setItems] = useState<TimelineItem[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -56,12 +57,45 @@ const MainScreen = () => {
   const [contextMenuItem, setContextMenuItem] = useState<TimelineItem | null>(null);
   const [sideMenuVisible, setSideMenuVisible] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [watermarkFrame, setWatermarkFrame] = useState<{ width: number; height: number } | null>(null);
   const flatListRef = useRef<FlatList<TimelineItem>>(null);
   const shouldScrollToEnd = useRef(false);
-  const androidInputOffset = Platform.OS === 'android' && keyboardVisible
-    ? keyboardHeight + Math.max(insets.bottom, ANDROID_KEYBOARD_EXTRA_OFFSET)
-    : 0;
+  const scrollRetryTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const clearScrollRetryTimers = useCallback(() => {
+    scrollRetryTimers.current.forEach(timer => clearTimeout(timer));
+    scrollRetryTimers.current = [];
+  }, []);
+
+  const scrollToLatest = useCallback((animated = false) => {
+    clearScrollRetryTimers();
+
+    requestAnimationFrame(() => {
+      flatListRef.current?.scrollToOffset({ offset: 0, animated });
+    });
+
+    if (Platform.OS === 'ios') {
+      return;
+    }
+
+    [80, 180, 360, 600].forEach(delay => {
+      const timer = setTimeout(() => {
+        flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+      }, delay);
+      scrollRetryTimers.current.push(timer);
+    });
+  }, [clearScrollRetryTimers]);
+
+  const scrollToLatestIfNeeded = useCallback(() => {
+    if (!shouldScrollToEnd.current) return;
+
+    shouldScrollToEnd.current = false;
+    if (Platform.OS === 'ios') return;
+
+    scrollToLatest(false);
+  }, [scrollToLatest]);
+
+  useEffect(() => clearScrollRetryTimers, [clearScrollRetryTimers]);
 
   // 링크 감지 관련 state
   const [detectedLink, setDetectedLink] = useState<string | null>(null);
@@ -94,6 +128,11 @@ const MainScreen = () => {
   const [mediaPickerVisible, setMediaPickerVisible] = useState(false);
   const [isUploadingMedia, setIsUploadingMedia] = useState(false);
 
+  // 이미지 뷰어
+  const [imageViewerVisible, setImageViewerVisible] = useState(false);
+  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+  const [allImageUris, setAllImageUris] = useState<string[]>([]);
+
   // 검색 & 필터
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [searchText, setSearchText] = useState('');
@@ -113,11 +152,6 @@ const MainScreen = () => {
     noteExpandMode: 'none' as 'none' | 'first' | 'all',
   });
   const [expandModalVisible, setExpandModalVisible] = useState(false);
-
-  // 이미지 뷰어
-  const [imageViewerVisible, setImageViewerVisible] = useState(false);
-  const [imageViewerUris, setImageViewerUris] = useState<string[]>([]);
-  const [imageViewerIndex, setImageViewerIndex] = useState(0);
 
   // 초기 설정 로드
   useEffect(() => {
@@ -218,7 +252,7 @@ const MainScreen = () => {
         result = result.filter(i => {
           if (i.type === 'board') {
             const board = i as Board;
-            return (board.tags ?? []).some(tag => tag.toLowerCase().includes(tagQuery));
+            return (board.tags ?? []).some(tag => (tag ?? '').toLowerCase().includes(tagQuery));
           }
           return false;
         });
@@ -226,11 +260,11 @@ const MainScreen = () => {
         // 일반 텍스트 검색
         result = result.filter(i => {
           if (i.type === 'memo') {
-            return (i as Memo).text.toLowerCase().includes(query);
+            return ((i as Memo).text ?? '').toLowerCase().includes(query);
           } else {
             const board = i as Board;
             // 보드 제목 검색
-            if (board.title.toLowerCase().includes(query)) {
+            if ((board.title ?? '').toLowerCase().includes(query)) {
               return true;
             }
             // 보드 내 노트 제목, 내용 검색
@@ -245,6 +279,8 @@ const MainScreen = () => {
 
     return result;
   }, [items, filterType, filterBookmarkOnly, searchText, selectedTags]);
+
+  const timelineItems = useMemo(() => [...filteredItems].reverse(), [filteredItems]);
 
   const nativeShareModule =
     Platform.OS === 'ios'
@@ -276,6 +312,9 @@ const MainScreen = () => {
         sort: 'createdAt',
         limit: 50,
       });
+      if (response.items.length > 0 && !route.params?.scrollToItemId) {
+        shouldScrollToEnd.current = true;
+      }
       setItems(response.items);
     } catch (error) {
       console.error('Failed to load timeline:', error);
@@ -283,7 +322,7 @@ const MainScreen = () => {
     } finally {
       setLoaded(true);
     }
-  }, []);
+  }, [route.params?.scrollToItemId]);
 
   useEffect(() => {
     loadTimeline();
@@ -362,12 +401,12 @@ const MainScreen = () => {
 
   useEffect(() => {
     if (route.params?.scrollToItemId) {
-      const index = items.findIndex(i => i.id === route.params.scrollToItemId);
+      const index = timelineItems.findIndex(i => i.id === route.params?.scrollToItemId);
       if (index !== -1) {
         flatListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.5 });
       }
     }
-  }, [route.params?.scrollToItemId, items]);
+  }, [route.params?.scrollToItemId, timelineItems]);
 
   useEffect(() => {
     const getShared = async () => {
@@ -401,13 +440,14 @@ const MainScreen = () => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
 
-    const showSub = Keyboard.addListener(showEvent, (event) => {
+    const showSub = Keyboard.addListener(showEvent, () => {
       setKeyboardVisible(true);
-      setKeyboardHeight(event.endCoordinates.height);
+      if (Platform.OS === 'android') {
+        shouldScrollToEnd.current = true;
+      }
     });
     const hideSub = Keyboard.addListener(hideEvent, () => {
       setKeyboardVisible(false);
-      setKeyboardHeight(0);
     });
 
     return () => {
@@ -449,7 +489,7 @@ const MainScreen = () => {
       contextMenuItem.type === 'memo'
         ? contextMenuItem.text
         : contextMenuItem.title;
-    Alert.alert('복사됨', text);
+    showAlert({ title: '복사됨', message: text, type: 'success' });
   };
 
   const handleContextBookmark = async () => {
@@ -474,15 +514,8 @@ const MainScreen = () => {
       }
     } catch (error) {
       console.error('Failed to toggle bookmark:', error);
-      Alert.alert('오류', '북마크 설정에 실패했습니다.');
+      showAlert({ title: '오류', message: '북마크 설정에 실패했습니다.', type: 'error' });
     }
-  };
-
-  const handleImagePress = (imageUri: string, imageUris: string[]) => {
-    const index = imageUris.indexOf(imageUri);
-    setImageViewerUris(imageUris);
-    setImageViewerIndex(Math.max(0, index));
-    setImageViewerVisible(true);
   };
 
   const handleContextConvert = () => {
@@ -502,24 +535,24 @@ const MainScreen = () => {
         ? `이 보드 안의 노트 ${noteCount}개가 모두 삭제됩니다. 메모로 변환하시겠습니까?`
         : '메모로 변환하시겠습니까?';
 
-      Alert.alert('메모로 변환', warningMsg, [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '변환',
-          style: 'destructive',
-          onPress: () => {
-            const newMemo: Memo = {
-              id: board.id,
-              userId: board.userId,
-              type: 'memo',
-              bookmarked: board.bookmarked,
-              text: board.title,
-              createdAt: board.createdAt,
-            };
-            setItems(prev => prev.map(i => i.id === board.id ? newMemo : i));
-          },
+      showConfirm({
+        title: '메모로 변환',
+        message: warningMsg,
+        confirmText: '변환',
+        cancelText: '취소',
+        destructive: true,
+        onConfirm: () => {
+          const newMemo: Memo = {
+            id: board.id,
+            userId: board.userId,
+            type: 'memo',
+            bookmarked: board.bookmarked,
+            text: board.title,
+            createdAt: board.createdAt,
+          };
+          setItems(prev => prev.map(i => i.id === board.id ? newMemo : i));
         },
-      ]);
+      });
     }
   };
 
@@ -553,7 +586,7 @@ const MainScreen = () => {
       setInputText('');
     } catch (error) {
       console.error('Failed to create memo:', error);
-      Alert.alert('오류', '메모 저장에 실패했습니다.');
+      showAlert({ title: '오류', message: '메모 저장에 실패했습니다.', type: 'error' });
       setInputText(text);
     }
   };
@@ -591,7 +624,7 @@ const MainScreen = () => {
       }
     } catch (error) {
       console.error('Failed to handle link:', error);
-      Alert.alert('오류', '링크 처리에 실패했습니다.');
+      showAlert({ title: '오류', message: '링크 처리에 실패했습니다.', type: 'error' });
     }
 
     setLinkDetectionModalVisible(false);
@@ -604,27 +637,27 @@ const MainScreen = () => {
     const id = contextMenuItem.id;
     const item = contextMenuItem;
 
-    Alert.alert('삭제', '정말 삭제하시겠습니까?', [
-      { text: '취소', style: 'cancel' },
-      {
-        text: '삭제',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            if (item.type === 'memo') {
-              await memoService.deleteMemo(id);
-            } else {
-              await boardService.deleteBoard(id);
-            }
-            setItems(prev => prev.filter(i => i.id !== id));
-            handleCloseContextMenu();
-          } catch (error) {
-            console.error('Failed to delete item:', error);
-            Alert.alert('오류', '삭제에 실패했습니다.');
+    showConfirm({
+      title: '삭제',
+      message: '정말 삭제하시겠습니까?',
+      confirmText: '삭제',
+      cancelText: '취소',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          if (item.type === 'memo') {
+            await memoService.deleteMemo(id);
+          } else {
+            await boardService.deleteBoard(id);
           }
-        },
+          setItems(prev => prev.filter(i => i.id !== id));
+          handleCloseContextMenu();
+        } catch (error) {
+          console.error('Failed to delete item:', error);
+          showAlert({ title: '오류', message: '삭제에 실패했습니다.', type: 'error' });
+        }
       },
-    ]);
+    });
   };
 
   const handleDetailPress = (board: Board, noteId?: string) => {
@@ -670,6 +703,12 @@ const MainScreen = () => {
     }
   };
 
+  const handleImagePress = (imageUri: string, allUris: string[]) => {
+    setSelectedImageUri(imageUri);
+    setAllImageUris(allUris);
+    setImageViewerVisible(true);
+  };
+
   const handleSend = async () => {
     if (!inputText.trim()) return;
     const text = inputText.trim();
@@ -682,27 +721,22 @@ const MainScreen = () => {
     if (imageUris.length === 0) return;
     setIsUploadingMedia(true);
     try {
-      // 여러 이미지를 한 번의 요청으로 전송하면 하나의 메모에 함께 묶임
-      const memoData = await createMemoWithImage(imageUris);
+      const raw = await createMemoWithImage(imageUris);
       const newMemo: Memo = {
-        id: memoData.uid,
-        userId: memoData.userId || '',
+        id: raw.uid,
+        userId: raw.userId || '',
         type: 'memo',
-        text: memoData.text,
-        urls: memoData.urls,
-        ogDatas: memoData.ogDatas,
-        imageUris: memoData.imageUris,
-        imageKeys: memoData.imageKeys,
-        videos: memoData.videos,
-        files: memoData.files,
-        bookmarked: memoData.bookmarked ?? false,
-        createdAt: memoData.createdAt,
+        text: raw.text || '',
+        imageUris: raw.imageUris || (raw.images && raw.images.length > 0 ? raw.images.map((img: any) => img.url) : []),
+        images: raw.images,
+        bookmarked: raw.bookmarked ?? false,
+        createdAt: raw.createdAt,
       };
-      setItems(prev => [...prev, newMemo]);
       shouldScrollToEnd.current = true;
+      setItems(prev => [...prev, newMemo]);
     } catch (error) {
       console.error('Failed to upload images:', error);
-      Alert.alert('오류', '이미지 업로드에 실패했습니다.');
+      showAlert({ title: '오류', message: '이미지 업로드에 실패했습니다.', type: 'error' });
     } finally {
       setIsUploadingMedia(false);
     }
@@ -711,54 +745,45 @@ const MainScreen = () => {
   const handlePickVideo = async (videoUri: string) => {
     setIsUploadingMedia(true);
     try {
-      const memoData = await createMemoWithVideo(videoUri);
+      const raw = await createMemoWithVideo(videoUri);
       const newMemo: Memo = {
-        id: memoData.uid,
-        userId: memoData.userId || '',
+        id: raw.uid,
+        userId: raw.userId || '',
         type: 'memo',
-        text: memoData.text,
-        urls: memoData.urls,
-        ogDatas: memoData.ogDatas,
-        imageUris: memoData.imageUris,
-        imageKeys: memoData.imageKeys,
-        videos: memoData.videos,
-        files: memoData.files,
-        bookmarked: memoData.bookmarked ?? false,
-        createdAt: memoData.createdAt,
+        text: raw.text || '',
+        videoUris: raw.videoUris || (raw.videos && raw.videos.length > 0 ? raw.videos.map((vid: any) => vid.url) : []),
+        videos: raw.videos,
+        bookmarked: raw.bookmarked ?? false,
+        createdAt: raw.createdAt,
       };
-      setItems(prev => [...prev, newMemo]);
       shouldScrollToEnd.current = true;
+      setItems(prev => [...prev, newMemo]);
     } catch (error) {
       console.error('Failed to upload video:', error);
-      Alert.alert('오류', '동영상 업로드에 실패했습니다.');
+      showAlert({ title: '오류', message: '동영상 업로드에 실패했습니다.', type: 'error' });
     } finally {
       setIsUploadingMedia(false);
     }
   };
 
-  const handlePickFile = async (fileUri: string, fileName: string) => {
+  const handlePickFile = async (fileUri: string, _fileName: string) => {
     setIsUploadingMedia(true);
     try {
-      const memoData = await createMemoWithFile(fileUri);
+      const raw = await createMemoWithFile(fileUri);
       const newMemo: Memo = {
-        id: memoData.uid,
-        userId: memoData.userId || '',
+        id: raw.uid,
+        userId: raw.userId || '',
         type: 'memo',
-        text: memoData.text,
-        urls: memoData.urls,
-        ogDatas: memoData.ogDatas,
-        imageUris: memoData.imageUris,
-        imageKeys: memoData.imageKeys,
-        videos: memoData.videos,
-        files: memoData.files,
-        bookmarked: memoData.bookmarked ?? false,
-        createdAt: memoData.createdAt,
+        text: raw.text || '',
+        files: raw.files,
+        bookmarked: raw.bookmarked ?? false,
+        createdAt: raw.createdAt,
       };
-      setItems(prev => [...prev, newMemo]);
       shouldScrollToEnd.current = true;
+      setItems(prev => [...prev, newMemo]);
     } catch (error) {
       console.error('Failed to upload file:', error);
-      Alert.alert('오류', '파일 업로드에 실패했습니다.');
+      showAlert({ title: '오류', message: '파일 업로드에 실패했습니다.', type: 'error' });
     } finally {
       setIsUploadingMedia(false);
     }
@@ -787,7 +812,7 @@ const MainScreen = () => {
       setPendingLinks(prev => prev.filter(l => l.id !== link.id));
     } catch (error) {
       console.error('Failed to add note to board:', error);
-      Alert.alert('오류', '노트 추가에 실패했습니다.');
+      showAlert({ title: '오류', message: '노트 추가에 실패했습니다.', type: 'error' });
     }
   };
 
@@ -797,7 +822,7 @@ const MainScreen = () => {
       setPendingLinks(prev => prev.filter(l => l.id !== linkId));
     } catch (error) {
       console.error('Failed to dismiss pending link:', error);
-      Alert.alert('오류', '링크 삭제에 실패했습니다.');
+      showAlert({ title: '오류', message: '링크 삭제에 실패했습니다.', type: 'error' });
     }
   };
 
@@ -847,13 +872,15 @@ const MainScreen = () => {
               <TouchableOpacity
                 style={styles['main-header-iconButton']}
                 onPress={() => setExpandModalVisible(true)}>
-                <Text style={[{ fontSize: 10, fontWeight: '600', color: '#1A1A1A' }]}>
+                <Text style={styles['main-header-expandText']}>
                   접기/펼치기
                 </Text>
               </TouchableOpacity>
             </View>
 
-            <Text style={styles['main-header-title']} pointerEvents="none">MEMoryMe</Text>
+            <View style={styles['main-header-titleWrapper']} pointerEvents="none">
+              <Text style={styles['main-header-title']}>MEMoryMe</Text>
+            </View>
 
             <View style={styles['main-header-rightButtons']}>
               <TouchableOpacity
@@ -875,37 +902,67 @@ const MainScreen = () => {
 
       <KeyboardAvoidingView
         style={styles['main-body']}
-        behavior={Platform.OS === 'ios' ? 'height' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={0}
       >
-        <View style={styles['main-content']}>
-          <View style={styles['main-watermark']} pointerEvents="none">
-            <Image
-              source={require('../assets/imgs/mainlogo.png')}
-              style={styles['main-watermark-image']}
-            />
-          </View>
+        <View
+          style={styles['main-content']}
+          onLayout={({ nativeEvent }) => {
+            if (watermarkFrame) return;
+
+            const { width, height } = nativeEvent.layout;
+            setWatermarkFrame({ width, height });
+          }}>
+          {watermarkFrame ? (
+            <View
+              style={[
+                styles['main-watermark'],
+                {
+                  top: (watermarkFrame.height - watermarkFrame.width * 0.55) / 2,
+                  height: watermarkFrame.width * 0.55,
+                },
+              ]}
+              pointerEvents="none">
+              <Image
+                source={require('../assets/imgs/mainlogo.png')}
+                style={[
+                  styles['main-watermark-image'],
+                  {
+                    width: watermarkFrame.width * 0.55,
+                    height: watermarkFrame.width * 0.55,
+                  },
+                ]}
+              />
+            </View>
+          ) : null}
 
           <FlatList<TimelineItem>
             ref={flatListRef}
-            data={filteredItems}
+            data={timelineItems}
             keyExtractor={item => item.id}
+            style={styles['main-list']}
             contentContainerStyle={styles['main-listContent']}
-            keyboardDismissMode="interactive"
+            inverted
+            keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
             keyboardShouldPersistTaps="handled"
             onContentSizeChange={() => {
-              if (shouldScrollToEnd.current) {
-                shouldScrollToEnd.current = false;
-                flatListRef.current?.scrollToEnd({ animated: false });
-              }
+              scrollToLatestIfNeeded();
             }}
-            renderItem={({ item }) => {
+            onLayout={scrollToLatestIfNeeded}
+            renderItem={({ item, index }) => {
+              // 다음 아이템의 시간과 비교하여 같은 시간에 보낸 것인지 확인
+              const currentTime = getHourMinute(item.createdAt);
+              const nextItem = index > 0 ? timelineItems[index - 1] : null;
+              const nextTime = nextItem ? getHourMinute(nextItem.createdAt) : null;
+              const isLastInTime = !nextTime || currentTime !== nextTime;
+
               if (item.type === 'memo') {
                 const memo = item as Memo;
                 return (
                   <ChatMessageItem
                     item={memo}
                     expanded={expandedMemoId === memo.id}
+                    showTime={isLastInTime}
                     onToggleExpand={(m) => setExpandedMemoId(expandedMemoId === m.id ? null : m.id)}
                     onLongPress={handleContextMenu}
                     onOpenLinkModal={handleOpenLinkModal}
@@ -920,6 +977,7 @@ const MainScreen = () => {
                   onContextMenu={handleContextMenu}
                   onDetailPress={handleDetailPress}
                   onPress={handleDetailPress}
+                  showTime={isLastInTime}
                   isExpanded={boardExpandStates[(item as Board).id] ?? true}
                   onExpandChange={(id, expanded) => setBoardExpandStates(prev => ({ ...prev, [id]: expanded }))}
                   expandedNoteIds={Object.keys(noteExpandStates).filter(key => {
@@ -943,13 +1001,17 @@ const MainScreen = () => {
           />
         </View>
 
-        <View style={Platform.OS === 'android' ? { marginBottom: androidInputOffset } : null}>
+        <View
+          style={[
+            styles['main-inputBarWrapper'],
+            Platform.OS === 'android' && keyboardVisible && styles['main-inputBarWrapper-keyboardVisible'],
+          ]}>
           <ChatInputBar
             inputText={inputText}
             onChangeText={setInputText}
             onSend={handleSend}
             onPlusPress={() => setMediaPickerVisible(true)}
-            bottomInset={insets.bottom}
+            bottomInset={Platform.OS === 'ios' && keyboardVisible ? 0 : insets.bottom}
           />
         </View>
       </KeyboardAvoidingView>
@@ -1492,8 +1554,8 @@ const MainScreen = () => {
       {/* 이미지 뷰어 모달 */}
       <ImageViewerModal
         visible={imageViewerVisible}
-        imageUris={imageViewerUris}
-        initialIndex={imageViewerIndex}
+        imageUris={allImageUris}
+        initialIndex={allImageUris.indexOf(selectedImageUri || '')}
         onClose={() => setImageViewerVisible(false)}
       />
     </SafeAreaView>

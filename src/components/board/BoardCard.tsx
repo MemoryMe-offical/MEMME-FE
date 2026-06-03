@@ -38,6 +38,7 @@ interface BoardCardProps {
   onContextMenu: (board: Board) => void;
   onDetailPress: (board: Board, noteId?: string) => void;
   onPress?: (board: Board) => void;
+  showTime?: boolean;
   isExpanded?: boolean;
   onExpandChange?: (id: string, expanded: boolean) => void;
   expandedNoteIds?: string[];
@@ -48,6 +49,7 @@ const BoardCard = ({
   item,
   onContextMenu,
   onDetailPress,
+  showTime = true,
   isExpanded: propsIsExpanded,
   onExpandChange,
   expandedNoteIds: propsExpandedNoteIds,
@@ -115,7 +117,7 @@ const BoardCard = ({
 
   return (
     <View style={styles['card-row']}>
-      <Text style={styles['card-time']}>{formatTime(item.createdAt)}</Text>
+      {showTime && <Text style={styles['card-time']}>{formatTime(item.createdAt)}</Text>}
       <View
         onLongPress={() => onContextMenu(item)}
         style={styles['card-wrapper']}>

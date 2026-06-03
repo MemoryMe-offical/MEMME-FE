@@ -5,10 +5,11 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
-  Alert,
   Modal,
   StyleSheet,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Board, Memo } from '../../types';
@@ -16,6 +17,7 @@ import TagInput from '../common/TagInput';
 import { ArrowLeftIcon, CloseIcon, SearchIcon, PlusCircleIcon } from '../common/Icons';
 import * as memoConvertService from '../../services/memoConvertService';
 import * as memoService from '../../services/memoService';
+import { useAlert } from '../../context/AlertContext';
 
 type Step = 'list' | 'new-board' | 'add-to-board';
 
@@ -50,6 +52,7 @@ const MemoConvertSheet = ({
   onClose,
 }: MemoConvertSheetProps) => {
   const insets = useSafeAreaInsets();
+  const { showAlert } = useAlert();
 
   const [step, setStep] = useState<Step>('list');
   const [selectedBoard, setSelectedBoard] = useState<Board | null>(null);
@@ -113,11 +116,11 @@ const MemoConvertSheet = ({
 
   const handleCreateNewBoard = async () => {
     if (!boardTitle.trim()) {
-      Alert.alert('알림', '보드 제목을 입력해주세요.');
+      showAlert({ title: '알림', message: '보드 제목을 입력해주세요.' });
       return;
     }
     if (!newNoteTitle.trim()) {
-      Alert.alert('알림', '노트 이름을 입력해주세요.');
+      showAlert({ title: '알림', message: '노트 이름을 입력해주세요.' });
       return;
     }
 
@@ -143,7 +146,7 @@ const MemoConvertSheet = ({
       handleClose();
     } catch (error) {
       console.error('Failed to convert memo to new board:', error);
-      Alert.alert('오류', '변환 중 문제가 발생했습니다. 다시 시도해주세요.');
+      showAlert({ title: '오류', message: '변환 중 문제가 발생했습니다. 다시 시도해주세요.', type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -152,7 +155,7 @@ const MemoConvertSheet = ({
   const handleAddToBoard = async () => {
     if (!selectedBoard) return;
     if (!addNoteTitle.trim()) {
-      Alert.alert('알림', '노트 이름을 입력해주세요.');
+      showAlert({ title: '알림', message: '노트 이름을 입력해주세요.' });
       return;
     }
 
@@ -180,7 +183,7 @@ const MemoConvertSheet = ({
       handleClose();
     } catch (error) {
       console.error('Failed to convert memo to existing board:', error);
-      Alert.alert('오류', '추가 중 문제가 발생했습니다. 다시 시도해주세요.');
+      showAlert({ title: '오류', message: '추가 중 문제가 발생했습니다. 다시 시도해주세요.', type: 'error' });
     } finally {
       setIsLoading(false);
     }
@@ -193,13 +196,16 @@ const MemoConvertSheet = ({
       animationType="slide"
       onRequestClose={handleClose}>
       {/* 배경 오버레이 — Step 1에서만 탭하여 닫기 */}
-      <TouchableOpacity
-        style={styles['modal-overlay']}
-        activeOpacity={1}
-        onPress={step === 'list' ? handleClose : undefined}>
-        <View
-          style={[styles['modal-sheet'], { paddingBottom: insets.bottom + 20 }]}
-          onStartShouldSetResponder={() => true}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <TouchableOpacity
+          style={styles['modal-overlay']}
+          activeOpacity={1}
+          onPress={step === 'list' ? handleClose : undefined}>
+          <View
+            style={[styles['modal-sheet'], { paddingBottom: insets.bottom + 20 }]}
+            onStartShouldSetResponder={() => true}>
           <View style={styles['modal-handle']} />
 
           {/* ── Step 1: 목적지 선택 ── */}
@@ -401,8 +407,9 @@ const MemoConvertSheet = ({
               </ScrollView>
             </>
           )}
-        </View>
-      </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };

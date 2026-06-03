@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
   StyleSheet,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -61,7 +63,6 @@ const BoardPickerBottomSheet = ({
       const data = await timelineService.fetchTimeline({
         type: 'board',
         sort: 'updatedAt',
-        order: 'desc',
       });
       const allBoards = (Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : [])) as Board[];
       setBoards(allBoards.length > 0 ? allBoards : (initialBoards ?? []));
@@ -91,67 +92,71 @@ const BoardPickerBottomSheet = ({
       transparent
       animationType="slide"
       onRequestClose={onClose}>
-      <TouchableOpacity
-        style={styles['modal-overlay']}
-        activeOpacity={1}
-        onPress={onClose}>
-        <View
-          style={[styles['modal-sheet'], { paddingBottom: insets.bottom + 20 }]}
-          onStartShouldSetResponder={() => true}>
-          <View style={styles['modal-handle']} />
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <TouchableOpacity
+          style={styles['modal-overlay']}
+          activeOpacity={1}
+          onPress={onClose}>
+          <View
+            style={[styles['modal-sheet'], { paddingBottom: insets.bottom + 20 }]}
+            onStartShouldSetResponder={() => true}>
+            <View style={styles['modal-handle']} />
 
-          {/* 헤더 */}
-          <View style={styles.header}>
-            <Text style={styles.title}>{title}</Text>
-            <TouchableOpacity onPress={onClose} hitSlop={8}>
-              <CloseIcon color="#9DAFC8" size={20} />
-            </TouchableOpacity>
+            {/* 헤더 */}
+            <View style={styles.header}>
+              <Text style={styles.title}>{title}</Text>
+              <TouchableOpacity onPress={onClose} hitSlop={8}>
+                <CloseIcon color="#9DAFC8" size={20} />
+              </TouchableOpacity>
+            </View>
+
+            {/* 검색 */}
+            <View style={styles['search-row']}>
+              <SearchIcon color="#AABBCC" size={16} />
+              <TextInput
+                style={styles['search-input']}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                placeholder="보드 검색..."
+                placeholderTextColor="#AABBCC"
+                returnKeyType="search"
+              />
+            </View>
+
+            {/* 정렬 레이블 */}
+            <Text style={styles['sort-label']}>최근 수정순</Text>
+
+            {/* 보드 목록 */}
+            <ScrollView
+              style={styles['board-list']}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}>
+              {filteredBoards.length === 0 ? (
+                <Text style={styles['empty-text']}>
+                  {searchQuery.trim() ? '검색 결과가 없습니다.' : '보드가 없습니다.'}
+                </Text>
+              ) : (
+                filteredBoards.map(board => (
+                  <TouchableOpacity
+                    key={board.id}
+                    style={styles['board-item']}
+                    onPress={() => onSelect(board)}
+                    activeOpacity={0.7}>
+                    <Text style={styles['board-item-title']} numberOfLines={1}>
+                      {board.title}
+                    </Text>
+                    <Text style={styles['board-item-time']}>
+                      {formatRelativeTime(board.updatedAt ?? board.createdAt)}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              )}
+            </ScrollView>
           </View>
-
-          {/* 검색 */}
-          <View style={styles['search-row']}>
-            <SearchIcon color="#AABBCC" size={16} />
-            <TextInput
-              style={styles['search-input']}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="보드 검색..."
-              placeholderTextColor="#AABBCC"
-              returnKeyType="search"
-            />
-          </View>
-
-          {/* 정렬 레이블 */}
-          <Text style={styles['sort-label']}>최근 수정순</Text>
-
-          {/* 보드 목록 */}
-          <ScrollView
-            style={styles['board-list']}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}>
-            {filteredBoards.length === 0 ? (
-              <Text style={styles['empty-text']}>
-                {searchQuery.trim() ? '검색 결과가 없습니다.' : '보드가 없습니다.'}
-              </Text>
-            ) : (
-              filteredBoards.map(board => (
-                <TouchableOpacity
-                  key={board.id}
-                  style={styles['board-item']}
-                  onPress={() => onSelect(board)}
-                  activeOpacity={0.7}>
-                  <Text style={styles['board-item-title']} numberOfLines={1}>
-                    {board.title}
-                  </Text>
-                  <Text style={styles['board-item-time']}>
-                    {formatRelativeTime(board.updatedAt ?? board.createdAt)}
-                  </Text>
-                </TouchableOpacity>
-              ))
-            )}
-          </ScrollView>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };

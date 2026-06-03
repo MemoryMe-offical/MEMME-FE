@@ -4,7 +4,6 @@ import {
   Text,
   TouchableOpacity,
   ScrollView,
-  Alert,
   StyleSheet,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -12,39 +11,45 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { ArrowLeftIcon } from '../components/common/Icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAlert } from '../context/AlertContext';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
 const SettingsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
+  const { showAlert, showConfirm } = useAlert();
 
   const handleLogout = () => {
-    Alert.alert('로그아웃', '로그아웃하시겠습니까?', [
-      { text: '취소', style: 'cancel' },
-      {
-        text: '로그아웃',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            // AsyncStorage에서 인증 정보 삭제
-            await AsyncStorage.multiRemove([
-              'accessToken',
-              'refreshToken',
-              'userId',
-              'AUTO_LOGIN',
-            ]);
-            // 로그인 화면으로 이동
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'Login' }],
-            });
-          } catch (error) {
-            console.error('Failed to logout:', error);
-            Alert.alert('오류', '로그아웃에 실패했습니다.');
-          }
-        },
+    showConfirm({
+      title: '로그아웃',
+      message: '로그아웃하시겠습니까?',
+      confirmText: '로그아웃',
+      cancelText: '취소',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          // AsyncStorage에서 인증 정보 삭제
+          await AsyncStorage.multiRemove([
+            'accessToken',
+            'refreshToken',
+            'userId',
+            'AUTO_LOGIN',
+          ]);
+          // 로그인 화면으로 이동
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          });
+        } catch (error) {
+          console.error('Failed to logout:', error);
+          showAlert({
+            title: '오류',
+            message: '로그아웃에 실패했습니다.',
+            type: 'error',
+          });
+        }
       },
-    ]);
+    });
   };
 
   return (

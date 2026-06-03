@@ -4,7 +4,6 @@ import {
   Modal,
   TouchableOpacity,
   Text,
-  Alert,
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,6 +11,7 @@ import { launchImageLibrary } from 'react-native-image-picker';
 import { pick, types, isErrorWithCode, errorCodes } from '@react-native-documents/picker';
 import { ImageIcon, VideoIcon, FileIcon, CloseIcon } from '../common/Icons';
 import { mediaPickerSheetStyles as styles } from '../../styles/MediaPickerSheet.styles';
+import { useAlert } from '../../context/AlertContext';
 
 interface MediaPickerSheetProps {
   visible: boolean;
@@ -31,6 +31,7 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
   isLoading = false,
 }) => {
   const insets = useSafeAreaInsets();
+  const { showAlert } = useAlert();
 
   const handlePickImages = useCallback(async () => {
     try {
@@ -42,15 +43,15 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
       if (result.assets && result.assets.length > 0) {
         const uris = result.assets.map(asset => asset.uri).filter((uri): uri is string => !!uri);
         if (uris.length > 0) {
-          onClose();
           onPickImages(uris);
+          onClose();
         }
       }
     } catch (error) {
       console.error('Failed to pick images:', error);
-      Alert.alert('오류', '이미지 선택에 실패했습니다.');
+      showAlert({ title: '오류', message: '이미지 선택에 실패했습니다.', type: 'error' });
     }
-  }, [onPickImages, onClose]);
+  }, [onPickImages, onClose, showAlert]);
 
   const handlePickVideo = useCallback(async () => {
     try {
@@ -60,14 +61,14 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
       });
 
       if (result.assets && result.assets[0]?.uri) {
-        onClose();
         onPickVideo(result.assets[0].uri);
+        onClose();
       }
     } catch (error) {
       console.error('Failed to pick video:', error);
-      Alert.alert('오류', '동영상 선택에 실패했습니다.');
+      showAlert({ title: '오류', message: '동영상 선택에 실패했습니다.', type: 'error' });
     }
-  }, [onPickVideo, onClose]);
+  }, [onPickVideo, onClose, showAlert]);
 
   const handlePickFile = useCallback(async () => {
     try {
@@ -80,8 +81,8 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
         // 한 개씩 처리 (여러 개는 UI에서 마지막 하나만 사용)
         const file = result[result.length - 1];
         if (file.uri && file.name) {
-          onClose();
           onPickFile(file.uri, file.name);
+          onClose();
         }
       }
     } catch (err: any) {

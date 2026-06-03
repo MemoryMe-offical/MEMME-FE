@@ -12,6 +12,7 @@ import {
   StatusBar,
   Dimensions,
   Linking,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Board, TimelineItem, Memo, FileAttachment, OgData } from '../../types';
@@ -50,6 +51,10 @@ interface Props {
 const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBookmarkPress, isBookmarkFilterActive, onBookmarkFilterToggle, onMediaGalleryPress }: Props) => {
   const slideAnim = useRef(new Animated.Value(SIDE_MENU_WIDTH)).current;
   const insets = useSafeAreaInsets();
+  const panelTopInset =
+    Platform.OS === 'android'
+      ? Math.max(insets.top, StatusBar.currentHeight ?? 0)
+      : insets.top;
   const [cachedOgData, setCachedOgData] = useState<{ [url: string]: OgData }>({});
   const [imageViewerState, setImageViewerState] = useState({
     visible: false,
@@ -60,6 +65,9 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
   useEffect(() => {
     if (visible) {
       slideAnim.setValue(SIDE_MENU_WIDTH);
+      if (Platform.OS === 'android') {
+        StatusBar.setBackgroundColor('transparent');
+      }
       Animated.spring(slideAnim, {
         toValue: 0,
         bounciness: 3,
@@ -70,9 +78,10 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
   }, [visible, slideAnim]);
 
   const handleClose = () => {
-    Animated.timing(slideAnim, {
+    Animated.spring(slideAnim, {
       toValue: SIDE_MENU_WIDTH,
-      duration: 220,
+      bounciness: 3,
+      speed: 14,
       useNativeDriver: true,
     }).start(() => onClose());
   };
@@ -210,10 +219,10 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
       visible={visible}
       transparent
       animationType="none"
-      statusBarTranslucent
+      statusBarTranslucent={false}
       onRequestClose={handleClose}
     >
-      <StatusBar barStyle="light-content" backgroundColor="rgba(0, 0, 0, 0.38)" />
+      <StatusBar barStyle="light-content" backgroundColor="transparent" />
 
       <View style={styles['sideMenu-overlay']}>
         {/* 백드롭 */}
@@ -228,8 +237,8 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
           style={[
             styles['sideMenu-panel'],
             {
-              marginTop: insets.top,
-              height: SCREEN_HEIGHT - insets.top - insets.bottom,
+              marginTop: panelTopInset,
+              height: SCREEN_HEIGHT - panelTopInset - insets.bottom,
               transform: [{ translateX: slideAnim }],
             },
           ]}

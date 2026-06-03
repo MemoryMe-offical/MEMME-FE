@@ -5,12 +5,12 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import * as noteService from '../../services/noteService';
 import * as boardService from '../../services/boardService';
 import { Board } from '../../types';
 import BoardPickerBottomSheet from '../common/BoardPickerBottomSheet';
+import { useAlert } from '../../context/AlertContext';
 
 interface NoteActionBarProps {
   selectedCount: number;
@@ -31,40 +31,37 @@ const NoteActionBar = ({
 }: NoteActionBarProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const [showBoardPicker, setShowBoardPicker] = useState(false);
+  const { showAlert, showConfirm } = useAlert();
 
   const handleDeleteNotes = () => {
-    Alert.alert(
-      '노트 삭제',
-      `${selectedCount}개 노트를 삭제하시겠습니까?`,
-      [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '삭제',
-          style: 'destructive',
-          onPress: async () => {
-            setIsLoading(true);
-            try {
-              await Promise.all(
-                selectedNoteIds.map(noteId =>
-                  noteService.deleteNote(currentBoardId, noteId)
-                )
-              );
-              onDeleteSuccess();
-            } catch (error) {
-              console.error('Failed to delete notes:', error);
-              Alert.alert('오류', '노트 삭제에 실패했습니다.');
-            } finally {
-              setIsLoading(false);
-            }
-          },
-        },
-      ]
-    );
+    showConfirm({
+      title: '노트 삭제',
+      message: `${selectedCount}개 노트를 삭제하시겠습니까?`,
+      confirmText: '삭제',
+      cancelText: '취소',
+      destructive: true,
+      onConfirm: async () => {
+        setIsLoading(true);
+        try {
+          await Promise.all(
+            selectedNoteIds.map(noteId =>
+              noteService.deleteNote(currentBoardId, noteId)
+            )
+          );
+          onDeleteSuccess();
+        } catch (error) {
+          console.error('Failed to delete notes:', error);
+          showAlert({ title: '오류', message: '노트 삭제에 실패했습니다.', type: 'error' });
+        } finally {
+          setIsLoading(false);
+        }
+      },
+    });
   };
 
   const handleMoveNotes = async (targetBoard: Board) => {
     if (targetBoard.id === currentBoardId) {
-      Alert.alert('안내', '같은 보드입니다.');
+      showAlert({ title: '안내', message: '같은 보드입니다.' });
       return;
     }
 
@@ -75,7 +72,7 @@ const NoteActionBar = ({
       setShowBoardPicker(false);
     } catch (error) {
       console.error('Failed to move notes:', error);
-      Alert.alert('오류', '노트 이동에 실패했습니다.');
+      showAlert({ title: '오류', message: '노트 이동에 실패했습니다.', type: 'error' });
     } finally {
       setIsLoading(false);
     }

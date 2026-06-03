@@ -23,6 +23,8 @@ const transformBoard = (data: any): Board => {
         id: note.uid,
         title: note.title,
         content: note.content,
+        createdAt: note.createdAt,
+        updatedAt: note.updatedAt,
         imageUris: note.imageUris,
         videoUris: note.videoUris,
         imageKeys: note.imageKeys,

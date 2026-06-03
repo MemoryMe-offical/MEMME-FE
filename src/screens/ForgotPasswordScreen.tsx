@@ -6,18 +6,19 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { forgotPasswordStyles as styles } from '../styles/ForgotPasswordScreen.styles';
+import { useAlert } from '../context/AlertContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const ForgotPasswordScreen = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { showAlert, showConfirm } = useAlert();
   const [email, setEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -31,7 +32,7 @@ const ForgotPasswordScreen = () => {
   // 1단계: 이메일 인증번호 발송
   const handleSendCode = () => {
     if (!email) {
-      Alert.alert('알림', '이메일을 입력해주세요.');
+      showAlert({ title: '알림', message: '이메일을 입력해주세요.' });
       return;
     }
 
@@ -40,7 +41,7 @@ const ForgotPasswordScreen = () => {
     setIsCodeSent(true);
     setTimer(180); // 3분
 
-    Alert.alert('인증번호 발송', '이메일로 인증번호가 발송되었습니다.');
+    showAlert({ title: '인증번호 발송', message: '이메일로 인증번호가 발송되었습니다.', type: 'success' });
 
     // 타이머 시작
     const interval = setInterval(() => {
@@ -57,7 +58,7 @@ const ForgotPasswordScreen = () => {
   // 2단계: 인증번호 확인
   const handleVerifyCode = () => {
     if (!verificationCode) {
-      Alert.alert('알림', '인증번호를 입력해주세요.');
+      showAlert({ title: '알림', message: '인증번호를 입력해주세요.' });
       return;
     }
 
@@ -66,39 +67,37 @@ const ForgotPasswordScreen = () => {
 
     // 인증 성공 → 비밀번호 재설정 단계로
     setStep(3);
-    Alert.alert('인증 완료', '이메일 인증이 완료되었습니다.\n새 비밀번호를 설정해주세요.');
+    showAlert({ title: '인증 완료', message: '이메일 인증이 완료되었습니다.\n새 비밀번호를 설정해주세요.', type: 'success' });
   };
 
   // 3단계: 비밀번호 재설정
   const handleResetPassword = () => {
     if (!newPassword || !newPasswordConfirm) {
-      Alert.alert('알림', '새 비밀번호를 입력해주세요.');
+      showAlert({ title: '알림', message: '새 비밀번호를 입력해주세요.' });
       return;
     }
 
     if (newPassword !== newPasswordConfirm) {
-      Alert.alert('알림', '비밀번호가 일치하지 않습니다.');
+      showAlert({ title: '알림', message: '비밀번호가 일치하지 않습니다.' });
       return;
     }
 
     if (newPassword.length < 6) {
-      Alert.alert('알림', '비밀번호는 6자 이상이어야 합니다.');
+      showAlert({ title: '알림', message: '비밀번호는 6자 이상이어야 합니다.' });
       return;
     }
 
     // TODO: 비밀번호 재설정 API 연동
     console.log('비밀번호 재설정:', { email, newPassword });
 
-    Alert.alert(
-      '완료',
-      '비밀번호가 성공적으로 변경되었습니다.\n로그인 화면으로 이동합니다.',
-      [
-        {
-          text: '확인',
-          onPress: () => navigation.navigate('Login'),
-        },
-      ]
-    );
+    showConfirm({
+      title: '완료',
+      message: '비밀번호가 성공적으로 변경되었습니다.\n로그인 화면으로 이동합니다.',
+      confirmText: '확인',
+      cancelText: undefined,
+      destructive: false,
+      onConfirm: () => navigation.navigate('Login'),
+    });
   };
 
   const handleBack = () => {
