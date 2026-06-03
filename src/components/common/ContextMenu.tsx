@@ -93,7 +93,7 @@ const ContextMenu = ({
           ]}>
           {/* 복사 - 메모의 텍스트/이미지만 */}
           {showCopyButton && onCopy && (
-            <>
+            <View>
               <TouchableOpacity
                 style={styles['contextMenu-item']}
                 onPress={() => handleAction(onCopy)}
@@ -103,7 +103,7 @@ const ContextMenu = ({
               </TouchableOpacity>
 
               <View style={styles['contextMenu-separator']} />
-            </>
+            </View>
           )}
 
           {/* 북마크 */}

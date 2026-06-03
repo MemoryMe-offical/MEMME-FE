@@ -1046,7 +1046,7 @@ const MainScreen = () => {
             </View>
           ) : null}
 
-            // 일반 타임라인 리스트
+            {/* 일반 타임라인 리스트 */}
             <FlatList<TimelineItem>
               ref={flatListRef}
               data={timelineItems}
@@ -1121,19 +1121,21 @@ const MainScreen = () => {
             />
         </View>
 
-        <View
-          style={[
-            styles['main-inputBarWrapper'],
-            Platform.OS === 'android' && keyboardVisible && styles['main-inputBarWrapper-keyboardVisible'],
-          ]}>
-          <ChatInputBar
-            inputText={inputText}
-            onChangeText={setInputText}
-            onSend={handleSend}
-            onPlusPress={() => setMediaPickerVisible(true)}
-            bottomInset={Platform.OS === 'ios' && keyboardVisible ? 0 : insets.bottom}
-          />
-        </View>
+        {!isSearchMode && (
+          <View
+            style={[
+              styles['main-inputBarWrapper'],
+              Platform.OS === 'android' && keyboardVisible && styles['main-inputBarWrapper-keyboardVisible'],
+            ]}>
+            <ChatInputBar
+              inputText={inputText}
+              onChangeText={setInputText}
+              onSend={handleSend}
+              onPlusPress={() => setMediaPickerVisible(true)}
+              bottomInset={Platform.OS === 'ios' && keyboardVisible ? 0 : insets.bottom}
+            />
+          </View>
+        )}
       </KeyboardAvoidingView>
 
       {/* 미디어 피커 시트 */}
