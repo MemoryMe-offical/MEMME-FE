@@ -9,7 +9,7 @@ export const chatMessageItemStyles = StyleSheet.create({
   'container': {
     width: '100%',
     alignSelf: 'flex-end',
-    marginBottom: 12,
+    marginBottom: 8,
   },
 
   // 메시지 + 시간 행
