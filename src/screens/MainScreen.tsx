@@ -14,6 +14,9 @@ import {
   Keyboard,
   Modal,
   ScrollView,
+  Clipboard,
+  ToastAndroid,
+  Animated,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -543,13 +546,31 @@ const MainScreen = () => {
   const handleContextMenu = (item: TimelineItem) => setContextMenuItem(item);
   const handleCloseContextMenu = () => setContextMenuItem(null);
 
-  const handleContextCopy = () => {
+  const handleContextCopy = async () => {
     if (!contextMenuItem) return;
-    const text =
-      contextMenuItem.type === 'memo'
-        ? contextMenuItem.text
-        : contextMenuItem.title;
-    showAlert({ title: '복사됨', message: text, type: 'success' });
+    if (contextMenuItem.type !== 'memo') return;
+
+    const memo = contextMenuItem as Memo;
+
+    try {
+      // 텍스트 메모
+      if (memo.text && !memo.imageUris?.length && !memo.videos?.length && !memo.files?.length) {
+        await Clipboard.setString(memo.text);
+        ToastAndroid.show('텍스트 복사됨', ToastAndroid.SHORT);
+        return;
+      }
+
+      // 이미지 메모
+      if (memo.imageUris?.length) {
+        // 첫 번째 이미지 URL을 클립보드에 복사
+        await Clipboard.setString(memo.imageUris[0]);
+        ToastAndroid.show(`${memo.imageUris.length}개의 이미지 복사됨`, ToastAndroid.SHORT);
+        return;
+      }
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+      ToastAndroid.show('복사 실패', ToastAndroid.SHORT);
+    }
   };
 
   const handleContextBookmark = async () => {
@@ -1458,6 +1479,16 @@ const MainScreen = () => {
         visible={contextMenuItem !== null}
         itemType={contextMenuItem?.type ?? 'memo'}
         isBookmarked={contextMenuItem?.bookmarked ?? false}
+        showCopyButton={
+          contextMenuItem?.type === 'memo' && (
+            // 텍스트 메모 또는 이미지 메모만
+            (!((contextMenuItem as Memo).imageUris?.length || (contextMenuItem as Memo).videos?.length || (contextMenuItem as Memo).files?.length)) ||
+            (contextMenuItem as Memo).imageUris?.length > 0
+          )
+        }
+        copyLabel={
+          (contextMenuItem as Memo)?.imageUris?.length > 0 ? '이미지 복사' : '내용 복사'
+        }
         onCopy={handleContextCopy}
         onBookmark={handleContextBookmark}
         onConvert={handleContextConvert}

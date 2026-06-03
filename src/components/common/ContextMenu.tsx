@@ -15,7 +15,9 @@ interface ContextMenuProps {
   visible: boolean;
   itemType: 'memo' | 'board';
   isBookmarked: boolean;
-  onCopy: () => void;
+  showCopyButton?: boolean;
+  copyLabel?: string;
+  onCopy?: () => void;
   onBookmark: () => void;
   onConvert: () => void;
   onDelete: () => void;
@@ -26,6 +28,8 @@ const ContextMenu = ({
   visible,
   itemType,
   isBookmarked,
+  showCopyButton = false,
+  copyLabel = '내용 복사',
   onCopy,
   onBookmark,
   onConvert,
@@ -64,7 +68,6 @@ const ContextMenu = ({
     }).start(() => onClose());
   };
 
-  const copyLabel = itemType === 'memo' ? '내용 복사' : '제목 복사';
   const convertLabel = itemType === 'memo' ? '보드로 변환' : '메모로 변환';
 
   return (
@@ -88,16 +91,20 @@ const ContextMenu = ({
             styles['contextMenu-card'],
             { transform: [{ scale: fadeAnim.interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) }] },
           ]}>
-          {/* 복사 */}
-          <TouchableOpacity
-            style={styles['contextMenu-item']}
-            onPress={() => handleAction(onCopy)}
-            activeOpacity={0.6}>
-            <Text style={styles['contextMenu-item-text']}>{copyLabel}</Text>
-            <CopyIcon color="#3A3A3A" size={20} />
-          </TouchableOpacity>
+          {/* 복사 - 메모의 텍스트/이미지만 */}
+          {showCopyButton && onCopy && (
+            <>
+              <TouchableOpacity
+                style={styles['contextMenu-item']}
+                onPress={() => handleAction(onCopy)}
+                activeOpacity={0.6}>
+                <Text style={styles['contextMenu-item-text']}>{copyLabel}</Text>
+                <CopyIcon color="#3A3A3A" size={20} />
+              </TouchableOpacity>
 
-          <View style={styles['contextMenu-separator']} />
+              <View style={styles['contextMenu-separator']} />
+            </>
+          )}
 
           {/* 북마크 */}
           <TouchableOpacity
