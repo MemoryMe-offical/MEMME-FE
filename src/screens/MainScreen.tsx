@@ -137,10 +137,12 @@ const MainScreen = () => {
   // 검색 & 필터
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [searchText, setSearchText] = useState('');
-  const [filterType, setFilterType] = useState<'all' | 'memo' | 'board'>('all');
   const [filterBookmarkOnly, setFilterBookmarkOnly] = useState(false);
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [isTagFilterVisible, setIsTagFilterVisible] = useState(false);
+
+  // 검색 필터
+  type SearchFieldFilter = 'memoTextOnly' | 'board' | 'note' | 'tag' | 'photo' | 'video' | 'file';
+  const [searchFieldFilters, setSearchFieldFilters] = useState<Set<SearchFieldFilter>>(new Set());
+  const [isSearchFilterVisible, setIsSearchFilterVisible] = useState(false);
 
   // 검색 API 관련 state
   const [isLoadingSearch, setIsLoadingSearch] = useState(false);
@@ -227,19 +229,64 @@ const MainScreen = () => {
   const filteredItems = useMemo(() => {
     let result = items;
 
-    // 검색 모드일 때는 API 응답 결과로만 필터링
-    if (isSearchMode && searchResults.length > 0) {
+    // 필터가 선택되어 있으면 항상 적용 (검색 모드 여부 상관없음)
+    if (searchFieldFilters.size > 0) {
+      result = result.filter(item => {
+        for (const filter of searchFieldFilters) {
+          // 타입 필터
+          if (filter === 'memoTextOnly') {
+            if (item.type === 'memo') {
+              const memo = item as Memo;
+              // 미디어가 없는 순수 텍스트 메모만
+              if (!memo.imageUris?.length && !memo.videos?.length && !memo.files?.length) {
+                return true;
+              }
+            }
+          }
+          if (filter === 'board' && item.type === 'board') return true;
+          if (filter === 'note' && item.type === 'board') {
+            // 노트는 보드 내에 있으므로 보드를 표시
+            return true;
+          }
+
+          // 미디어/태그 필터
+          if (filter === 'tag') {
+            if (item.type === 'board' && (item as Board).tags?.length > 0) return true;
+          }
+
+          if (filter === 'photo') {
+            if (item.type === 'memo' && (item as Memo).imageUris?.length > 0) return true;
+            if (item.type === 'board') {
+              const board = item as Board;
+              if (board.notes?.some(n => n.imageUris?.length > 0)) return true;
+            }
+          }
+
+          if (filter === 'video') {
+            if (item.type === 'memo' && (item as Memo).videos?.length > 0) return true;
+            if (item.type === 'board') {
+              const board = item as Board;
+              if (board.notes?.some(n => n.videos?.length > 0)) return true;
+            }
+          }
+
+          if (filter === 'file') {
+            if (item.type === 'memo' && (item as Memo).files?.length > 0) return true;
+            if (item.type === 'board') {
+              const board = item as Board;
+              if (board.notes?.some(n => n.files?.length > 0)) return true;
+            }
+          }
+        }
+        return false;
+      });
+    }
+
+    // 검색 모드이고 필터가 없을 때는 API 검색 결과로 필터링
+    if (isSearchMode && searchResults.length > 0 && searchFieldFilters.size === 0) {
       const searchUids = new Set(searchResults.map(r => r.uid));
       result = result.filter(i => searchUids.has(i.id));
       return result;
-    }
-
-    // 검색 모드가 아닐 때는 기존 필터링 로직
-    // 타입 필터
-    if (filterType === 'memo') {
-      result = result.filter(i => i.type === 'memo');
-    } else if (filterType === 'board') {
-      result = result.filter(i => i.type === 'board');
     }
 
     // 북마크 필터
@@ -247,54 +294,8 @@ const MainScreen = () => {
       result = result.filter(i => i.bookmarked);
     }
 
-    // 태그 필터 (보드만)
-    if (selectedTags.length > 0) {
-      result = result.filter(i => {
-        if (i.type === 'board') {
-          const board = i as Board;
-          return selectedTags.some(tag => board.tags?.includes(tag));
-        }
-        return true;
-      });
-    }
-
-    // 검색 텍스트 필터
-    if (searchText.trim()) {
-      const query = searchText.toLowerCase();
-
-      // 태그 검색 (# 포함)
-      if (query.startsWith('#')) {
-        const tagQuery = query.substring(1).trim();
-        result = result.filter(i => {
-          if (i.type === 'board') {
-            const board = i as Board;
-            return (board.tags ?? []).some(tag => (tag ?? '').toLowerCase().includes(tagQuery));
-          }
-          return false;
-        });
-      } else {
-        // 일반 텍스트 검색
-        result = result.filter(i => {
-          if (i.type === 'memo') {
-            return ((i as Memo).text ?? '').toLowerCase().includes(query);
-          } else {
-            const board = i as Board;
-            // 보드 제목 검색
-            if ((board.title ?? '').toLowerCase().includes(query)) {
-              return true;
-            }
-            // 보드 내 노트 제목, 내용 검색
-            return (board.notes ?? []).some(note =>
-              note.title?.toLowerCase().includes(query) ||
-              note.content?.toLowerCase().includes(query)
-            );
-          }
-        });
-      }
-    }
-
     return result;
-  }, [items, filterType, filterBookmarkOnly, searchText, selectedTags, isSearchMode, searchResults]);
+  }, [items, isSearchMode, searchResults, searchFieldFilters, filterBookmarkOnly]);
 
   const timelineItems = useMemo(() => [...filteredItems].reverse(), [filteredItems]);
 
@@ -929,7 +930,7 @@ const MainScreen = () => {
       <View style={styles['main-header']}>
         {isSearchMode ? (
           <>
-            <TouchableOpacity onPress={() => { setIsSearchMode(false); setSearchText(''); }} style={styles['main-header-iconButton']}>
+            <TouchableOpacity onPress={() => { setIsSearchMode(false); setSearchText(''); setSearchFieldFilters(new Set()); }} style={styles['main-header-iconButton']}>
               <ArrowLeftIcon color="#1A1A1A" size={20} />
             </TouchableOpacity>
             <TextInput
@@ -941,10 +942,10 @@ const MainScreen = () => {
               autoFocus
             />
             <TouchableOpacity
-              style={[styles['main-header-iconButton'], selectedTags.length > 0 && { backgroundColor: '#E8EEFF' }]}
-              onPress={() => setIsTagFilterVisible(true)}>
-              <Text style={[{ fontSize: 10, fontWeight: '600', color: selectedTags.length > 0 ? '#588DFF' : '#1A1A1A' }]}>
-                필터
+              style={[styles['main-header-iconButton'], searchFieldFilters.size > 0 && { backgroundColor: '#E8EEFF' }]}
+              onPress={() => setIsSearchFilterVisible(true)}>
+              <Text style={[{ fontSize: 10, fontWeight: '600', color: searchFieldFilters.size > 0 ? '#588DFF' : '#1A1A1A' }]}>
+                {searchFieldFilters.size > 0 ? `필터 (${searchFieldFilters.size})` : '필터'}
               </Text>
             </TouchableOpacity>
           </>
@@ -1124,16 +1125,16 @@ const MainScreen = () => {
         isLoading={isUploadingMedia}
       />
 
-      {/* 태그 필터 모달 */}
+      {/* 검색 필터 모달 */}
       <Modal
-        visible={isTagFilterVisible}
+        visible={isSearchFilterVisible}
         transparent
         animationType="slide"
-        onRequestClose={() => setIsTagFilterVisible(false)}>
+        onRequestClose={() => setIsSearchFilterVisible(false)}>
         <TouchableOpacity
-          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)' }}
+          style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)' }}
           activeOpacity={1}
-          onPress={() => setIsTagFilterVisible(false)}>
+          onPress={() => setIsSearchFilterVisible(false)}>
           <View
             style={{
               backgroundColor: '#FFFFFF',
@@ -1143,80 +1144,67 @@ const MainScreen = () => {
               paddingHorizontal: 18,
               paddingBottom: Math.max(insets.bottom, 18),
               marginTop: 'auto',
-              maxHeight: '70%',
             }}
-            onStartShouldSetResponder={() => true}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+            onStartShouldSetResponder={() => true}
+            pointerEvents="auto">
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
               <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A1A', fontFamily: 'PretendardVariable' }}>
-                태그 필터
+                검색 필터
               </Text>
-              <TouchableOpacity onPress={() => setIsTagFilterVisible(false)}>
-                <Text style={{ fontSize: 24, color: '#9DAFC8' }}>✕</Text>
-              </TouchableOpacity>
+              <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                {searchFieldFilters.size > 0 && (
+                  <TouchableOpacity onPress={() => setSearchFieldFilters(new Set())}>
+                    <Text style={{ fontSize: 12, color: '#9DAFC8', fontWeight: '600', fontFamily: 'PretendardVariable' }}>
+                      초기화
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity onPress={() => setIsSearchFilterVisible(false)}>
+                  <Text style={{ fontSize: 24, color: '#9DAFC8' }}>✕</Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} style={{ marginBottom: 12 }}>
+            <ScrollView showsVerticalScrollIndicator={false}>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                {/* 모든 태그 */}
-                {Array.from(new Set(
-                  items
-                    .filter(i => i.type === 'board')
-                    .flatMap(i => (i as Board).tags ?? [])
-                )).map(tag => (
+                {(['memoTextOnly', 'board', 'note', 'tag', 'photo', 'video', 'file'] as SearchFieldFilter[]).map(filter => (
                   <TouchableOpacity
-                    key={tag}
+                    key={filter}
                     onPress={() => {
-                      setSelectedTags(prev =>
-                        prev.includes(tag)
-                          ? prev.filter(t => t !== tag)
-                          : [...prev, tag]
-                      );
+                      const newFilters = new Set(searchFieldFilters);
+                      if (newFilters.has(filter)) {
+                        newFilters.delete(filter);
+                      } else {
+                        newFilters.add(filter);
+                      }
+                      setSearchFieldFilters(newFilters);
                     }}
                     style={{
                       paddingHorizontal: 12,
                       paddingVertical: 6,
                       borderRadius: 20,
-                      backgroundColor: selectedTags.includes(tag) ? '#588DFF' : '#F0F4FF',
-                      borderWidth: selectedTags.includes(tag) ? 0 : 1,
+                      backgroundColor: searchFieldFilters.has(filter) ? '#588DFF' : '#F0F4FF',
+                      borderWidth: searchFieldFilters.has(filter) ? 0 : 1,
                       borderColor: '#C0CDD8',
                     }}>
                     <Text style={{
                       fontSize: 11,
                       fontWeight: '500',
-                      color: selectedTags.includes(tag) ? '#FFFFFF' : '#588DFF',
+                      color: searchFieldFilters.has(filter) ? '#FFFFFF' : '#588DFF',
                       fontFamily: 'PretendardVariable',
                     }}>
-                      #{tag}
+                      {filter === 'memoTextOnly' ? '메모(텍스트)' :
+                       filter === 'memo' ? '메모' :
+                       filter === 'board' ? '보드' :
+                       filter === 'note' ? '노트' :
+                       filter === 'tag' ? '태그' :
+                       filter === 'photo' ? '사진' :
+                       filter === 'video' ? '동영상' : '파일'}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
-
-              {Array.from(new Set(
-                items
-                  .filter(i => i.type === 'board')
-                  .flatMap(i => (i as Board).tags ?? [])
-              )).length === 0 && (
-                <Text style={{ fontSize: 12, color: '#AABBCC', fontFamily: 'PretendardVariable', textAlign: 'center', paddingVertical: 16 }}>
-                  사용 가능한 태그가 없습니다
-                </Text>
-              )}
             </ScrollView>
-
-            {selectedTags.length > 0 && (
-              <TouchableOpacity
-                onPress={() => setSelectedTags([])}
-                style={{
-                  paddingVertical: 8,
-                  alignItems: 'center',
-                  borderTopWidth: 1,
-                  borderTopColor: '#E8EEF8',
-                }}>
-                <Text style={{ fontSize: 12, color: '#9DAFC8', fontWeight: '600', fontFamily: 'PretendardVariable' }}>
-                  필터 초기화
-                </Text>
-              </TouchableOpacity>
-            )}
           </View>
         </TouchableOpacity>
       </Modal>
@@ -1235,6 +1223,7 @@ const MainScreen = () => {
         onBookmarkFilterToggle={(active) => {
           setFilterBookmarkOnly(active);
           setIsSearchMode(false);
+          setSearchFieldFilters(new Set());
         }}
         onMediaGalleryPress={(galleryType) => {
           navigation.navigate('MediaGallery', {
