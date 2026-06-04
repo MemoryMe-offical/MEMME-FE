@@ -9,7 +9,7 @@ export const chatMessageItemStyles = StyleSheet.create({
   'container': {
     width: '100%',
     alignSelf: 'flex-end',
-    marginBottom: 12,
+    marginBottom: 8,
   },
 
   // 메시지 + 시간 행
@@ -77,9 +77,7 @@ export const chatMessageItemStyles = StyleSheet.create({
 
   // 링크 관련 아이템들 컨테이너
   'links-container': {
-    gap: 8,
     alignItems: 'flex-end',
-    marginTop: 8,
     alignSelf: 'flex-end',
   },
 
