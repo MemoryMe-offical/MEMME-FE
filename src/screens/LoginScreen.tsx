@@ -281,9 +281,9 @@ const LoginScreen = () => {
 
               <View style={styles['login-inputContainer-optionsRow']}>
                 <TouchableOpacity onPress={handleFindPassword}>
-                  <Text style={styles['login-inputContainer-optionsRow-findPassword']}>
+                  {/* <Text style={styles['login-inputContainer-optionsRow-findPassword']}>
                     비밀번호 찾기
-                  </Text>
+                  </Text> */}
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -331,12 +331,12 @@ const LoginScreen = () => {
               </TouchableOpacity>
             </View>
 
-            <View style={styles['login-dividerContainer']}>
+            {/* <View style={styles['login-dividerContainer']}>
               <View style={styles['login-dividerContainer-line']} />
               <Text style={styles['login-dividerContainer-text']}>또는</Text>
               <View style={styles['login-dividerContainer-line']} />
-            </View>
-
+            </View> */}
+{/* 
             <View style={styles['login-socialContainer']}>
               <TouchableOpacity
                 style={styles['login-socialContainer-kakaoButton']}
@@ -358,7 +358,7 @@ const LoginScreen = () => {
                   style={styles['login-socialContainer-appleButton-image']}
                 />
               </TouchableOpacity>
-            </View>
+            </View> */}
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
