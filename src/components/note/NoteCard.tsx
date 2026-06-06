@@ -6,6 +6,13 @@ import ImageViewerModal from '../common/ImageViewerModal';
 import { fetchOgData } from '../../services/ogService';
 import LoadingImage from '../common/LoadingImage';
 
+const formatDate = (iso?: string): string => {
+  if (!iso) return '날짜 없음';
+  const date = new Date(iso);
+  if (isNaN(date.getTime())) return '날짜 없음';
+  return date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
 interface NoteCardProps {
   note: Note;
   onPress?: () => void;
@@ -279,6 +286,13 @@ const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: Not
               </View>
             );
         })()}
+
+        {/* 날짜 정보 */}
+        <View style={styles['date-info']}>
+          <Text style={styles['date-text']}>
+            {formatDate(note.updatedAt ?? note.createdAt)}
+          </Text>
+        </View>
       </TouchableOpacity>
 
       {/* 이미지 뷰어 모달 */}
@@ -330,6 +344,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E4ECFF',
     gap: 10,
+    position: 'relative',
   },
   containerSelected: {
     backgroundColor: '#F0F4FF',
@@ -581,6 +596,16 @@ const styles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
     paddingHorizontal: 0,
     paddingTop: 6,
+  },
+  'date-info': {
+    position: 'absolute',
+    bottom: 8,
+    right: 12,
+  },
+  'date-text': {
+    fontSize: 10,
+    color: '#AABBCC',
+    fontFamily: 'PretendardVariable',
   },
 });
 
