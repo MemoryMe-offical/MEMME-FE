@@ -66,6 +66,7 @@ const MainScreen = () => {
   const flatListRef = useRef<FlatList<TimelineItem>>(null);
   const shouldScrollToEnd = useRef(false);
   const scrollRetryTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const hasShownPendingLinksToastRef = useRef(false);
 
   const clearScrollRetryTimers = useCallback(() => {
     scrollRetryTimers.current.forEach(timer => clearTimeout(timer));
@@ -368,6 +369,11 @@ const MainScreen = () => {
 
       const linkWithOgData = { ...link, ogData };
       setPendingLinks(prev => [...prev, linkWithOgData]);
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('새로운 링크가 추가되었습니다', ToastAndroid.SHORT);
+      } else {
+        showAlert({ message: '새로운 링크가 추가되었습니다' });
+      }
     } catch (error) {
       console.error('Failed to handle shared URL:', error);
     }
@@ -411,6 +417,19 @@ const MainScreen = () => {
       setPendingLinks(linksWithOgData);
     });
   }, [loadTimeline]);
+
+  // 앱 시작 시 처리되지 않은 링크가 있으면 토스트 알림
+  useEffect(() => {
+    if (!loaded || pendingLinks.length === 0 || hasShownPendingLinksToastRef.current) {
+      return;
+    }
+    hasShownPendingLinksToastRef.current = true;
+    if (Platform.OS === 'android') {
+      ToastAndroid.show('새로운 링크가 추가되었습니다', ToastAndroid.SHORT);
+    } else {
+      showAlert({ message: '새로운 링크가 추가되었습니다' });
+    }
+  }, [loaded, pendingLinks, showAlert]);
 
   // 타임라인 로드 후 보드/노트 확장 상태 초기화
   useEffect(() => {
@@ -706,6 +725,11 @@ const MainScreen = () => {
 
         const linkWithOgData = { ...link, ogData: linkOgData };
         setPendingLinks(prev => [...prev, linkWithOgData]);
+        if (Platform.OS === 'android') {
+          ToastAndroid.show('새로운 링크가 추가되었습니다', ToastAndroid.SHORT);
+        } else {
+          showAlert({ message: '새로운 링크가 추가되었습니다' });
+        }
       }
     } catch (error) {
       console.error('Failed to handle link:', error);

@@ -8,7 +8,6 @@ const App = () => {
   return (
     <SafeAreaProvider>
       <AlertProvider>
-        {/* 앱 시작 시 NavigationContainer -> RootNavigator -> initialRoute 페이지로 이동 */}
         <NavigationContainer>
           <RootNavigator />
         </NavigationContainer>
