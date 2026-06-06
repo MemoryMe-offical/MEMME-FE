@@ -153,7 +153,7 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
         <TouchableOpacity
           onLongPress={() => onLongPress(item)}
           delayLongPress={400}
-          style={[styles['media-container']]}>
+          style={[styles['media-container'], { width: CHAT_MESSAGE_MAX_WIDTH }]}>
           <View style={styles['image-row']}>
             {item.imageUris!.slice(0, 2).map((uri, idx) => (
               <TouchableOpacity
@@ -174,7 +174,7 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
         <TouchableOpacity
           onLongPress={() => onLongPress(item)}
           delayLongPress={400}
-          style={[styles['media-container']]}>
+          style={[styles['media-container'], { width: CHAT_MESSAGE_MAX_WIDTH }]}>
           <View style={styles['image-grid']}>
             {/* 첫 2장 */}
             <View style={styles['image-row']}>
