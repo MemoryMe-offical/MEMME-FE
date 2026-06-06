@@ -160,6 +160,7 @@ const MainScreen = () => {
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [recentBoards, setRecentBoards] = useState<Board[]>([]);
+  const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // 보드 & 노트 펼치기/접기 상태 관리
   const [boardExpandStates, setBoardExpandStates] = useState<Record<string, boolean>>({});
@@ -492,6 +493,21 @@ const MainScreen = () => {
     }
   }, [route.params?.scrollToItemId, timelineItems]);
 
+  // 5초 간격 자동 새로고침
+  const startAutoRefresh = useCallback(() => {
+    if (refreshTimerRef.current) return;
+    refreshTimerRef.current = setInterval(() => {
+      loadTimeline();
+    }, 5000);
+  }, [loadTimeline]);
+
+  const stopAutoRefresh = useCallback(() => {
+    if (refreshTimerRef.current) {
+      clearInterval(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+  }, []);
+
   useEffect(() => {
     const getShared = async () => {
       try {
@@ -509,16 +525,23 @@ const MainScreen = () => {
 
     if (userId) {
       getShared();
+      startAutoRefresh();
     }
 
     const sub = AppState.addEventListener('change', state => {
       if (state === 'active' && userId) {
         getShared();
+        startAutoRefresh();
+      } else {
+        stopAutoRefresh();
       }
     });
 
-    return () => sub.remove();
-  }, [userId]);
+    return () => {
+      sub.remove();
+      stopAutoRefresh();
+    };
+  }, [userId, startAutoRefresh, stopAutoRefresh]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
