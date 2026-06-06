@@ -20,7 +20,6 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Keychain from 'react-native-keychain';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { loginStyles as styles } from '../styles/LoginScreen.styles';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -33,7 +32,6 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 const API_BASE_URL = 'https://memme.o-r.kr';
 
 const STORAGE_KEYS = {
-  ACCESS_TOKEN: 'ACCESS_TOKEN',
   AUTO_LOGIN: 'AUTO_LOGIN',
 };
 
@@ -46,6 +44,7 @@ const KAKAO_AUTH_URL =
 const LoginScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const passwordInputRef = useRef<RNTextInput>(null);
+  const kakaoLoginInProgressRef = useRef(false);
   const { showAlert } = useAlert();
 
   const [email, setEmail] = useState('');
@@ -73,6 +72,39 @@ const LoginScreen = () => {
     } catch {
       return '로그인 중 오류가 발생했습니다.';
     }
+  };
+
+  const persistLoginSession = async (
+    accessToken: string,
+    refreshToken: string | undefined,
+    shouldAutoLogin: boolean,
+  ) => {
+    if (!accessToken) {
+      throw new Error('토큰이 응답에 없습니다.');
+    }
+
+    const userId = extractUserIdFromJWT(accessToken);
+
+    if (!userId) {
+      throw new Error('토큰에서 userId를 추출할 수 없습니다.');
+    }
+
+    await AsyncStorage.setItem('accessToken', accessToken);
+    if (refreshToken) {
+      await AsyncStorage.setItem('refreshToken', refreshToken);
+    }
+    await AsyncStorage.setItem('userId', userId);
+    await AsyncStorage.setItem(
+      STORAGE_KEYS.AUTO_LOGIN,
+      shouldAutoLogin ? 'true' : 'false',
+    );
+  };
+
+  const navigateToMain = () => {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Main' }],
+    });
   };
 
   const handleLogin = async () => {
@@ -104,31 +136,8 @@ const LoginScreen = () => {
 
       const apiResponse = await response.json();
       const { accessToken, refreshToken } = apiResponse.data;
-
-      if (!accessToken) {
-        throw new Error('토큰이 응답에 없습니다.');
-      }
-
-      // JWT에서 userId 추출
-      const userId = extractUserIdFromJWT(accessToken);
-
-      if (!userId) {
-        throw new Error('토큰에서 userId를 추출할 수 없습니다.');
-      }
-
-      // AsyncStorage에 저장
-      await AsyncStorage.setItem('accessToken', accessToken);
-      if (refreshToken) {
-        await AsyncStorage.setItem('refreshToken', refreshToken);
-      }
-      await AsyncStorage.setItem('userId', userId);
-      const autoLoginFlag = autoLogin ? 'true' : 'false';
-      await AsyncStorage.setItem(STORAGE_KEYS.AUTO_LOGIN, autoLoginFlag);
-
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'Main' }],
-      });
+      await persistLoginSession(accessToken, refreshToken, autoLogin);
+      navigateToMain();
     } catch (error) {
       const message =
         error instanceof Error
@@ -136,6 +145,45 @@ const LoginScreen = () => {
           : '로그인 중 오류가 발생했습니다.';
       showAlert({ title: '로그인 실패', message, type: 'error' });
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const completeKakaoLogin = async (code: string) => {
+    if (kakaoLoginInProgressRef.current) {
+      return;
+    }
+
+    kakaoLoginInProgressRef.current = true;
+
+    try {
+      setLoading(true);
+
+      const response = await fetch(`${API_BASE_URL}/v1/auth/kakao`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ code }),
+      });
+
+      if (!response.ok) {
+        throw new Error(await parseErrorMessage(response));
+      }
+
+      const apiResponse = await response.json();
+      const { accessToken, refreshToken } = apiResponse.data;
+
+      await persistLoginSession(accessToken, refreshToken, true);
+      navigateToMain();
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : '카카오 로그인 중 오류가 발생했습니다.';
+      showAlert({ title: '카카오 로그인 실패', message, type: 'error' });
+    } finally {
+      kakaoLoginInProgressRef.current = false;
       setLoading(false);
     }
   };
@@ -163,6 +211,7 @@ const LoginScreen = () => {
       return true;
     }
 
+    completeKakaoLogin(code);
     return true;
   };
 
@@ -181,11 +230,9 @@ const LoginScreen = () => {
   };
 
   const handleKakaoLogin = () => {
+    kakaoLoginInProgressRef.current = false;
     setKakaoWebViewVisible(true);
   };
-
-  // TODO: 유료 Apple Developer 계정 전환 후 구현
-  const handleAppleLogin = () => {};
 
   const handleSignup = () => {
     navigation.navigate('Terms');
@@ -314,12 +361,12 @@ const LoginScreen = () => {
               </TouchableOpacity>
             </View>
 
-            {/* <View style={styles['login-dividerContainer']}>
+            <View style={styles['login-dividerContainer']}>
               <View style={styles['login-dividerContainer-line']} />
               <Text style={styles['login-dividerContainer-text']}>또는</Text>
               <View style={styles['login-dividerContainer-line']} />
-            </View> */}
-{/* 
+            </View>
+
             <View style={styles['login-socialContainer']}>
               <TouchableOpacity
                 style={styles['login-socialContainer-kakaoButton']}
@@ -331,17 +378,7 @@ const LoginScreen = () => {
                   resizeMode="contain"
                 />
               </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles['login-socialContainer-appleButton']}
-                onPress={handleAppleLogin}
-                disabled={loading}>
-                <Image
-                  source={require('../assets/imgs/appleLogin.png')}
-                  style={styles['login-socialContainer-appleButton-image']}
-                />
-              </TouchableOpacity>
-            </View> */}
+            </View>
           </ScrollView>
         </TouchableWithoutFeedback>
       </KeyboardAvoidingView>
@@ -357,7 +394,10 @@ const LoginScreen = () => {
           ]}>
           <View style={webViewStyles.header}>
             <TouchableOpacity
-              onPress={() => setKakaoWebViewVisible(false)}
+              onPress={() => {
+                kakaoLoginInProgressRef.current = false;
+                setKakaoWebViewVisible(false);
+              }}
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Icon name="close" size={24} color="#000" />
             </TouchableOpacity>

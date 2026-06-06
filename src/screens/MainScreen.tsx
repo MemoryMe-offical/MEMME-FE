@@ -260,30 +260,30 @@ const MainScreen = () => {
 
           // 미디어/태그 필터
           if (filter === 'tag') {
-            if (item.type === 'board' && (item as Board).tags?.length > 0) return true;
+            if (item.type === 'board' && ((item as Board).tags?.length ?? 0) > 0) return true;
           }
 
           if (filter === 'photo') {
-            if (item.type === 'memo' && (item as Memo).imageUris?.length > 0) return true;
+            if (item.type === 'memo' && ((item as Memo).imageUris?.length ?? 0) > 0) return true;
             if (item.type === 'board') {
               const board = item as Board;
-              if (board.notes?.some(n => n.imageUris?.length > 0)) return true;
+              if (board.notes?.some(n => (n.imageUris?.length ?? 0) > 0)) return true;
             }
           }
 
           if (filter === 'video') {
-            if (item.type === 'memo' && (item as Memo).videos?.length > 0) return true;
+            if (item.type === 'memo' && ((item as Memo).videos?.length ?? 0) > 0) return true;
             if (item.type === 'board') {
               const board = item as Board;
-              if (board.notes?.some(n => n.videos?.length > 0)) return true;
+              if (board.notes?.some(n => (n.videos?.length ?? 0) > 0)) return true;
             }
           }
 
           if (filter === 'file') {
-            if (item.type === 'memo' && (item as Memo).files?.length > 0) return true;
+            if (item.type === 'memo' && ((item as Memo).files?.length ?? 0) > 0) return true;
             if (item.type === 'board') {
               const board = item as Board;
-              if (board.notes?.some(n => n.files?.length > 0)) return true;
+              if (board.notes?.some(n => (n.files?.length ?? 0) > 0)) return true;
             }
           }
         }
@@ -1321,7 +1321,6 @@ const MainScreen = () => {
                       fontFamily: 'PretendardVariable',
                     }}>
                       {filter === 'memoTextOnly' ? '메모(텍스트)' :
-                       filter === 'memo' ? '메모' :
                        filter === 'board' ? '보드' :
                        filter === 'note' ? '노트' :
                        filter === 'tag' ? '태그' :
