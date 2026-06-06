@@ -56,6 +56,7 @@ const PendingLinksBottomSheet = ({
   const [activePendingLink, setActivePendingLink] = useState<PendingLink | null>(null);
   const [ogDataCache, setOgDataCache] = useState<Record<string, OgData>>({});
   const [loadingUrls, setLoadingUrls] = useState<Set<string>>(new Set());
+  const [isAddingToBoard, setIsAddingToBoard] = useState(false);
 
   // 새 보드 만들기 상태
   const [showNewBoardForm, setShowNewBoardForm] = useState(false);
@@ -102,10 +103,12 @@ const PendingLinksBottomSheet = ({
   };
 
   const handleBoardSelect = async (board: Board) => {
-    if (!activePendingLink) return;
+    if (!activePendingLink || isAddingToBoard) return;
+    setIsAddingToBoard(true);
     try {
       await onAddToBoard(activePendingLink, board);
     } finally {
+      setIsAddingToBoard(false);
       setPickerVisible(false);
       setActivePendingLink(null);
     }
@@ -199,14 +202,20 @@ const PendingLinksBottomSheet = ({
                           <TouchableOpacity
                             style={styles['btn-dismiss']}
                             onPress={() => onDismiss && onDismiss(link.id)}
+                            disabled={isAddingToBoard}
                             activeOpacity={0.7}>
                             <Text style={styles['btn-dismiss-text']}>무시</Text>
                           </TouchableOpacity>
                           <TouchableOpacity
                             style={styles['btn-add']}
                             onPress={() => handleAddPress(link)}
+                            disabled={isAddingToBoard}
                             activeOpacity={0.7}>
-                            <Text style={styles['btn-add-text']}>추가</Text>
+                            {isAddingToBoard ? (
+                              <ActivityIndicator size="small" color="#FFFFFF" />
+                            ) : (
+                              <Text style={styles['btn-add-text']}>추가</Text>
+                            )}
                           </TouchableOpacity>
                         </View>
                       </View>
@@ -227,6 +236,7 @@ const PendingLinksBottomSheet = ({
         onSelect={handleBoardSelect}
         onClose={handlePickerClose}
         onCreateNewBoard={handleCreateNewBoardPress}
+        isLoading={isAddingToBoard}
       />
 
       {/* 새 보드 만들기 모달 */}

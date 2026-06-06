@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Board } from '../../types';
@@ -23,6 +24,7 @@ interface BoardPickerBottomSheetProps {
   onSelect: (board: Board) => void;
   onClose: () => void;
   onCreateNewBoard?: () => void;
+  isLoading?: boolean;
 }
 
 const formatRelativeTime = (iso: string): string => {
@@ -48,6 +50,7 @@ const BoardPickerBottomSheet = ({
   onSelect,
   onClose,
   onCreateNewBoard,
+  isLoading = false,
 }: BoardPickerBottomSheetProps) => {
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
@@ -130,8 +133,9 @@ const BoardPickerBottomSheet = ({
             {/* 새 보드 만들기 버튼 */}
             {onCreateNewBoard && (
               <TouchableOpacity
-                style={styles['create-board-btn']}
+                style={[styles['create-board-btn'], isLoading && styles['create-board-btn-disabled']]}
                 onPress={onCreateNewBoard}
+                disabled={isLoading}
                 activeOpacity={0.7}>
                 <Text style={styles['create-board-btn-text']}>+ 새 보드 만들기</Text>
               </TouchableOpacity>
@@ -153,8 +157,9 @@ const BoardPickerBottomSheet = ({
                 filteredBoards.map(board => (
                   <TouchableOpacity
                     key={board.id}
-                    style={styles['board-item']}
+                    style={[styles['board-item'], isLoading && styles['board-item-disabled']]}
                     onPress={() => onSelect(board)}
+                    disabled={isLoading}
                     activeOpacity={0.7}>
                     <Text style={styles['board-item-title']} numberOfLines={1}>
                       {board.title}
@@ -246,6 +251,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#F0F4FF',
   },
+  'board-item-disabled': {
+    opacity: 0.5,
+  },
   'board-item-title': {
     flex: 1,
     fontSize: 15,
@@ -280,6 +288,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#588DFF',
     fontFamily: 'PretendardVariable',
+  },
+  'create-board-btn-disabled': {
+    opacity: 0.5,
   },
 });
 
