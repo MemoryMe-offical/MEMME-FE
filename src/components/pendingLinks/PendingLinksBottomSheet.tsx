@@ -6,13 +6,18 @@ import {
   ScrollView,
   Modal,
   StyleSheet,
+  TextInput,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Board, PendingLink, OgData } from '../../types';
 import OgPreviewCard from '../note/OgPreviewCard';
 import BoardPickerBottomSheet from '../common/BoardPickerBottomSheet';
-import { CloseIcon } from '../common/Icons';
+import { CloseIcon, ArrowLeftIcon } from '../common/Icons';
 import { fetchOgData } from '../../services/ogService';
+import * as boardService from '../../services/boardService';
 
 interface PendingLinksBottomSheetProps {
   visible: boolean;
@@ -51,6 +56,11 @@ const PendingLinksBottomSheet = ({
   const [activePendingLink, setActivePendingLink] = useState<PendingLink | null>(null);
   const [ogDataCache, setOgDataCache] = useState<Record<string, OgData>>({});
   const [loadingUrls, setLoadingUrls] = useState<Set<string>>(new Set());
+
+  // 새 보드 만들기 상태
+  const [showNewBoardForm, setShowNewBoardForm] = useState(false);
+  const [newBoardName, setNewBoardName] = useState('');
+  const [isCreatingBoard, setIsCreatingBoard] = useState(false);
 
   // 링크가 변경될 때 OG 데이터 로드
   useEffect(() => {
@@ -104,6 +114,33 @@ const PendingLinksBottomSheet = ({
   const handlePickerClose = () => {
     setPickerVisible(false);
     setActivePendingLink(null);
+  };
+
+  const handleCreateNewBoardPress = () => {
+    setPickerVisible(false);
+    setShowNewBoardForm(true);
+    setNewBoardName('');
+  };
+
+  const handleCreateNewBoard = async () => {
+    if (!newBoardName.trim() || !activePendingLink) return;
+
+    setIsCreatingBoard(true);
+    try {
+      const newBoard = await boardService.createBoard({
+        title: newBoardName.trim(),
+      });
+
+      // 새 보드에 링크 추가
+      await onAddToBoard(activePendingLink, newBoard);
+      setShowNewBoardForm(false);
+      setNewBoardName('');
+      setActivePendingLink(null);
+    } catch (error) {
+      console.error('Failed to create board:', error);
+    } finally {
+      setIsCreatingBoard(false);
+    }
   };
 
   return (
@@ -189,7 +226,90 @@ const PendingLinksBottomSheet = ({
         boards={boards}
         onSelect={handleBoardSelect}
         onClose={handlePickerClose}
+        onCreateNewBoard={handleCreateNewBoardPress}
       />
+
+      {/* 새 보드 만들기 모달 */}
+      <Modal
+        visible={showNewBoardForm}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
+          if (!isCreatingBoard) setShowNewBoardForm(false);
+        }}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <TouchableOpacity
+            style={styles['modal-overlay']}
+            activeOpacity={1}
+            onPress={() => {
+              if (!isCreatingBoard) setShowNewBoardForm(false);
+            }}>
+            <View
+              style={[styles['new-board-sheet'], { paddingBottom: insets.bottom + 20 }]}
+              onStartShouldSetResponder={() => true}>
+              <View style={styles['modal-handle']} />
+
+              <View style={styles['new-board-header']}>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (!isCreatingBoard) setShowNewBoardForm(false);
+                  }}
+                  hitSlop={8}
+                  disabled={isCreatingBoard}>
+                  <ArrowLeftIcon color="#1A1A1A" size={20} />
+                </TouchableOpacity>
+                <Text style={styles['new-board-title']}>새 보드 만들기</Text>
+                <View style={{ width: 20 }} />
+              </View>
+
+              <ScrollView
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+                style={styles['new-board-content']}>
+                <Text style={styles['form-label']}>보드 이름</Text>
+                <TextInput
+                  style={styles['form-input']}
+                  value={newBoardName}
+                  onChangeText={setNewBoardName}
+                  placeholder="보드 이름을 입력하세요"
+                  placeholderTextColor="#AABBCC"
+                  editable={!isCreatingBoard}
+                  maxLength={100}
+                  returnKeyType="done"
+                  onSubmitEditing={handleCreateNewBoard}
+                  autoFocus
+                />
+              </ScrollView>
+
+              <View style={styles['new-board-footer']}>
+                <TouchableOpacity
+                  style={styles['cancel-btn']}
+                  onPress={() => setShowNewBoardForm(false)}
+                  disabled={isCreatingBoard}
+                  activeOpacity={0.7}>
+                  <Text style={styles['cancel-btn-text']}>취소</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles['confirm-btn'],
+                    (!newBoardName.trim() || isCreatingBoard) && styles['confirm-btn-disabled'],
+                  ]}
+                  onPress={handleCreateNewBoard}
+                  disabled={!newBoardName.trim() || isCreatingBoard}
+                  activeOpacity={0.7}>
+                  {isCreatingBoard ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <Text style={styles['confirm-btn-text']}>만들기</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
+      </Modal>
     </>
   );
 };
@@ -286,6 +406,96 @@ const styles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
     textAlign: 'center',
     paddingVertical: 32,
+  },
+  'new-board-sheet': {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 12,
+    paddingHorizontal: 20,
+    maxHeight: '60%',
+  },
+  'modal-handle': {
+    width: 40,
+    height: 4,
+    backgroundColor: '#E0E8F8',
+    borderRadius: 2,
+    alignSelf: 'center',
+    marginBottom: 16,
+  },
+  'new-board-header': {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  'new-board-title': {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#1A1A1A',
+    fontFamily: 'PretendardVariable',
+    flex: 1,
+    textAlign: 'center',
+  },
+  'new-board-content': {
+    marginBottom: 16,
+  },
+  'form-label': {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#9DAFC8',
+    fontFamily: 'PretendardVariable',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  'form-input': {
+    fontSize: 15,
+    color: '#1A1A1A',
+    fontFamily: 'PretendardVariable',
+    borderWidth: 1,
+    borderColor: '#E4ECFF',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: '#FAFCFF',
+    marginBottom: 20,
+  },
+  'new-board-footer': {
+    flexDirection: 'row',
+    gap: 8,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F4FF',
+  },
+  'cancel-btn': {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E8EEF8',
+    alignItems: 'center',
+  },
+  'cancel-btn-text': {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#588DFF',
+    fontFamily: 'PretendardVariable',
+  },
+  'confirm-btn': {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#588DFF',
+    alignItems: 'center',
+  },
+  'confirm-btn-disabled': {
+    backgroundColor: '#C0CDD8',
+  },
+  'confirm-btn-text': {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontFamily: 'PretendardVariable',
   },
 });
 

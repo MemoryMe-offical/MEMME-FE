@@ -22,6 +22,7 @@ interface BoardPickerBottomSheetProps {
   excludeBoardId?: string;
   onSelect: (board: Board) => void;
   onClose: () => void;
+  onCreateNewBoard?: () => void;
 }
 
 const formatRelativeTime = (iso: string): string => {
@@ -46,6 +47,7 @@ const BoardPickerBottomSheet = ({
   excludeBoardId,
   onSelect,
   onClose,
+  onCreateNewBoard,
 }: BoardPickerBottomSheetProps) => {
   const insets = useSafeAreaInsets();
   const [searchQuery, setSearchQuery] = useState('');
@@ -124,6 +126,16 @@ const BoardPickerBottomSheet = ({
                 returnKeyType="search"
               />
             </View>
+
+            {/* 새 보드 만들기 버튼 */}
+            {onCreateNewBoard && (
+              <TouchableOpacity
+                style={styles['create-board-btn']}
+                onPress={onCreateNewBoard}
+                activeOpacity={0.7}>
+                <Text style={styles['create-board-btn-text']}>+ 새 보드 만들기</Text>
+              </TouchableOpacity>
+            )}
 
             {/* 정렬 레이블 */}
             <Text style={styles['sort-label']}>최근 수정순</Text>
@@ -252,6 +264,22 @@ const styles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
     textAlign: 'center',
     paddingVertical: 24,
+  },
+  'create-board-btn': {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: '#EEF4FF',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#C8D9FF',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  'create-board-btn-text': {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#588DFF',
+    fontFamily: 'PretendardVariable',
   },
 });
 
