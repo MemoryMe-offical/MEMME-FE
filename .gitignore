@@ -78,3 +78,7 @@ yarn-error.log
 # env
 .env
 *.env.*
+
+# Firebase 설정 파일 (민감한 정보 포함)
+google-services.json
+GoogleService-Info.plist
