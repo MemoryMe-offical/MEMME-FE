@@ -1,6 +1,7 @@
 // 전체 네비게이션 구조(Stack/Tab 등)
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { logScreenView } from '../utils/analytics';
 import SplashScreen from '../screens/SplashScreen';
 import OnboardingScreen from '../screens/OnboardingScreen';
 import MainScreen from '../screens/MainScreen';

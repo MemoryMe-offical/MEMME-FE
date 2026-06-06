@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "806310440420",
+    "project_id": "memme-7349f",
+    "storage_bucket": "memme-7349f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:806310440420:android:9957a655810501ec242bf1",
+        "android_client_info": {
+          "package_name": "com.memme"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDzqWKmfT0urpKgDaGX04ynUEmazGBXxhM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
