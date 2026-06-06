@@ -990,7 +990,18 @@ const MainScreen = () => {
         notes: [...(board.notes ?? []), createdNote],
         updatedAt: new Date().toISOString(),
       };
-      setItems(prev => prev.map(i => i.id === board.id ? updatedBoard : i));
+
+      // 새 보드 여부 확인
+      const isBoardExisting = items.some(i => i.id === board.id);
+
+      if (isBoardExisting) {
+        // 기존 보드: 해당 보드만 업데이트
+        setItems(prev => prev.map(i => i.id === board.id ? updatedBoard : i));
+      } else {
+        // 새 보드: timeline 새로고침 (새 보드 반영)
+        await loadTimeline();
+      }
+
       setPendingLinks(prev => prev.filter(l => l.id !== link.id));
     } catch (error) {
       console.error('Failed to add note to board:', error);
