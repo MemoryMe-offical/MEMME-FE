@@ -218,7 +218,7 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
             width: CHAT_MESSAGE_MAX_WIDTH,
             maxHeight: maxGridHeight,
           }}
-          columnWrapperStyle={{ gap: 4 }}
+          columnWrapperStyle={{ gap: 4, marginBottom: 4 }}
           contentContainerStyle={{ paddingBottom: 4 }}
           renderItem={({ item: imageUri }) => (
             <TouchableOpacity
