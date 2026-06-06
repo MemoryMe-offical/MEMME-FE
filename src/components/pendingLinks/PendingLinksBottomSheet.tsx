@@ -257,7 +257,7 @@ const PendingLinksBottomSheet = ({
               if (!isCreatingBoard) setShowNewBoardForm(false);
             }}>
             <View
-              style={[styles['new-board-sheet'], { paddingBottom: insets.bottom + 20 }]}
+              style={[styles['new-board-sheet'], { paddingBottom: 20 }]}
               onStartShouldSetResponder={() => true}>
               <View style={styles['modal-handle']} />
 
