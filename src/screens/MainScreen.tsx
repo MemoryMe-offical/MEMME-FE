@@ -15,8 +15,8 @@ import {
   Modal,
   ScrollView,
   Clipboard,
-  ToastAndroid,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -30,7 +30,7 @@ import ChatInputBar from '../components/chat/ChatInputBar';
 import BoardCard from '../components/board/BoardCard';
 import ContextMenu from '../components/common/ContextMenu';
 import SideMenu from '../components/common/SideMenu';
-import { HamburgerIcon, PlusIcon, SearchIcon, ArrowLeftIcon } from '../components/common/Icons';
+import { HamburgerIcon, PlusIcon, SearchIcon, ArrowLeftIcon, ViewIcon } from '../components/common/Icons';
 import Badge from '../components/common/Badge';
 import MemoConvertSheet from '../components/memo/MemoConvertSheet';
 import PendingLinksBottomSheet from '../components/pendingLinks/PendingLinksBottomSheet';
@@ -41,6 +41,7 @@ import { mainStyles as styles } from '../styles/MainScreen.styles';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { fetchOgData } from '../services/ogService';
 import { getHourMinute } from '../utils/date';
+import { showToastNotification } from '../utils/toastHelper';
 import * as pendingLinkService from '../services/pendingLinkService';
 import * as timelineService from '../services/timelineService';
 import * as memoService from '../services/memoService';
@@ -65,6 +66,7 @@ const MainScreen = () => {
   const flatListRef = useRef<FlatList<TimelineItem>>(null);
   const shouldScrollToEnd = useRef(false);
   const scrollRetryTimers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const hasShownPendingLinksToastRef = useRef(false);
 
   const clearScrollRetryTimers = useCallback(() => {
     scrollRetryTimers.current.forEach(timer => clearTimeout(timer));
@@ -106,6 +108,9 @@ const MainScreen = () => {
   const [linkDetectionModalVisible, setLinkDetectionModalVisible] = useState(false);
   const [linkOgData, setLinkOgData] = useState<any>(null);
   const [isFetchingOg, setIsFetchingOg] = useState(false);
+  const [showNewBoardFormInLinkModal, setShowNewBoardFormInLinkModal] = useState(false);
+  const [newBoardNameInLinkModal, setNewBoardNameInLinkModal] = useState('');
+  const [isCreatingBoardInLinkModal, setIsCreatingBoardInLinkModal] = useState(false);
 
   // 로그인한 사용자 ID 로드
   useEffect(() => {
@@ -155,6 +160,7 @@ const MainScreen = () => {
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [recentBoards, setRecentBoards] = useState<Board[]>([]);
+  const refreshTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // 보드 & 노트 펼치기/접기 상태 관리
   const [boardExpandStates, setBoardExpandStates] = useState<Record<string, boolean>>({});
@@ -364,6 +370,10 @@ const MainScreen = () => {
 
       const linkWithOgData = { ...link, ogData };
       setPendingLinks(prev => [...prev, linkWithOgData]);
+      showToastNotification({
+        message: '새로운 링크가 추가되었습니다',
+        onAlert: msg => showAlert({ message: msg }),
+      });
     } catch (error) {
       console.error('Failed to handle shared URL:', error);
     }
@@ -407,6 +417,18 @@ const MainScreen = () => {
       setPendingLinks(linksWithOgData);
     });
   }, [loadTimeline]);
+
+  // 앱 시작 시 처리되지 않은 링크가 있으면 토스트 알림
+  useEffect(() => {
+    if (!loaded || pendingLinks.length === 0 || hasShownPendingLinksToastRef.current) {
+      return;
+    }
+    hasShownPendingLinksToastRef.current = true;
+    showToastNotification({
+      message: '새로운 링크가 추가되었습니다',
+      onAlert: msg => showAlert({ message: msg }),
+    });
+  }, [loaded, pendingLinks, showAlert]);
 
   // 타임라인 로드 후 보드/노트 확장 상태 초기화
   useEffect(() => {
@@ -471,6 +493,21 @@ const MainScreen = () => {
     }
   }, [route.params?.scrollToItemId, timelineItems]);
 
+  // 5초 간격 자동 새로고침
+  const startAutoRefresh = useCallback(() => {
+    if (refreshTimerRef.current) return;
+    refreshTimerRef.current = setInterval(() => {
+      loadTimeline();
+    }, 5000);
+  }, [loadTimeline]);
+
+  const stopAutoRefresh = useCallback(() => {
+    if (refreshTimerRef.current) {
+      clearInterval(refreshTimerRef.current);
+      refreshTimerRef.current = null;
+    }
+  }, []);
+
   useEffect(() => {
     const getShared = async () => {
       try {
@@ -488,16 +525,23 @@ const MainScreen = () => {
 
     if (userId) {
       getShared();
+      startAutoRefresh();
     }
 
     const sub = AppState.addEventListener('change', state => {
       if (state === 'active' && userId) {
         getShared();
+        startAutoRefresh();
+      } else {
+        stopAutoRefresh();
       }
     });
 
-    return () => sub.remove();
-  }, [userId]);
+    return () => {
+      sub.remove();
+      stopAutoRefresh();
+    };
+  }, [userId, startAutoRefresh, stopAutoRefresh]);
 
   useEffect(() => {
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
@@ -556,7 +600,10 @@ const MainScreen = () => {
       // 텍스트 메모
       if (memo.text && !memo.imageUris?.length && !memo.videos?.length && !memo.files?.length) {
         await Clipboard.setString(memo.text);
-        ToastAndroid.show('텍스트 복사됨', ToastAndroid.SHORT);
+        showToastNotification({
+          message: '텍스트 복사됨',
+          onAlert: msg => showAlert({ message: msg }),
+        });
         return;
       }
 
@@ -564,12 +611,18 @@ const MainScreen = () => {
       if (memo.imageUris?.length) {
         // 첫 번째 이미지 URL을 클립보드에 복사
         await Clipboard.setString(memo.imageUris[0]);
-        ToastAndroid.show(`${memo.imageUris.length}개의 이미지 복사됨`, ToastAndroid.SHORT);
+        showToastNotification({
+          message: `${memo.imageUris.length}개의 이미지 복사됨`,
+          onAlert: msg => showAlert({ message: msg }),
+        });
         return;
       }
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
-      ToastAndroid.show('복사 실패', ToastAndroid.SHORT);
+      showToastNotification({
+        message: '복사 실패',
+        onAlert: msg => showAlert({ message: msg }),
+      });
     }
   };
 
@@ -702,6 +755,10 @@ const MainScreen = () => {
 
         const linkWithOgData = { ...link, ogData: linkOgData };
         setPendingLinks(prev => [...prev, linkWithOgData]);
+        showToastNotification({
+          message: '새로운 링크가 추가되었습니다',
+          onAlert: msg => showAlert({ message: msg }),
+        });
       }
     } catch (error) {
       console.error('Failed to handle link:', error);
@@ -711,6 +768,44 @@ const MainScreen = () => {
     setLinkDetectionModalVisible(false);
     setDetectedLink(null);
     setLinkOgData(null);
+  };
+
+  const handleCreateNewBoardInLinkModal = async () => {
+    if (!newBoardNameInLinkModal.trim() || !detectedLink || !userId) return;
+
+    setIsCreatingBoardInLinkModal(true);
+    try {
+      // 새 보드 생성
+      const newBoard = await boardService.createBoard({
+        title: newBoardNameInLinkModal.trim(),
+      });
+
+      // 바로 링크를 노트로 추가
+      const createdNote = await noteService.createNote(newBoard.id, {
+        title: linkOgData?.title || detectedLink.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || detectedLink,
+        content: linkOgData?.description,
+        urls: [detectedLink],
+        ogDatas: linkOgData ? [linkOgData] : undefined,
+      });
+
+      const updatedBoard: Board = {
+        ...newBoard,
+        notes: [createdNote],
+        updatedAt: new Date().toISOString(),
+      };
+      setItems(prev => [...prev, updatedBoard]);
+
+      setLinkDetectionModalVisible(false);
+      setDetectedLink(null);
+      setLinkOgData(null);
+      setShowNewBoardFormInLinkModal(false);
+      setNewBoardNameInLinkModal('');
+    } catch (error) {
+      console.error('Failed to create board and add link:', error);
+      showAlert({ title: '오류', message: '보드 생성 중 오류가 발생했습니다.', type: 'error' });
+    } finally {
+      setIsCreatingBoardInLinkModal(false);
+    }
   };
 
   const handleContextDelete = () => {
@@ -837,7 +932,7 @@ const MainScreen = () => {
         userId: raw.userId || '',
         type: 'memo',
         text: raw.text || '',
-        imageUris: raw.imageUris || (raw.images && raw.images.length > 0 ? raw.images.map((img: any) => img.url) : []),
+        imageUris: raw.images && raw.images.length > 0 ? raw.images.map((img: any) => img.url) : [],
         images: raw.images,
         bookmarked: raw.bookmarked ?? false,
         createdAt: raw.createdAt,
@@ -852,16 +947,16 @@ const MainScreen = () => {
     }
   };
 
-  const handlePickVideo = async (videoUri: string) => {
+  const handlePickVideo = async (videoUri: string, videoName?: string) => {
     setIsUploadingMedia(true);
     try {
-      const raw = await createMemoWithVideo(videoUri);
+      const raw = await createMemoWithVideo(videoUri, videoName);
       const newMemo: Memo = {
         id: raw.uid,
         userId: raw.userId || '',
         type: 'memo',
         text: raw.text || '',
-        videoUris: raw.videoUris || (raw.videos && raw.videos.length > 0 ? raw.videos.map((vid: any) => vid.url) : []),
+        videoUris: raw.videos && raw.videos.length > 0 ? raw.videos.map((vid: any) => vid.url) : [],
         videos: raw.videos,
         bookmarked: raw.bookmarked ?? false,
         createdAt: raw.createdAt,
@@ -876,10 +971,10 @@ const MainScreen = () => {
     }
   };
 
-  const handlePickFile = async (fileUri: string, _fileName: string) => {
+  const handlePickFile = async (fileUri: string, fileName: string) => {
     setIsUploadingMedia(true);
     try {
-      const raw = await createMemoWithFile(fileUri);
+      const raw = await createMemoWithFile(fileUri, fileName);
       const newMemo: Memo = {
         id: raw.uid,
         userId: raw.userId || '',
@@ -918,7 +1013,18 @@ const MainScreen = () => {
         notes: [...(board.notes ?? []), createdNote],
         updatedAt: new Date().toISOString(),
       };
-      setItems(prev => prev.map(i => i.id === board.id ? updatedBoard : i));
+
+      // 새 보드 여부 확인
+      const isBoardExisting = items.some(i => i.id === board.id);
+
+      if (isBoardExisting) {
+        // 기존 보드: 해당 보드만 업데이트
+        setItems(prev => prev.map(i => i.id === board.id ? updatedBoard : i));
+      } else {
+        // 새 보드: timeline 새로고침 (새 보드 반영)
+        await loadTimeline();
+      }
+
       setPendingLinks(prev => prev.filter(l => l.id !== link.id));
     } catch (error) {
       console.error('Failed to add note to board:', error);
@@ -982,9 +1088,7 @@ const MainScreen = () => {
               <TouchableOpacity
                 style={styles['main-header-iconButton']}
                 onPress={() => setExpandModalVisible(true)}>
-                <Text style={styles['main-header-expandText']}>
-                  접기/펼치기
-                </Text>
+                <ViewIcon color="#1A1A1A" size={20} />
               </TouchableOpacity>
             </View>
 
@@ -1483,13 +1587,13 @@ const MainScreen = () => {
         isBookmarked={contextMenuItem?.bookmarked ?? false}
         showCopyButton={
           contextMenuItem?.type === 'memo' && (
-            // 텍스트 메모 또는 이미지 메모만
+            // 텍스트 메모 또는 이미지가 1개인 메모만
             (!((contextMenuItem as Memo).imageUris?.length || (contextMenuItem as Memo).videos?.length || (contextMenuItem as Memo).files?.length)) ||
-            (contextMenuItem as Memo).imageUris?.length > 0
+            (contextMenuItem as Memo).imageUris?.length === 1
           )
         }
         copyLabel={
-          (contextMenuItem as Memo)?.imageUris?.length > 0 ? '이미지 복사' : '내용 복사'
+          (contextMenuItem as Memo)?.imageUris?.length === 1 ? '이미지 복사' : '내용 복사'
         }
         onCopy={handleContextCopy}
         onBookmark={handleContextBookmark}
@@ -1605,6 +1709,24 @@ const MainScreen = () => {
               <Text style={{ fontSize: 11, fontWeight: '600', color: '#588DFF', marginBottom: 8, fontFamily: 'PretendardVariable' }}>
                 보드에 추가
               </Text>
+
+              {/* 새 보드 만들기 버튼 */}
+              <TouchableOpacity
+                onPress={() => setShowNewBoardFormInLinkModal(true)}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 10,
+                  marginBottom: 8,
+                  borderRadius: 8,
+                  backgroundColor: '#EEF4FF',
+                  borderWidth: 1,
+                  borderColor: '#C8D9FF',
+                }}>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: '#588DFF', fontFamily: 'PretendardVariable' }}>
+                  + 새 보드 만들기
+                </Text>
+              </TouchableOpacity>
+
               {recentBoards.length > 0 ? (
                 recentBoards.map((board) => (
                   <TouchableOpacity
@@ -1629,7 +1751,7 @@ const MainScreen = () => {
                 ))
               ) : (
                 <Text style={{ fontSize: 11, color: '#AABBCC', fontFamily: 'PretendardVariable', textAlign: 'center', paddingVertical: 8 }}>
-                  보드가 없습니다
+                  기존 보드가 없습니다
                 </Text>
               )}
             </ScrollView>
@@ -1669,6 +1791,112 @@ const MainScreen = () => {
             </View>
           </View>
         </TouchableOpacity>
+      </Modal>
+
+      {/* 링크 감지 모달에서의 새 보드 만들기 */}
+      <Modal
+        visible={showNewBoardFormInLinkModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => {
+          if (!isCreatingBoardInLinkModal) setShowNewBoardFormInLinkModal(false);
+        }}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <TouchableOpacity
+            style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' }}
+            activeOpacity={1}
+            onPress={() => {
+              if (!isCreatingBoardInLinkModal) setShowNewBoardFormInLinkModal(false);
+            }}>
+            <View
+              style={{
+                backgroundColor: '#FFFFFF',
+                borderTopLeftRadius: 20,
+                borderTopRightRadius: 20,
+                paddingTop: 14,
+                paddingHorizontal: 18,
+                paddingBottom: Math.max(insets.bottom, 18),
+              }}
+              onStartShouldSetResponder={() => true}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                <Text style={{ fontSize: 16, fontWeight: '700', color: '#1A1A1A', fontFamily: 'PretendardVariable' }}>
+                  새 보드 만들기
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (!isCreatingBoardInLinkModal) setShowNewBoardFormInLinkModal(false);
+                  }}
+                  disabled={isCreatingBoardInLinkModal}>
+                  <Text style={{ fontSize: 24, color: '#9DAFC8' }}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={{ fontSize: 12, fontWeight: '600', color: '#9DAFC8', marginBottom: 8, fontFamily: 'PretendardVariable' }}>
+                보드 이름
+              </Text>
+              <TextInput
+                style={{
+                  fontSize: 15,
+                  color: '#1A1A1A',
+                  fontFamily: 'PretendardVariable',
+                  borderWidth: 1,
+                  borderColor: '#E4ECFF',
+                  borderRadius: 10,
+                  paddingHorizontal: 14,
+                  paddingVertical: 12,
+                  backgroundColor: '#FAFCFF',
+                  marginBottom: 20,
+                }}
+                value={newBoardNameInLinkModal}
+                onChangeText={setNewBoardNameInLinkModal}
+                placeholder="보드 이름을 입력하세요"
+                placeholderTextColor="#AABBCC"
+                editable={!isCreatingBoardInLinkModal}
+                maxLength={100}
+                returnKeyType="done"
+                autoFocus
+              />
+
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    paddingVertical: 12,
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: '#E8EEF8',
+                    alignItems: 'center',
+                  }}
+                  onPress={() => setShowNewBoardFormInLinkModal(false)}
+                  disabled={isCreatingBoardInLinkModal}>
+                  <Text style={{ fontSize: 12, fontWeight: '600', color: '#588DFF', fontFamily: 'PretendardVariable' }}>
+                    취소
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    paddingVertical: 12,
+                    borderRadius: 8,
+                    backgroundColor: newBoardNameInLinkModal.trim() && !isCreatingBoardInLinkModal ? '#588DFF' : '#C0CDD8',
+                    alignItems: 'center',
+                  }}
+                  onPress={handleCreateNewBoardInLinkModal}
+                  disabled={!newBoardNameInLinkModal.trim() || isCreatingBoardInLinkModal}>
+                  {isCreatingBoardInLinkModal ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <Text style={{ fontSize: 12, fontWeight: '600', color: '#FFFFFF', fontFamily: 'PretendardVariable' }}>
+                      만들기
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
       </Modal>
 
       {/* 이미지 뷰어 모달 */}

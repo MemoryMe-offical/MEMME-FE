@@ -142,7 +142,7 @@ export const loginStyles = StyleSheet.create({
 
   // 로그인 - 입력 컨테이너 - 옵션 행 - 자동 로그인 - 체크박스 - 체크
   'login-inputContainer-optionsRow-autoLogin-checkbox-check': {
-    fontSize: 11,
+    fontSize: 10,
     color: '#FFFFFF',
     fontWeight: 'bold',
   },

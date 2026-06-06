@@ -47,7 +47,6 @@ export const createNote = async (
       ogDatas: noteData.ogDatas,
     };
 
-    console.log('Creating note with data:', JSON.stringify(bodyData, null, 2));
     const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/boards/${boardUid}/notes`, {
       method: 'POST',
       body: JSON.stringify(bodyData),
@@ -102,7 +101,6 @@ export const updateNote = async (
     if (updates.urls !== undefined) bodyData.urls = updates.urls;
     if (updates.ogDatas !== undefined) bodyData.ogDatas = updates.ogDatas;
 
-    console.log('Updating note with data:', JSON.stringify(bodyData, null, 2));
     const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/boards/${boardUid}/notes/${noteUid}`, {
       method: 'PUT',
       body: JSON.stringify(bodyData),

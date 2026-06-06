@@ -15,11 +15,8 @@ export const encryptMessageV2 = async (
   publicKey: string
 ): Promise<PayloadDataV2> => {
   try {
-    console.log('Encryption started...');
-
     const dek = generateDEK(); // Hex string (64자)
-    console.log('DEK generated:', dek);
-    
+
     const iv = CryptoJS.lib.WordArray.random(16);
 
     // ⭐ DEK를 WordArray로 변환
@@ -46,7 +43,6 @@ export const encryptMessageV2 = async (
       timestamp: Date.now(),
     };
 
-    console.log('Encryption completed');
     return payload;
   } catch (error) {
     console.error('Encryption failed:', error);
@@ -62,8 +58,6 @@ export const decryptMessageV2 = async (
   userId: string
 ): Promise<string> => {
   try {
-    console.log('Decryption started...');
-
     const privateKey = await loadPrivateKey(userId);
     if (!privateKey) {
       throw new Error('PRIVATE_KEY_NOT_FOUND');
@@ -72,8 +66,6 @@ export const decryptMessageV2 = async (
     const encryptedDEK = (payload as PayloadDataV2).encryptedDEKForUser || payload.encryptedDEK;
 
     const dek = await decryptDEKWithPrivateKey(encryptedDEK, privateKey);
-    console.log('DEK decrypted:', dek);
-    console.log('DEK length:', dek.length); // 64여야 함
 
     // ⭐ DEK를 WordArray로 변환
     const dekWordArray = CryptoJS.enc.Hex.parse(dek);
@@ -93,14 +85,9 @@ export const decryptMessageV2 = async (
     const plaintext = decrypted.toString(CryptoJS.enc.Utf8);
 
     if (!plaintext) {
-      console.error('Decryption result is empty');
-      console.error('DEK used:', dek);
-      console.error('IV used:', payload.iv);
-      console.error('Ciphertext:', payload.ciphertext.substring(0, 50));
       throw new Error('DECRYPTION_FAILED');
     }
 
-    console.log('Decryption completed');
     return plaintext;
   } catch (error) {
     console.error('Decryption failed:', error);

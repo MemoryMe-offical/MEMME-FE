@@ -315,7 +315,7 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
                 .sort((a, b) => {
                   const timeA = new Date(a.createdAt ?? a.id).getTime();
                   const timeB = new Date(b.createdAt ?? b.id).getTime();
-                  return timeB - timeA;
+                  return timeA - timeB;
                 })
                 .map(note => (
                   <NoteCard

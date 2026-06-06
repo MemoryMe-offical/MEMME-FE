@@ -26,7 +26,6 @@ export const convertMemoToNewBoard = async (
       content: boardData?.content,
       createdAt: boardData?.memoCreatedAt,
     };
-    console.log('convertMemoToNewBoard request:', memoUid, JSON.stringify(requestBody, null, 2));
 
     const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/memos/${memoUid}/convert/new-board`, {
       method: 'POST',
@@ -34,13 +33,10 @@ export const convertMemoToNewBoard = async (
     });
 
     if (!response.ok) {
-      const errorData = await response.text();
-      console.error('Convert memo error response:', errorData);
       throw new Error(`API error: ${response.status}`);
     }
 
     const response_data = await response.json();
-    console.log('convertMemoToNewBoard response:', JSON.stringify(response_data, null, 2));
 
     const responseBoard = response_data.data;
     const result: Board = {

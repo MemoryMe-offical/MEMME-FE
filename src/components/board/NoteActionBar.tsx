@@ -121,6 +121,7 @@ const NoteActionBar = ({
         onClose={() => setShowBoardPicker(false)}
         onSelect={handleMoveNotes}
         excludeBoardId={currentBoardId}
+        isLoading={isLoading}
       />
     </>
   );

@@ -150,31 +150,29 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
     if (imageCount === 2) {
       // 2장: 나란히 2열
       return (
-        <TouchableOpacity
-          onLongPress={() => onLongPress(item)}
-          delayLongPress={400}
-          style={[styles['media-container']]}>
+        <View
+          style={[styles['media-container'], { width: CHAT_MESSAGE_MAX_WIDTH }]}>
           <View style={styles['image-row']}>
             {item.imageUris!.slice(0, 2).map((uri, idx) => (
               <TouchableOpacity
                 key={idx}
                 onPress={() => onImagePress?.(uri, item.imageUris!)}
+                onLongPress={() => onLongPress(item)}
+                delayLongPress={400}
                 style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
                 {renderImageWithLoader(uri, styles['image-thumbnail'])}
               </TouchableOpacity>
             ))}
           </View>
-        </TouchableOpacity>
+        </View>
       );
     }
 
     if (imageCount === 3) {
       // 3장: 상단 2열 + 하단 1열
       return (
-        <TouchableOpacity
-          onLongPress={() => onLongPress(item)}
-          delayLongPress={400}
-          style={[styles['media-container']]}>
+        <View
+          style={[styles['media-container'], { width: CHAT_MESSAGE_MAX_WIDTH }]}>
           <View style={styles['image-grid']}>
             {/* 첫 2장 */}
             <View style={styles['image-row']}>
@@ -182,6 +180,8 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
                 <TouchableOpacity
                   key={idx}
                   onPress={() => onImagePress?.(uri, item.imageUris!)}
+                  onLongPress={() => onLongPress(item)}
+                  delayLongPress={400}
                   style={[styles['image-cell'], { width: imageSize, height: imageSize }]}>
                   {renderImageWithLoader(uri, styles['image-thumbnail'])}
                 </TouchableOpacity>
@@ -190,11 +190,13 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
             {/* 마지막 1장 (전체 너비) */}
             <TouchableOpacity
               onPress={() => onImagePress?.(item.imageUris![2], item.imageUris!)}
+              onLongPress={() => onLongPress(item)}
+              delayLongPress={400}
               style={{ width: '100%', aspectRatio: 2 / 1, borderRadius: 12, overflow: 'hidden' }}>
               {renderImageWithLoader(item.imageUris![2], { width: '100%', height: '100%' })}
             </TouchableOpacity>
           </View>
-        </TouchableOpacity>
+        </View>
       );
     }
 
@@ -216,7 +218,7 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
             width: CHAT_MESSAGE_MAX_WIDTH,
             maxHeight: maxGridHeight,
           }}
-          columnWrapperStyle={{ gap: 4 }}
+          columnWrapperStyle={{ gap: 4, marginBottom: 4 }}
           contentContainerStyle={{ paddingBottom: 4 }}
           renderItem={({ item: imageUri }) => (
             <TouchableOpacity
@@ -238,26 +240,33 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
     const video = item.videos[0];
 
     return (
-      <TouchableOpacity
-        onLongPress={() => onLongPress(item)}
-        delayLongPress={400}
-        style={styles['video-container']}
-        onPress={() => {
-          Linking.openURL(video.url).catch(() => {
-            console.error('Failed to open video:', video.url);
-          });
-        }}>
-        {video.thumbnailUrl ? (
-          renderImageWithLoader(video.thumbnailUrl, styles['video-thumbnail'])
-        ) : (
-          <View style={[styles['video-thumbnail'], { backgroundColor: '#1A1A1A' }]} />
-        )}
-        <View style={styles['video-play-icon']}>
-          <View style={styles['video-play-button']}>
-            <Text style={{ fontSize: 24 }}>▶</Text>
+      <View style={styles['video-container']}>
+        <TouchableOpacity
+          onLongPress={() => onLongPress(item)}
+          delayLongPress={400}
+          style={{ width: '100%' }}
+          onPress={() => {
+            Linking.openURL(video.url).catch(() => {
+              console.error('Failed to open video:', video.url);
+            });
+          }}>
+          {video.thumbnailUrl ? (
+            renderImageWithLoader(video.thumbnailUrl, styles['video-thumbnail'])
+          ) : (
+            <View style={[styles['video-thumbnail'], { backgroundColor: '#1A1A1A' }]} />
+          )}
+          <View style={styles['video-play-icon']}>
+            <View style={styles['video-play-button']}>
+              <Text style={{ fontSize: 24 }}>▶</Text>
+            </View>
           </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+        {video.name && (
+          <Text style={[styles['file-name'], { marginTop: 8 }]} numberOfLines={1}>
+            {decodeURIComponent(decodeURIComponent(video.name))}
+          </Text>
+        )}
+      </View>
     );
   };
 
@@ -265,6 +274,8 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
   const renderFile = () => {
     if (!item.files || item.files.length === 0) return null;
     const file = item.files[0];
+
+    const decodedFileName = decodeURIComponent(decodeURIComponent(file.name));
 
     return (
       <TouchableOpacity
@@ -281,7 +292,7 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
         </View>
         <View style={styles['file-info']}>
           <Text style={styles['file-name']} numberOfLines={1}>
-            {file.name}
+            {decodedFileName}
           </Text>
           <Text style={styles['file-size']}>
             {formatFileSize(file.size)}
@@ -357,11 +368,17 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
               delayLongPress={400}
               style={[styles['link-card'], { marginTop: text.trim().length > 0 ? 8 : 0, marginRight: 8 }]}>
               {/* 썸네일 */}
-              {firstOgData.imageUrl && (
-                <View style={{ width: '100%', height: 120, overflow: 'hidden' }}>
-                  {renderImageWithLoader(firstOgData.imageUrl, styles['link-card-image'])}
-                </View>
-              )}
+              <View style={{ width: '100%', height: 120, overflow: 'hidden' }}>
+                {firstOgData.imageUrl ? (
+                  renderImageWithLoader(firstOgData.imageUrl, styles['link-card-image'])
+                ) : (
+                  <Image
+                    source={require('../../assets/imgs/mainlogo.png')}
+                    style={styles['link-card-image']}
+                    resizeMode="cover"
+                  />
+                )}
+              </View>
 
               {/* 내용 */}
               <View style={styles['link-card-content']}>

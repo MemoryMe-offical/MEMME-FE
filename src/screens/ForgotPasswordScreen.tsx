@@ -37,7 +37,6 @@ const ForgotPasswordScreen = () => {
     }
 
     // TODO: 인증번호 발송 API 연동
-    console.log('인증번호 발송:', email);
     setIsCodeSent(true);
     setTimer(180); // 3분
 
@@ -63,7 +62,6 @@ const ForgotPasswordScreen = () => {
     }
 
     // TODO: 인증번호 확인 API 연동
-    console.log('인증번호 확인:', verificationCode);
 
     // 인증 성공 → 비밀번호 재설정 단계로
     setStep(3);
@@ -88,7 +86,6 @@ const ForgotPasswordScreen = () => {
     }
 
     // TODO: 비밀번호 재설정 API 연동
-    console.log('비밀번호 재설정:', { email, newPassword });
 
     showConfirm({
       title: '완료',

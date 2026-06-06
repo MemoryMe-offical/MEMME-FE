@@ -304,7 +304,7 @@ const BoardCard = ({
                                                 <FileIcon color="#588DFF" size={18} />
                                               </View>
                                               <Text style={styles['card-file-name']} numberOfLines={1}>
-                                                {file.name || 'file'}
+                                                {decodeURIComponent(decodeURIComponent(file.name)) || 'file'}
                                               </Text>
                                             </TouchableOpacity>
                                           ))}
@@ -348,17 +348,11 @@ const BoardCard = ({
                                                     });
                                                   }}
                                                   activeOpacity={0.7}>
-                                                  {ogData?.imageUrl ? (
-                                                    <LoadingImage
-                                                      source={{ uri: ogData.imageUrl }}
-                                                      style={styles['card-link-image']}
-                                                      resizeMode="cover"
-                                                    />
-                                                  ) : (
-                                                    <View style={styles['card-link-image-placeholder']}>
-                                                      <LinkIcon color="#AABBCC" size={20} />
-                                                    </View>
-                                                  )}
+                                                  <LoadingImage
+                                                    source={ogData?.imageUrl ? { uri: ogData.imageUrl } : require('../../assets/imgs/mainlogo.png')}
+                                                    style={styles['card-link-image']}
+                                                    resizeMode="cover"
+                                                  />
                                                   <View style={styles['card-link-info']}>
                                                     <Text style={styles['card-link-domain']} numberOfLines={1}>
                                                       {ogData?.siteName || displayDomain}

@@ -22,17 +22,14 @@ export const getOrCreateDeviceId = async (): Promise<string> => {
   try {
     const existingId = await AsyncStorage.getItem(DEVICE_ID_KEY);
     if (existingId) {
-      console.log('✅ [Device] 기존 디바이스 ID 사용');
       await updateLastActive();
       return existingId;
     }
 
-    console.log('🔑 [Device] 새 디바이스 ID 생성 중...');
-    
     const uniqueId = await DeviceInfo.getUniqueId();
     const timestamp = Date.now().toString();
     const random = CryptoJS.lib.WordArray.random(16).toString();
-    
+
     const deviceId = CryptoJS.SHA256(uniqueId + timestamp + random)
       .toString()
       .substring(0, 32);
@@ -40,10 +37,8 @@ export const getOrCreateDeviceId = async (): Promise<string> => {
     await AsyncStorage.setItem(DEVICE_ID_KEY, deviceId);
     await saveDeviceInfo(deviceId);
 
-    console.log('✅ [Device] 디바이스 ID 생성 완료');
     return deviceId;
   } catch (error) {
-    console.error('❌ [Device] 디바이스 ID 생성 실패:', error);
     throw new Error('디바이스 ID 생성 실패');
   }
 };
@@ -64,9 +59,8 @@ export const saveDeviceInfo = async (deviceId: string): Promise<void> => {
     };
 
     await AsyncStorage.setItem(DEVICE_INFO_KEY, JSON.stringify(deviceInfo));
-    console.log('✅ [Device] 디바이스 정보 저장 완료');
   } catch (error) {
-    console.error('❌ [Device] 디바이스 정보 저장 실패:', error);
+    // Silently fail
   }
 };
 
@@ -79,7 +73,6 @@ export const getDeviceInfo = async (): Promise<DeviceInfoType | null> => {
     if (!json) return null;
     return JSON.parse(json) as DeviceInfoType;
   } catch (error) {
-    console.error('❌ [Device] 디바이스 정보 조회 실패:', error);
     return null;
   }
 };
@@ -95,7 +88,7 @@ export const updateLastActive = async (): Promise<void> => {
       await AsyncStorage.setItem(DEVICE_INFO_KEY, JSON.stringify(info));
     }
   } catch (error) {
-    console.error('❌ [Device] 마지막 활동 시간 업데이트 실패:', error);
+    // Silently fail
   }
 };
 
@@ -105,8 +98,7 @@ export const updateLastActive = async (): Promise<void> => {
 export const deleteDeviceId = async (): Promise<void> => {
   try {
     await AsyncStorage.multiRemove([DEVICE_ID_KEY, DEVICE_INFO_KEY]);
-    console.log('✅ [Device] 디바이스 ID 삭제 완료');
   } catch (error) {
-    console.error('❌ [Device] 디바이스 ID 삭제 실패:', error);
+    // Silently fail
   }
 };

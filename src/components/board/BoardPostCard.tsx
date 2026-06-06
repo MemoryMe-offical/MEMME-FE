@@ -8,6 +8,7 @@ import {
   MoreIcon,
 } from '../common/Icons';
 import { useAlert } from '../../context/AlertContext';
+import LoadingImage from '../common/LoadingImage';
 
 const formatTime = (isoString: string): string => {
   const date = new Date(isoString);
@@ -77,9 +78,9 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardPos
 
   const OgCard = ({ url, ogData }: { url: string; ogData?: BoardPost['ogData'] }) => (
     <View style={styles['card-og-card']}>
-      {ogData?.imageUrl && (
-        <Image
-          source={{ uri: ogData.imageUrl }}
+      {ogData && (
+        <LoadingImage
+          source={ogData.imageUrl ? { uri: ogData.imageUrl } : require('../../assets/imgs/mainlogo.png')}
           style={styles['card-og-image']}
           resizeMode="cover"
         />

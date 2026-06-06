@@ -28,7 +28,6 @@ const SplashScreen = ({ navigation }: Props) => {
 
         // 스플래시 고정 모드면 화면 전환 안 함
         if (FREEZE_SPLASH) {
-          console.log('스플래시 화면 고정 모드');
           return;
         }
 
@@ -45,26 +44,21 @@ const SplashScreen = ({ navigation }: Props) => {
         const hasSeenOnboarding = await AsyncStorage.getItem('@hasSeenOnboarding');
 
         if (hasSeenOnboarding === 'true') {
-          console.log('📌 [Splash] 온보딩 완료됨, 자동로그인 검증 중...');
           // 온보딩을 본 적 있으면 자동로그인 데이터 확인
           const autoLoginValid = await isAutoLoginDataValid();
 
           if (autoLoginValid) {
             // 자동로그인 가능 → 메인으로
-            console.log('✅ [Splash] 자동로그인 성공 → Main으로 이동');
             navigation.replace('Main');
           } else {
             // 자동로그인 불가능 → 로그인으로
-            console.log('⚠️ [Splash] 자동로그인 실패 → Login으로 이동');
             navigation.replace('Login');
           }
         } else {
-          console.log('📌 [Splash] 온보딩 미완료 → Onboarding으로 이동');
           // 최초 사용자면 온보딩으로
           navigation.replace('Onboarding');
         }
       } catch (error) {
-        console.error('스플래시 체크 에러:', error);
         navigation.replace('Onboarding');
       }
     };

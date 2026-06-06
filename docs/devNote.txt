@@ -17,6 +17,11 @@ npm run android -- --clean
   오른쪽 패널 아래 rendered by 확인
 
 -----
+<기타>
+
+- toast 알림: 화면 아래에 잠깐 표시되었다가 사라지는 알림
+
+-----
 <참고: Android 16 이슈>
 
 Android 16에서 adb 스트리밍 설치(adb install) 방식에 버그가 있어 APK 서명 검증 실패함.

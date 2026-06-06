@@ -12,7 +12,6 @@ import {
   KeyboardAvoidingView,
   Pressable,
   Linking,
-  ToastAndroid,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -36,6 +35,7 @@ import OgPreviewCard from '../components/note/OgPreviewCard';
 import LoadingImage from '../components/common/LoadingImage';
 import * as noteService from '../services/noteService';
 import { useAlert } from '../context/AlertContext';
+import { showToastNotification } from '../utils/toastHelper';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NoteDetail'>;
 
@@ -46,8 +46,6 @@ const ImagePreview = ({ imageUrl, onRemove }: { imageUrl: string; onRemove: () =
         source={{ uri: imageUrl }}
         style={styles.thumbnail}
         resizeMode="cover"
-        onError={(e) => console.log(`Image load error: ${imageUrl}`, e.nativeEvent.error)}
-        onLoad={() => console.log(`Image loaded: ${imageUrl}`)}
       />
       <TouchableOpacity
         style={styles['image-remove-btn']}
@@ -245,7 +243,6 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       } else if (note) {
         await noteService.updateNote(boardId, note.id, noteData);
       }
-      console.log('Note saved successfully');
       navigation.goBack();
     } catch (error) {
       console.error('Failed to save note:', error);
@@ -318,7 +315,6 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         setIsUploading(true);
         try {
           const response = await uploadImages(localUris);
-          console.log('Upload response:', response);
           // presigned URLs를 저장 (화면 렌더링용)
           setEditImageUris(prev => [...prev, ...response.urls]);
         } catch (error) {
@@ -446,13 +442,14 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
 
   const handleRequestSummary = async (index: number) => {
     const url = editUrls[index];
-    if (!url) return;
+    const ogData = editOgDatas[index];
+    if (!url || !ogData) return;
     setLoadingSummaryIndexes(prev => new Set(prev).add(index));
     try {
       const summary = await fetchOgSummary(url);
       setEditOgDatas(prev => {
         const updated = [...prev];
-        updated[index] = { ...updated[index], summary };
+        updated[index] = { ...(updated[index] || {}), summary };
         return updated;
       });
     } catch (error) {
@@ -473,22 +470,20 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
   const handleRequestAndAddSummary = async (index: number) => {
     const url = editUrls[index];
     const ogData = editOgDatas[index];
-    if (!url) return;
+    if (!url || !ogData) return;
 
     const addToNoteAndShowToast = (summary: string) => {
-      const linkTitle = ogData?.title || url || '링크';
+      const linkTitle = ogData.title || url || '링크';
       const cleanedSummary = summary.split('\n')[0].slice(0, 500);
       const summaryBlock = `🔗 [${linkTitle}](${url})\n\nAI 요약:\n${cleanedSummary}`;
 
       setEditContent(prev => prev.trim() ? `${prev}\n\n---\n\n${summaryBlock}` : summaryBlock);
       setAddedSummaryIndexes(prev => new Set(prev).add(index));
 
-      // 토스트 메시지 표시
-      if (Platform.OS === 'android') {
-        ToastAndroid.show('요약이 내용에 추가되었습니다', ToastAndroid.SHORT);
-      } else {
-        showAlert({ message: '요약이 내용에 추가되었습니다' });
-      }
+      showToastNotification({
+        message: '요약이 내용에 추가되었습니다',
+        onAlert: msg => showAlert({ message: msg }),
+      });
 
       // 3초 후에 버튼으로 복구
       setTimeout(() => {
@@ -515,7 +510,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       // ogDatas 업데이트
       setEditOgDatas(prev => {
         const updated = [...prev];
-        updated[index] = { ...updated[index], summary };
+        updated[index] = { ...(updated[index] || {}), summary };
         return updated;
       });
 
@@ -539,7 +534,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
     const summary = editOgDatas[index]?.summary;
     const url = editUrls[index];
     const ogData = editOgDatas[index];
-    if (!summary) return;
+    if (!summary || !url) return;
 
     const linkTitle = ogData?.title || url || '링크';
 
@@ -760,7 +755,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                       <View style={styles['file-icon-container']}>
                         <FileIcon color="#588DFF" size={20} />
                       </View>
-                      <Text style={styles['file-name']} numberOfLines={1}>{file.name}</Text>
+                      <Text style={styles['file-name']} numberOfLines={1}>{decodeURIComponent(decodeURIComponent(file.name))}</Text>
                       <TouchableOpacity onPress={() => handleRemoveFile(file.uid)} hitSlop={8}>
                         <CloseIcon color="#9DAFC8" size={16} />
                       </TouchableOpacity>
@@ -865,7 +860,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                         <ActivityIndicator size={10} color="#588DFF" style={{ alignSelf: 'center', marginTop: 8 }} />
                       ) : addedSummaryIndexes.has(index) ? (
                         <Text style={[styles['summary-added-text'], { alignSelf: 'center' }]}>✓ 추가됨</Text>
-                      ) : (
+                      ) : editOgDatas[index] ? (
                         <TouchableOpacity
                           style={styles['summary-button']}
                           onPress={() => handleRequestAndAddSummary(index)}
@@ -873,7 +868,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                           <AiIcon color="#588DFF" size={12} />
                           <Text style={styles['summary-button-text']}>내용에 AI 요약 추가</Text>
                         </TouchableOpacity>
-                      )}
+                      ) : null}
                     </View>
                   ))}
                 </>

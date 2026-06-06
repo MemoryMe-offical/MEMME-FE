@@ -21,7 +21,6 @@ export const decodeJWT = (token: string): JWTPayload | null => {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) {
-      console.warn('🔥 Invalid JWT format');
       return null;
     }
 
@@ -30,7 +29,6 @@ export const decodeJWT = (token: string): JWTPayload | null => {
     const json = JSON.parse(decoded);
     return json;
   } catch (error) {
-    console.error('🔥 JWT 디코딩 실패:', error);
     return null;
   }
 };
@@ -42,19 +40,11 @@ export const decodeJWT = (token: string): JWTPayload | null => {
 export const isTokenExpired = (token: string): boolean => {
   const payload = decodeJWT(token);
   if (!payload || !payload.exp) {
-    console.warn('🔥 토큰에 exp 정보가 없습니다');
     return true;
   }
 
   const currentTime = Math.floor(Date.now() / 1000);
   const isExpired = payload.exp < currentTime;
-
-  if (isExpired) {
-    console.log(`🔥 토큰 만료됨 (exp: ${payload.exp}, now: ${currentTime})`);
-  } else {
-    const remainingSeconds = payload.exp - currentTime;
-    console.log(`✅ 토큰 유효 (${remainingSeconds}초 남음)`);
-  }
 
   return isExpired;
 };
@@ -102,11 +92,9 @@ export const getStoredUserId = async (): Promise<string | null> => {
  */
 export const refreshAccessToken = async (): Promise<boolean> => {
   try {
-    console.log('🔄 [TokenRefresh] RefreshToken으로 토큰 갱신 중...');
     const refreshToken = await getStoredRefreshToken();
 
     if (!refreshToken) {
-      console.log('🔥 [TokenRefresh] RefreshToken 없음');
       return false;
     }
 
@@ -117,7 +105,6 @@ export const refreshAccessToken = async (): Promise<boolean> => {
     });
 
     if (!response.ok) {
-      console.error(`🔥 [TokenRefresh] 토큰 갱신 실패 (${response.status})`);
       await clearAutoLoginData();
       return false;
     }
@@ -126,17 +113,14 @@ export const refreshAccessToken = async (): Promise<boolean> => {
     const newAccessToken = data?.data?.accessToken;
 
     if (!newAccessToken) {
-      console.error('🔥 [TokenRefresh] 응답에 accessToken 없음');
       await clearAutoLoginData();
       return false;
     }
 
     // 새 토큰 저장
     await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, newAccessToken);
-    console.log('✅ [TokenRefresh] 새 accessToken 저장 완료');
     return true;
   } catch (error) {
-    console.error('🔥 [TokenRefresh] 토큰 갱신 중 오류:', error);
     return false;
   }
 };
@@ -150,49 +134,32 @@ export const refreshAccessToken = async (): Promise<boolean> => {
  */
 export const isAutoLoginDataValid = async (): Promise<boolean> => {
   try {
-    console.log('🔍 [AutoLogin] 검증 시작');
-
     const autoLoginEnabled = await isAutoLoginEnabled();
-    console.log(`📌 [AutoLogin] AUTO_LOGIN 플래그: ${autoLoginEnabled}`);
     if (!autoLoginEnabled) {
-      console.log('🔥 [AutoLogin] 자동로그인 미활성화');
       return false;
     }
 
     const token = await getStoredToken();
-    console.log(`📌 [AutoLogin] accessToken 존재: ${!!token}, 길이: ${token?.length || 0}`);
     if (!token) {
-      console.log('🔥 [AutoLogin] 저장된 토큰 없음');
       return false;
     }
 
     const userId = await getStoredUserId();
-    console.log(`📌 [AutoLogin] userId: ${userId}`);
     if (!userId) {
-      console.log('🔥 [AutoLogin] 저장된 userId 없음');
       return false;
     }
 
-    const payload = decodeJWT(token);
-    console.log(`📌 [AutoLogin] JWT payload exp: ${payload?.exp}`);
-
     const expired = isTokenExpired(token);
-    console.log(`📌 [AutoLogin] 토큰 만료됨: ${expired}`);
 
     if (expired) {
-      console.log('⚠️ [AutoLogin] 토큰이 만료됨 → RefreshToken으로 갱신 시도');
       const refreshed = await refreshAccessToken();
       if (!refreshed) {
-        console.log('🔥 [AutoLogin] 토큰 갱신 실패');
         return false;
       }
-      console.log('✅ [AutoLogin] 토큰 갱신 성공');
     }
 
-    console.log('✅ [AutoLogin] 자동로그인 데이터 유효!');
     return true;
   } catch (error) {
-    console.error('🔥 [AutoLogin] 유효성 확인 중 오류:', error);
     return false;
   }
 };
@@ -203,9 +170,7 @@ export const isAutoLoginDataValid = async (): Promise<boolean> => {
 export const clearAutoLoginData = async (): Promise<void> => {
   try {
     await AsyncStorage.removeItem(STORAGE_KEYS.AUTO_LOGIN);
-    console.log('✅ 자동로그인 플래그 삭제');
   } catch (error) {
-    console.error('❌ 자동로그인 데이터 초기화 실패:', error);
     throw error;
   }
 };
@@ -243,7 +208,6 @@ export const fetchWithAutoLogoutHandler = async (
 
     // 401/403 응답 시 자동로그인 데이터 초기화
     if (response.status === 401 || response.status === 403) {
-      console.warn(`🔥 [API] ${response.status} 응답 - 자동로그인 상태 초기화`);
       await clearAutoLoginData();
       // 에러를 throw하면 호출한 곳에서 처리 (보통 Login 화면으로 이동)
       throw new Error(`Unauthorized (${response.status})`);
@@ -251,7 +215,6 @@ export const fetchWithAutoLogoutHandler = async (
 
     return response;
   } catch (error) {
-    console.error('🔥 [Fetch] 요청 실패:', error);
     throw error;
   }
 };

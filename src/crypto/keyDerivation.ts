@@ -23,16 +23,10 @@ export const deriveKEKFromPassword = (
   salt?: string,
   iterations: number = 100000
 ): { kek: string; salt: string; params: KDFParams } => {
-  console.log('🔐 [KDF] KEK 생성 중...');
-  console.log(`  반복: ${iterations}`);
-
   if (!salt) {
     salt = generateSalt();
-    console.log('  새 Salt 생성');
   }
 
-  const startTime = Date.now();
-  
   const key = CryptoJS.PBKDF2(password, salt, {
     keySize: 256 / 32,
     iterations: iterations,
@@ -40,9 +34,6 @@ export const deriveKEKFromPassword = (
   });
 
   const kek = key.toString(CryptoJS.enc.Hex);
-  
-  const elapsed = Date.now() - startTime;
-  console.log(`✅ [KDF] KEK 생성 완료 (${elapsed}ms)`);
 
   const params: KDFParams = {
     iterations,
@@ -61,8 +52,6 @@ export const deriveKEKWithParams = (
   password: string,
   params: KDFParams
 ): string => {
-  console.log('🔐 [KDF] 저장된 파라미터로 KEK 생성 중...');
-
   const key = CryptoJS.PBKDF2(password, params.salt, {
     keySize: params.keySize / 32,
     iterations: params.iterations,
@@ -71,7 +60,6 @@ export const deriveKEKWithParams = (
 
   const kek = key.toString(CryptoJS.enc.Hex);
 
-  console.log('✅ [KDF] KEK 생성 완료');
   return kek;
 };
 

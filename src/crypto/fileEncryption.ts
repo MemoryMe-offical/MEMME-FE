@@ -26,13 +26,8 @@ export const encryptFile = async (
   fileType: string
 ): Promise<FilePayload> => {
   try {
-    console.log('File encryption started...');
-    console.log(`  File: ${fileName}`);
-    console.log(`  Type: ${fileType}`);
-
     const base64Data = await RNFS.readFile(filePath, 'base64');
     const fileSize = base64Data.length;
-    console.log(`  Size: ${(fileSize / 1024).toFixed(2)} KB`);
 
     const dek = generateDEK();
     const iv = CryptoJS.lib.WordArray.random(16);
@@ -63,7 +58,6 @@ export const encryptFile = async (
       timestamp: Date.now(),
     };
 
-    console.log('File encryption completed');
     return payload;
   } catch (error) {
     console.error('File encryption failed:', error);
@@ -80,9 +74,6 @@ export const decryptFile = async (
   savePath: string
 ): Promise<string> => {
   try {
-    console.log('File decryption started...');
-    console.log(`  File: ${payload.fileName}`);
-
     const privateKey = await loadPrivateKey(userId);
     if (!privateKey) {
       throw new Error('PRIVATE_KEY_NOT_FOUND');
@@ -114,9 +105,6 @@ export const decryptFile = async (
     const outputPath = `${savePath}/${payload.fileName}`;
     await RNFS.writeFile(outputPath, base64Data, 'base64');
 
-    console.log('File decryption completed');
-    console.log(`  Saved to: ${outputPath}`);
-    
     return outputPath;
   } catch (error) {
     console.error('File decryption failed:', error);

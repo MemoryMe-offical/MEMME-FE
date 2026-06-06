@@ -111,3 +111,7 @@ export const VideoIcon = ({ color = '#1A1A1A', size = 18, style }: IconProps) =>
 export const FileIcon = ({ color = '#1A1A1A', size = 18, style }: IconProps) => (
   <MCI name="file-document-outline" color={color} size={size} style={style} />
 );
+
+export const ViewIcon = ({ color = '#1A1A1A', size = 20, style }: IconProps) => (
+  <MCI name="eye-outline" color={color} size={size} style={style} />
+);

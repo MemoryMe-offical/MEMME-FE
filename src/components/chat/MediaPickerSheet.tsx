@@ -61,7 +61,9 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
       });
 
       if (result.assets && result.assets[0]?.uri) {
-        onPickVideo(result.assets[0].uri);
+        const videoUri = result.assets[0].uri;
+        const videoName = result.assets[0].fileName || videoUri.split('/').pop();
+        onPickVideo(videoUri, videoName);
         onClose();
       }
     } catch (error) {
@@ -88,7 +90,7 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
     } catch (err: any) {
       if (isErrorWithCode(err)) {
         if (err.code === errorCodes.OPERATION_CANCELED) {
-          console.log('파일 선택이 취소되었습니다.');
+          // User cancelled the operation
         } else {
           console.error('파일 선택 오류:', err);
         }

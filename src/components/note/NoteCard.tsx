@@ -6,6 +6,13 @@ import ImageViewerModal from '../common/ImageViewerModal';
 import { fetchOgData } from '../../services/ogService';
 import LoadingImage from '../common/LoadingImage';
 
+const formatDate = (iso?: string): string => {
+  if (!iso) return '날짜 없음';
+  const date = new Date(iso);
+  if (isNaN(date.getTime())) return '날짜 없음';
+  return date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'short', day: 'numeric' });
+};
+
 interface NoteCardProps {
   note: Note;
   onPress?: () => void;
@@ -148,45 +155,52 @@ const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: Not
         {hasVideos && (
           <View style={[styles['section-row'], { marginTop: 16, ...(!hasFiles && !hasLinks && { marginBottom: 16 }) }]}>
             <Text style={styles['section-label']}>동영상</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={true}
-                persistentScrollbar={true}
-                scrollEventThrottle={16}
-                scrollIndicatorInsets={{ bottom: 4 }}
-                contentContainerStyle={styles['videos-preview']}>
-                <>
-                  {note.videos!.slice(0, maxMediaItems).map((video) => (
-                    <Pressable
-                      key={video.uid}
-                      onPress={() => {
-                        setSelectedVideoUrl(video.url);
-                        setVideoViewerVisible(true);
-                      }}
-                      style={({ pressed }) => [
-                        styles['video-thumbnail'],
-                        pressed && styles['video-thumbnail-pressed'],
-                      ]}>
-                      {video.thumbnailUrl ? (
-                        <LoadingImage
-                          source={{ uri: video.thumbnailUrl }}
-                          style={styles['video-thumbnail']}
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <View style={styles['video-thumbnail-placeholder']}>
-                          <Text style={styles['video-icon']}>▶</Text>
-                        </View>
-                      )}
-                    </Pressable>
-                  ))}
-                </>
-                {(note.videos!.length ?? 0) > maxMediaItems && (
-                  <Text style={styles['video-more']}>
-                    +{note.videos!.length - maxMediaItems}개
+              <View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={true}
+                  persistentScrollbar={true}
+                  scrollEventThrottle={16}
+                  scrollIndicatorInsets={{ bottom: 4 }}
+                  contentContainerStyle={styles['videos-preview']}>
+                  <>
+                    {note.videos!.slice(0, maxMediaItems).map((video) => (
+                      <Pressable
+                        key={video.uid}
+                        onPress={() => {
+                          setSelectedVideoUrl(video.url);
+                          setVideoViewerVisible(true);
+                        }}
+                        style={({ pressed }) => [
+                          styles['video-thumbnail'],
+                          pressed && styles['video-thumbnail-pressed'],
+                        ]}>
+                        {video.thumbnailUrl ? (
+                          <LoadingImage
+                            source={{ uri: video.thumbnailUrl }}
+                            style={styles['video-thumbnail']}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <View style={styles['video-thumbnail-placeholder']}>
+                            <Text style={styles['video-icon']}>▶</Text>
+                          </View>
+                        )}
+                      </Pressable>
+                    ))}
+                  </>
+                  {(note.videos!.length ?? 0) > maxMediaItems && (
+                    <Text style={styles['video-more']}>
+                      +{note.videos!.length - maxMediaItems}개
+                    </Text>
+                  )}
+                </ScrollView>
+                {note.videos![0]?.name && (
+                  <Text style={styles['file-name']} numberOfLines={1}>
+                    {decodeURIComponent(decodeURIComponent(note.videos![0].name))}
                   </Text>
                 )}
-              </ScrollView>
+              </View>
             </View>
         )}
 
@@ -209,7 +223,7 @@ const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: Not
                         <FileIcon color="#588DFF" size={20} />
                       </View>
                       <Text style={styles['file-name']} numberOfLines={1}>
-                        {file.name || 'file'}
+                        {decodeURIComponent(decodeURIComponent(file.name)) || 'file'}
                       </Text>
                     </TouchableOpacity>
                   ))}
@@ -254,17 +268,11 @@ const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: Not
                           });
                         }}
                         activeOpacity={0.7}>
-                        {ogData?.imageUrl ? (
-                          <LoadingImage
-                            source={{ uri: ogData.imageUrl }}
-                            style={styles['link-image']}
-                            resizeMode="cover"
-                          />
-                        ) : (
-                          <View style={styles['link-image-placeholder']}>
-                            <LinkIcon color="#AABBCC" size={20} />
-                          </View>
-                        )}
+                        <LoadingImage
+                          source={ogData?.imageUrl ? { uri: ogData.imageUrl } : require('../../assets/imgs/mainlogo.png')}
+                          style={styles['link-image']}
+                          resizeMode="cover"
+                        />
                         <View style={styles['link-info']}>
                           <Text style={styles['link-domain']} numberOfLines={1}>
                             {ogData?.siteName || (url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || url)}
@@ -285,6 +293,13 @@ const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: Not
               </View>
             );
         })()}
+
+        {/* 날짜 정보 */}
+        <View style={styles['date-info']}>
+          <Text style={styles['date-text']}>
+            {formatDate(note.updatedAt ?? note.createdAt)}
+          </Text>
+        </View>
       </TouchableOpacity>
 
       {/* 이미지 뷰어 모달 */}
@@ -336,6 +351,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E4ECFF',
     gap: 10,
+    position: 'relative',
   },
   containerSelected: {
     backgroundColor: '#F0F4FF',
@@ -587,6 +603,16 @@ const styles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
     paddingHorizontal: 0,
     paddingTop: 6,
+  },
+  'date-info': {
+    position: 'absolute',
+    bottom: 8,
+    right: 12,
+  },
+  'date-text': {
+    fontSize: 10,
+    color: '#AABBCC',
+    fontFamily: 'PretendardVariable',
   },
 });
 
