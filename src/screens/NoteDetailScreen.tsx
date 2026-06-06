@@ -12,7 +12,6 @@ import {
   KeyboardAvoidingView,
   Pressable,
   Linking,
-  ToastAndroid,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -36,6 +35,7 @@ import OgPreviewCard from '../components/note/OgPreviewCard';
 import LoadingImage from '../components/common/LoadingImage';
 import * as noteService from '../services/noteService';
 import { useAlert } from '../context/AlertContext';
+import { showToastNotification } from '../utils/toastHelper';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'NoteDetail'>;
 
@@ -483,12 +483,10 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       setEditContent(prev => prev.trim() ? `${prev}\n\n---\n\n${summaryBlock}` : summaryBlock);
       setAddedSummaryIndexes(prev => new Set(prev).add(index));
 
-      // 토스트 메시지 표시
-      if (Platform.OS === 'android') {
-        ToastAndroid.show('요약이 내용에 추가되었습니다', ToastAndroid.SHORT);
-      } else {
-        showAlert({ message: '요약이 내용에 추가되었습니다' });
-      }
+      showToastNotification({
+        message: '요약이 내용에 추가되었습니다',
+        onAlert: msg => showAlert({ message: msg }),
+      });
 
       // 3초 후에 버튼으로 복구
       setTimeout(() => {

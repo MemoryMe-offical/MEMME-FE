@@ -15,7 +15,6 @@ import {
   Modal,
   ScrollView,
   Clipboard,
-  ToastAndroid,
   Animated,
   ActivityIndicator,
 } from 'react-native';
@@ -42,6 +41,7 @@ import { mainStyles as styles } from '../styles/MainScreen.styles';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import { fetchOgData } from '../services/ogService';
 import { getHourMinute } from '../utils/date';
+import { showToastNotification } from '../utils/toastHelper';
 import * as pendingLinkService from '../services/pendingLinkService';
 import * as timelineService from '../services/timelineService';
 import * as memoService from '../services/memoService';
@@ -369,11 +369,10 @@ const MainScreen = () => {
 
       const linkWithOgData = { ...link, ogData };
       setPendingLinks(prev => [...prev, linkWithOgData]);
-      if (Platform.OS === 'android') {
-        ToastAndroid.show('새로운 링크가 추가되었습니다', ToastAndroid.SHORT);
-      } else {
-        showAlert({ message: '새로운 링크가 추가되었습니다' });
-      }
+      showToastNotification({
+        message: '새로운 링크가 추가되었습니다',
+        onAlert: msg => showAlert({ message: msg }),
+      });
     } catch (error) {
       console.error('Failed to handle shared URL:', error);
     }
@@ -424,11 +423,10 @@ const MainScreen = () => {
       return;
     }
     hasShownPendingLinksToastRef.current = true;
-    if (Platform.OS === 'android') {
-      ToastAndroid.show('새로운 링크가 추가되었습니다', ToastAndroid.SHORT);
-    } else {
-      showAlert({ message: '새로운 링크가 추가되었습니다' });
-    }
+    showToastNotification({
+      message: '새로운 링크가 추가되었습니다',
+      onAlert: msg => showAlert({ message: msg }),
+    });
   }, [loaded, pendingLinks, showAlert]);
 
   // 타임라인 로드 후 보드/노트 확장 상태 초기화
@@ -579,7 +577,10 @@ const MainScreen = () => {
       // 텍스트 메모
       if (memo.text && !memo.imageUris?.length && !memo.videos?.length && !memo.files?.length) {
         await Clipboard.setString(memo.text);
-        ToastAndroid.show('텍스트 복사됨', ToastAndroid.SHORT);
+        showToastNotification({
+          message: '텍스트 복사됨',
+          onAlert: msg => showAlert({ message: msg }),
+        });
         return;
       }
 
@@ -587,12 +588,18 @@ const MainScreen = () => {
       if (memo.imageUris?.length) {
         // 첫 번째 이미지 URL을 클립보드에 복사
         await Clipboard.setString(memo.imageUris[0]);
-        ToastAndroid.show(`${memo.imageUris.length}개의 이미지 복사됨`, ToastAndroid.SHORT);
+        showToastNotification({
+          message: `${memo.imageUris.length}개의 이미지 복사됨`,
+          onAlert: msg => showAlert({ message: msg }),
+        });
         return;
       }
     } catch (error) {
       console.error('Failed to copy to clipboard:', error);
-      ToastAndroid.show('복사 실패', ToastAndroid.SHORT);
+      showToastNotification({
+        message: '복사 실패',
+        onAlert: msg => showAlert({ message: msg }),
+      });
     }
   };
 
@@ -725,11 +732,10 @@ const MainScreen = () => {
 
         const linkWithOgData = { ...link, ogData: linkOgData };
         setPendingLinks(prev => [...prev, linkWithOgData]);
-        if (Platform.OS === 'android') {
-          ToastAndroid.show('새로운 링크가 추가되었습니다', ToastAndroid.SHORT);
-        } else {
-          showAlert({ message: '새로운 링크가 추가되었습니다' });
-        }
+        showToastNotification({
+          message: '새로운 링크가 추가되었습니다',
+          onAlert: msg => showAlert({ message: msg }),
+        });
       }
     } catch (error) {
       console.error('Failed to handle link:', error);
