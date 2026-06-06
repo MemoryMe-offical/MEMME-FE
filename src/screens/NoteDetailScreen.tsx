@@ -442,13 +442,14 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
 
   const handleRequestSummary = async (index: number) => {
     const url = editUrls[index];
-    if (!url) return;
+    const ogData = editOgDatas[index];
+    if (!url || !ogData) return;
     setLoadingSummaryIndexes(prev => new Set(prev).add(index));
     try {
       const summary = await fetchOgSummary(url);
       setEditOgDatas(prev => {
         const updated = [...prev];
-        updated[index] = { ...updated[index], summary };
+        updated[index] = { ...(updated[index] || {}), summary };
         return updated;
       });
     } catch (error) {
@@ -469,10 +470,10 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
   const handleRequestAndAddSummary = async (index: number) => {
     const url = editUrls[index];
     const ogData = editOgDatas[index];
-    if (!url) return;
+    if (!url || !ogData) return;
 
     const addToNoteAndShowToast = (summary: string) => {
-      const linkTitle = ogData?.title || url || '링크';
+      const linkTitle = ogData.title || url || '링크';
       const cleanedSummary = summary.split('\n')[0].slice(0, 500);
       const summaryBlock = `🔗 [${linkTitle}](${url})\n\nAI 요약:\n${cleanedSummary}`;
 
@@ -509,7 +510,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       // ogDatas 업데이트
       setEditOgDatas(prev => {
         const updated = [...prev];
-        updated[index] = { ...updated[index], summary };
+        updated[index] = { ...(updated[index] || {}), summary };
         return updated;
       });
 
@@ -533,7 +534,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
     const summary = editOgDatas[index]?.summary;
     const url = editUrls[index];
     const ogData = editOgDatas[index];
-    if (!summary) return;
+    if (!summary || !url) return;
 
     const linkTitle = ogData?.title || url || '링크';
 
@@ -859,7 +860,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                         <ActivityIndicator size={10} color="#588DFF" style={{ alignSelf: 'center', marginTop: 8 }} />
                       ) : addedSummaryIndexes.has(index) ? (
                         <Text style={[styles['summary-added-text'], { alignSelf: 'center' }]}>✓ 추가됨</Text>
-                      ) : (
+                      ) : editOgDatas[index] ? (
                         <TouchableOpacity
                           style={styles['summary-button']}
                           onPress={() => handleRequestAndAddSummary(index)}
@@ -867,7 +868,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                           <AiIcon color="#588DFF" size={12} />
                           <Text style={styles['summary-button-text']}>내용에 AI 요약 추가</Text>
                         </TouchableOpacity>
-                      )}
+                      ) : null}
                     </View>
                   ))}
                 </>

@@ -357,11 +357,17 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
               delayLongPress={400}
               style={[styles['link-card'], { marginTop: text.trim().length > 0 ? 8 : 0, marginRight: 8 }]}>
               {/* 썸네일 */}
-              {firstOgData.imageUrl && (
-                <View style={{ width: '100%', height: 120, overflow: 'hidden' }}>
-                  {renderImageWithLoader(firstOgData.imageUrl, styles['link-card-image'])}
-                </View>
-              )}
+              <View style={{ width: '100%', height: 120, overflow: 'hidden' }}>
+                {firstOgData.imageUrl ? (
+                  renderImageWithLoader(firstOgData.imageUrl, styles['link-card-image'])
+                ) : (
+                  <Image
+                    source={require('../../assets/imgs/mainlogo.png')}
+                    style={styles['link-card-image']}
+                    resizeMode="cover"
+                  />
+                )}
+              </View>
 
               {/* 내용 */}
               <View style={styles['link-card-content']}>

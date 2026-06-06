@@ -32,13 +32,11 @@ const OgPreviewCard = ({ url, ogData, onRemove, containerStyle, isEditMode }: Og
       onPress={handlePress}
       activeOpacity={0.7}>
       <View style={isEditMode ? styles['content-edit'] : styles.content}>
-        {ogData.imageUrl ? (
-          <LoadingImage source={{ uri: ogData.imageUrl }} style={isEditMode ? styles['image-edit'] : styles.image} resizeMode="cover" />
-        ) : (
-          <View style={isEditMode ? styles['image-placeholder-edit'] : styles['image-placeholder']}>
-            <LinkIcon color="#AABBCC" size={isEditMode ? 24 : 32} />
-          </View>
-        )}
+        <LoadingImage
+          source={ogData.imageUrl ? { uri: ogData.imageUrl } : require('../../assets/imgs/mainlogo.png')}
+          style={isEditMode ? styles['image-edit'] : styles.image}
+          resizeMode="cover"
+        />
         <View style={isEditMode ? styles['info-edit'] : styles.info}>
           <Text style={styles.domain} numberOfLines={1}>
             {ogData.siteName || displayDomain}

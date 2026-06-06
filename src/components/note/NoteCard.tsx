@@ -254,17 +254,11 @@ const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: Not
                           });
                         }}
                         activeOpacity={0.7}>
-                        {ogData?.imageUrl ? (
-                          <LoadingImage
-                            source={{ uri: ogData.imageUrl }}
-                            style={styles['link-image']}
-                            resizeMode="cover"
-                          />
-                        ) : (
-                          <View style={styles['link-image-placeholder']}>
-                            <LinkIcon color="#AABBCC" size={20} />
-                          </View>
-                        )}
+                        <LoadingImage
+                          source={ogData?.imageUrl ? { uri: ogData.imageUrl } : require('../../assets/imgs/mainlogo.png')}
+                          style={styles['link-image']}
+                          resizeMode="cover"
+                        />
                         <View style={styles['link-info']}>
                           <Text style={styles['link-domain']} numberOfLines={1}>
                             {ogData?.siteName || (url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || url)}

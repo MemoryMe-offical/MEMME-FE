@@ -20,6 +20,7 @@ import { CloseIcon, EditIcon, SettingsIcon, ChevronRightIcon, FileIcon } from '.
 import { SIDE_MENU_WIDTH, sideMenuStyles as styles } from '../../styles/SideMenu.styles';
 import { fetchOgData } from '../../services/ogService';
 import ImageViewerModal from './ImageViewerModal';
+import LoadingImage from './LoadingImage';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
 
 const SCREEN_HEIGHT = Dimensions.get('window').height;
@@ -573,12 +574,11 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                             }
                           }}
                         >
-                          {link.imageUrl && (
-                            <Image
-                              source={{ uri: link.imageUrl }}
-                              style={styles['sideMenu-linkPreviewImage']}
-                            />
-                          )}
+                          <LoadingImage
+                            source={link.imageUrl ? { uri: link.imageUrl } : require('../../assets/imgs/mainlogo.png')}
+                            style={styles['sideMenu-linkPreviewImage']}
+                            resizeMode="cover"
+                          />
                           <View style={styles['sideMenu-linkPreviewContent']}>
                             <Text style={styles['sideMenu-linkTitle']} numberOfLines={2}>{link.title}</Text>
                             <Text style={styles['sideMenu-linkUrl']} numberOfLines={1}>{link.url}</Text>
