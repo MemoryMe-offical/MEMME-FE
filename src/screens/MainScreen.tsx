@@ -30,7 +30,7 @@ import ChatInputBar from '../components/chat/ChatInputBar';
 import BoardCard from '../components/board/BoardCard';
 import ContextMenu from '../components/common/ContextMenu';
 import SideMenu from '../components/common/SideMenu';
-import { HamburgerIcon, PlusIcon, SearchIcon, ArrowLeftIcon } from '../components/common/Icons';
+import { HamburgerIcon, PlusIcon, SearchIcon, ArrowLeftIcon, ViewIcon } from '../components/common/Icons';
 import Badge from '../components/common/Badge';
 import MemoConvertSheet from '../components/memo/MemoConvertSheet';
 import PendingLinksBottomSheet from '../components/pendingLinks/PendingLinksBottomSheet';
@@ -1065,9 +1065,7 @@ const MainScreen = () => {
               <TouchableOpacity
                 style={styles['main-header-iconButton']}
                 onPress={() => setExpandModalVisible(true)}>
-                <Text style={styles['main-header-expandText']}>
-                  접기/펼치기
-                </Text>
+                <ViewIcon color="#1A1A1A" size={20} />
               </TouchableOpacity>
             </View>
 
