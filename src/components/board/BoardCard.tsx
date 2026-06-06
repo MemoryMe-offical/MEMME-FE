@@ -304,7 +304,7 @@ const BoardCard = ({
                                                 <FileIcon color="#588DFF" size={18} />
                                               </View>
                                               <Text style={styles['card-file-name']} numberOfLines={1}>
-                                                {file.name || 'file'}
+                                                {decodeURIComponent(decodeURIComponent(file.name)) || 'file'}
                                               </Text>
                                             </TouchableOpacity>
                                           ))}

@@ -119,7 +119,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
               items.push({
                 id: `file-${board.id}-${note.id}-${idx}`,
                 uri: file.url,
-                title: file.name,
+                title: decodeURIComponent(decodeURIComponent(file.name)),
                 type: 'file',
                 createdAt: board.updatedAt || board.createdAt,
                 note,
@@ -193,7 +193,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
             items.push({
               id: `memo-file-${memo.id}-${idx}`,
               uri: file.url,
-              title: file.name,
+              title: decodeURIComponent(decodeURIComponent(file.name)),
               type: 'file',
               createdAt: memo.updatedAt || memo.createdAt,
               file,

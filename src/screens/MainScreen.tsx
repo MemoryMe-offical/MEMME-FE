@@ -909,7 +909,7 @@ const MainScreen = () => {
         userId: raw.userId || '',
         type: 'memo',
         text: raw.text || '',
-        imageUris: raw.imageUris || (raw.images && raw.images.length > 0 ? raw.images.map((img: any) => img.url) : []),
+        imageUris: raw.images && raw.images.length > 0 ? raw.images.map((img: any) => img.url) : [],
         images: raw.images,
         bookmarked: raw.bookmarked ?? false,
         createdAt: raw.createdAt,
@@ -924,16 +924,16 @@ const MainScreen = () => {
     }
   };
 
-  const handlePickVideo = async (videoUri: string) => {
+  const handlePickVideo = async (videoUri: string, videoName?: string) => {
     setIsUploadingMedia(true);
     try {
-      const raw = await createMemoWithVideo(videoUri);
+      const raw = await createMemoWithVideo(videoUri, videoName);
       const newMemo: Memo = {
         id: raw.uid,
         userId: raw.userId || '',
         type: 'memo',
         text: raw.text || '',
-        videoUris: raw.videoUris || (raw.videos && raw.videos.length > 0 ? raw.videos.map((vid: any) => vid.url) : []),
+        videoUris: raw.videos && raw.videos.length > 0 ? raw.videos.map((vid: any) => vid.url) : [],
         videos: raw.videos,
         bookmarked: raw.bookmarked ?? false,
         createdAt: raw.createdAt,
@@ -948,10 +948,10 @@ const MainScreen = () => {
     }
   };
 
-  const handlePickFile = async (fileUri: string, _fileName: string) => {
+  const handlePickFile = async (fileUri: string, fileName: string) => {
     setIsUploadingMedia(true);
     try {
-      const raw = await createMemoWithFile(fileUri);
+      const raw = await createMemoWithFile(fileUri, fileName);
       const newMemo: Memo = {
         id: raw.uid,
         userId: raw.userId || '',

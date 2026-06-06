@@ -61,7 +61,9 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
       });
 
       if (result.assets && result.assets[0]?.uri) {
-        onPickVideo(result.assets[0].uri);
+        const videoUri = result.assets[0].uri;
+        const videoName = result.assets[0].fileName || videoUri.split('/').pop();
+        onPickVideo(videoUri, videoName);
         onClose();
       }
     } catch (error) {

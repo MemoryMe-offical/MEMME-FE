@@ -238,26 +238,33 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
     const video = item.videos[0];
 
     return (
-      <TouchableOpacity
-        onLongPress={() => onLongPress(item)}
-        delayLongPress={400}
-        style={styles['video-container']}
-        onPress={() => {
-          Linking.openURL(video.url).catch(() => {
-            console.error('Failed to open video:', video.url);
-          });
-        }}>
-        {video.thumbnailUrl ? (
-          renderImageWithLoader(video.thumbnailUrl, styles['video-thumbnail'])
-        ) : (
-          <View style={[styles['video-thumbnail'], { backgroundColor: '#1A1A1A' }]} />
-        )}
-        <View style={styles['video-play-icon']}>
-          <View style={styles['video-play-button']}>
-            <Text style={{ fontSize: 24 }}>▶</Text>
+      <View style={styles['video-container']}>
+        <TouchableOpacity
+          onLongPress={() => onLongPress(item)}
+          delayLongPress={400}
+          style={{ width: '100%' }}
+          onPress={() => {
+            Linking.openURL(video.url).catch(() => {
+              console.error('Failed to open video:', video.url);
+            });
+          }}>
+          {video.thumbnailUrl ? (
+            renderImageWithLoader(video.thumbnailUrl, styles['video-thumbnail'])
+          ) : (
+            <View style={[styles['video-thumbnail'], { backgroundColor: '#1A1A1A' }]} />
+          )}
+          <View style={styles['video-play-icon']}>
+            <View style={styles['video-play-button']}>
+              <Text style={{ fontSize: 24 }}>▶</Text>
+            </View>
           </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+        {video.name && (
+          <Text style={[styles['file-name'], { marginTop: 8 }]} numberOfLines={1}>
+            {decodeURIComponent(decodeURIComponent(video.name))}
+          </Text>
+        )}
+      </View>
     );
   };
 
@@ -265,6 +272,8 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
   const renderFile = () => {
     if (!item.files || item.files.length === 0) return null;
     const file = item.files[0];
+
+    const decodedFileName = decodeURIComponent(decodeURIComponent(file.name));
 
     return (
       <TouchableOpacity
@@ -281,7 +290,7 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
         </View>
         <View style={styles['file-info']}>
           <Text style={styles['file-name']} numberOfLines={1}>
-            {file.name}
+            {decodedFileName}
           </Text>
           <Text style={styles['file-size']}>
             {formatFileSize(file.size)}

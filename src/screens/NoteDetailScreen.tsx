@@ -755,7 +755,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                       <View style={styles['file-icon-container']}>
                         <FileIcon color="#588DFF" size={20} />
                       </View>
-                      <Text style={styles['file-name']} numberOfLines={1}>{file.name}</Text>
+                      <Text style={styles['file-name']} numberOfLines={1}>{decodeURIComponent(decodeURIComponent(file.name))}</Text>
                       <TouchableOpacity onPress={() => handleRemoveFile(file.uid)} hitSlop={8}>
                         <CloseIcon color="#9DAFC8" size={16} />
                       </TouchableOpacity>

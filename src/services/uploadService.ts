@@ -15,13 +15,13 @@ interface ApiResponse<T> {
 interface ImageUploadResponse {
   urls: string[];
   keys: string[];
-  names?: string[];
+  names: string[];
 }
 
 interface VideoUploadResponse {
   url: string;
   key: string;
-  name?: string;
+  name: string;
   thumbnailUrl?: string;
   duration: number;
   size: number;
@@ -74,7 +74,11 @@ export const uploadImages = async (
       return url;
     });
 
-    return { keys: apiResponse.data.keys, urls: absoluteUrls };
+    return {
+      keys: apiResponse.data.keys,
+      urls: absoluteUrls,
+      names: apiResponse.data.names,
+    };
   } catch (error) {
     console.error('Failed to upload images:', error);
     throw error;
@@ -239,11 +243,11 @@ export const createMemoWithImage = async (fileUris: string | string[]): Promise<
 /**
  * 영상 파일로 메모 직접 생성 (새로운 방식)
  */
-export const createMemoWithVideo = async (fileUri: string): Promise<any> => {
+export const createMemoWithVideo = async (fileUri: string, videoName?: string): Promise<any> => {
   try {
     const formData = new FormData();
 
-    const filename = fileUri.split('/').pop() || 'video.mp4';
+    const filename = videoName || fileUri.split('/').pop() || 'video.mp4';
 
     formData.append('file', {
       uri: fileUri,
@@ -271,11 +275,11 @@ export const createMemoWithVideo = async (fileUri: string): Promise<any> => {
 /**
  * 일반 파일로 메모 직접 생성 (새로운 방식)
  */
-export const createMemoWithFile = async (fileUri: string): Promise<any> => {
+export const createMemoWithFile = async (fileUri: string, fileName?: string): Promise<any> => {
   try {
     const formData = new FormData();
 
-    const filename = fileUri.split('/').pop() || 'file';
+    const filename = fileName || fileUri.split('/').pop() || 'file';
 
     formData.append('file', {
       uri: fileUri,

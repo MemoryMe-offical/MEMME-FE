@@ -155,45 +155,52 @@ const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: Not
         {hasVideos && (
           <View style={[styles['section-row'], { marginTop: 16, ...(!hasFiles && !hasLinks && { marginBottom: 16 }) }]}>
             <Text style={styles['section-label']}>동영상</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={true}
-                persistentScrollbar={true}
-                scrollEventThrottle={16}
-                scrollIndicatorInsets={{ bottom: 4 }}
-                contentContainerStyle={styles['videos-preview']}>
-                <>
-                  {note.videos!.slice(0, maxMediaItems).map((video) => (
-                    <Pressable
-                      key={video.uid}
-                      onPress={() => {
-                        setSelectedVideoUrl(video.url);
-                        setVideoViewerVisible(true);
-                      }}
-                      style={({ pressed }) => [
-                        styles['video-thumbnail'],
-                        pressed && styles['video-thumbnail-pressed'],
-                      ]}>
-                      {video.thumbnailUrl ? (
-                        <LoadingImage
-                          source={{ uri: video.thumbnailUrl }}
-                          style={styles['video-thumbnail']}
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <View style={styles['video-thumbnail-placeholder']}>
-                          <Text style={styles['video-icon']}>▶</Text>
-                        </View>
-                      )}
-                    </Pressable>
-                  ))}
-                </>
-                {(note.videos!.length ?? 0) > maxMediaItems && (
-                  <Text style={styles['video-more']}>
-                    +{note.videos!.length - maxMediaItems}개
+              <View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={true}
+                  persistentScrollbar={true}
+                  scrollEventThrottle={16}
+                  scrollIndicatorInsets={{ bottom: 4 }}
+                  contentContainerStyle={styles['videos-preview']}>
+                  <>
+                    {note.videos!.slice(0, maxMediaItems).map((video) => (
+                      <Pressable
+                        key={video.uid}
+                        onPress={() => {
+                          setSelectedVideoUrl(video.url);
+                          setVideoViewerVisible(true);
+                        }}
+                        style={({ pressed }) => [
+                          styles['video-thumbnail'],
+                          pressed && styles['video-thumbnail-pressed'],
+                        ]}>
+                        {video.thumbnailUrl ? (
+                          <LoadingImage
+                            source={{ uri: video.thumbnailUrl }}
+                            style={styles['video-thumbnail']}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <View style={styles['video-thumbnail-placeholder']}>
+                            <Text style={styles['video-icon']}>▶</Text>
+                          </View>
+                        )}
+                      </Pressable>
+                    ))}
+                  </>
+                  {(note.videos!.length ?? 0) > maxMediaItems && (
+                    <Text style={styles['video-more']}>
+                      +{note.videos!.length - maxMediaItems}개
+                    </Text>
+                  )}
+                </ScrollView>
+                {note.videos![0]?.name && (
+                  <Text style={styles['file-name']} numberOfLines={1}>
+                    {decodeURIComponent(decodeURIComponent(note.videos![0].name))}
                   </Text>
                 )}
-              </ScrollView>
+              </View>
             </View>
         )}
 
@@ -216,7 +223,7 @@ const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: Not
                         <FileIcon color="#588DFF" size={20} />
                       </View>
                       <Text style={styles['file-name']} numberOfLines={1}>
-                        {file.name || 'file'}
+                        {decodeURIComponent(decodeURIComponent(file.name)) || 'file'}
                       </Text>
                     </TouchableOpacity>
                   ))}
