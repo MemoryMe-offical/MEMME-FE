@@ -207,6 +207,7 @@ export const boardCardStyles = StyleSheet.create({
 
   // 더보기 버튼
   'more-notes-button': {
+    marginTop: 10,
     paddingHorizontal: 14,
     paddingVertical: 12,
     alignItems: 'center',

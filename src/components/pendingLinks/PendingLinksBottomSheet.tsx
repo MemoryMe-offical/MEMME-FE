@@ -155,7 +155,7 @@ const PendingLinksBottomSheet = ({
           activeOpacity={1}
           onPress={onClose}>
           <View
-            style={[styles['modal-sheet'], { paddingBottom: insets.bottom + 20 }]}
+            style={[styles['modal-sheet'], { paddingBottom: 20 }]}
             onStartShouldSetResponder={() => true}>
             <View style={styles['modal-handle']} />
 
@@ -189,7 +189,7 @@ const PendingLinksBottomSheet = ({
 
                   return (
                     <View key={link.id} style={styles['link-item']}>
-                      <OgPreviewCard url={link.url} ogData={displayOgData} />
+                      <OgPreviewCard url={link.url} ogData={displayOgData} containerStyle={{ flex: 1, width: '100%', height: 80 }} />
 
                       <View style={styles['link-footer']}>
                         <Text style={styles['link-time']}>

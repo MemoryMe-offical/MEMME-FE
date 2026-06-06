@@ -102,7 +102,7 @@ const BoardPickerBottomSheet = ({
           activeOpacity={1}
           onPress={onClose}>
           <View
-            style={[styles['modal-sheet'], { paddingBottom: insets.bottom + 20 }]}
+            style={[styles['modal-sheet'], { paddingBottom: 20 }]}
             onStartShouldSetResponder={() => true}>
             <View style={styles['modal-handle']} />
 
