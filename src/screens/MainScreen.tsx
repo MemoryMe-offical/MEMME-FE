@@ -1566,13 +1566,13 @@ const MainScreen = () => {
         isBookmarked={contextMenuItem?.bookmarked ?? false}
         showCopyButton={
           contextMenuItem?.type === 'memo' && (
-            // 텍스트 메모 또는 이미지 메모만
+            // 텍스트 메모 또는 이미지가 1개인 메모만
             (!((contextMenuItem as Memo).imageUris?.length || (contextMenuItem as Memo).videos?.length || (contextMenuItem as Memo).files?.length)) ||
-            (contextMenuItem as Memo).imageUris?.length > 0
+            (contextMenuItem as Memo).imageUris?.length === 1
           )
         }
         copyLabel={
-          (contextMenuItem as Memo)?.imageUris?.length > 0 ? '이미지 복사' : '내용 복사'
+          (contextMenuItem as Memo)?.imageUris?.length === 1 ? '이미지 복사' : '내용 복사'
         }
         onCopy={handleContextCopy}
         onBookmark={handleContextBookmark}

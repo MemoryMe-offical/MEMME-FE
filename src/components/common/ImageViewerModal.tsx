@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   View,
   Modal,
@@ -25,6 +25,13 @@ const ImageViewerModal = ({ visible, imageUris, initialIndex = 0, onClose }: Pro
   const flatListRef = useRef<FlatList>(null);
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
 
+  useEffect(() => {
+    if (visible) {
+      setCurrentIndex(initialIndex);
+      flatListRef.current?.scrollToIndex({ index: initialIndex, animated: false });
+    }
+  }, [visible, initialIndex]);
+
   const handleScroll = (event: any) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
     const index = Math.round(contentOffsetX / width);
@@ -42,25 +49,12 @@ const ImageViewerModal = ({ visible, imageUris, initialIndex = 0, onClose }: Pro
         <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
           {/* 헤더 */}
           <View style={styles.header}>
-            <TouchableOpacity onPress={onClose} hitSlop={8}>
+            <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton}>
               <CloseIcon color="#FFFFFF" size={24} />
             </TouchableOpacity>
-            <View style={styles.indexIndicator}>
-              <Text style={styles.fileName} numberOfLines={1}>
-                {imageUris[currentIndex]?.split('/').pop() || `이미지 ${currentIndex + 1}`}
-              </Text>
-              <View style={styles.indexText}>
-                {imageUris.map((_, idx) => (
-                  <View
-                    key={idx}
-                    style={[
-                      styles.dot,
-                      idx === currentIndex && styles.dotActive,
-                    ]}
-                  />
-                ))}
-              </View>
-            </View>
+            <Text style={styles.pageNumber}>
+              {currentIndex + 1} / {imageUris.length}
+            </Text>
           </View>
 
           {/* 이미지 스크롤 */}
@@ -106,37 +100,20 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  indexIndicator: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 8,
+  closeButton: {
+    position: 'absolute',
+    left: 16,
   },
-  fileName: {
+  pageNumber: {
     fontSize: 14,
     color: '#FFFFFF',
-    fontWeight: '600',
+    fontWeight: '700',
     fontFamily: 'PretendardVariable',
-    maxWidth: 200,
-  },
-  indexText: {
-    flexDirection: 'row',
-    gap: 6,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-  },
-  dotActive: {
-    backgroundColor: '#FFFFFF',
-    width: 8,
-    borderRadius: 4,
   },
   imageContainer: {
     width,
