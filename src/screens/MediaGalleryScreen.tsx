@@ -43,7 +43,6 @@ const GalleryImageThumbnail = ({ imageUrl, width, height }: { imageUrl: string; 
     <LoadingImage
       source={{ uri: imageUrl }}
       style={[styles.thumbnail, { width, height, backgroundColor: '#EEF3FF' }]}
-      onError={() => console.log('Failed to render gallery image')}
     />
   );
 };

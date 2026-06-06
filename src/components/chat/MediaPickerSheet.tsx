@@ -88,7 +88,7 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
     } catch (err: any) {
       if (isErrorWithCode(err)) {
         if (err.code === errorCodes.OPERATION_CANCELED) {
-          console.log('파일 선택이 취소되었습니다.');
+          // User cancelled the operation
         } else {
           console.error('파일 선택 오류:', err);
         }

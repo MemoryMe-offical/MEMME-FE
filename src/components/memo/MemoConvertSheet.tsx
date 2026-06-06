@@ -139,7 +139,7 @@ const MemoConvertSheet = ({
       try {
         await memoService.deleteMemo(memo.id);
       } catch {
-        console.log('Memo already deleted by backend');
+        // Silently fail
       }
 
       onSuccess(memo.id, newBoard);
@@ -176,7 +176,7 @@ const MemoConvertSheet = ({
       try {
         await memoService.deleteMemo(memo.id);
       } catch {
-        console.log('Memo already deleted by backend');
+        // Silently fail
       }
 
       onSuccess(memo.id, updatedBoard);

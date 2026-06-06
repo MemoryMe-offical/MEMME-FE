@@ -14,8 +14,6 @@ export const registerPublicKey = async (
   publicKey: string,
   deviceId: string
 ): Promise<void> => {
-  console.log('Registering public key...');
-  
   const token = await AsyncStorage.getItem('accessToken');
   
   const response = await fetch(`${BASE_URL}/keys/register`, {
@@ -34,16 +32,12 @@ export const registerPublicKey = async (
   if (!response.ok) {
     throw new Error(`API error: ${response.status}`);
   }
-  
-  console.log('Public key registered successfully');
 };
 
 /**
  * 공개키 조회
  */
 export const getPublicKey = async (userId: string): Promise<string> => {
-  console.log('Fetching public key...');
-  
   const token = await AsyncStorage.getItem('accessToken');
   
   const response = await fetch(`${BASE_URL}/keys/${userId}`, {
@@ -57,7 +51,6 @@ export const getPublicKey = async (userId: string): Promise<string> => {
   }
   
   const data = await response.json();
-  console.log('Public key fetched successfully');
   return data.publicKey;
 };
 
@@ -69,8 +62,6 @@ export const uploadPrivateKeyBackup = async (
   backup: PrivateKeyBackup,
   deviceId: string
 ): Promise<void> => {
-  console.log('Uploading private key backup...');
-  
   const token = await AsyncStorage.getItem('accessToken');
   
   const response = await fetch(`${BASE_URL}/keys/backup`, {
@@ -89,8 +80,6 @@ export const uploadPrivateKeyBackup = async (
   if (!response.ok) {
     throw new Error(`API error: ${response.status}`);
   }
-  
-  console.log('Private key backup uploaded successfully');
 };
 
 /**
@@ -99,8 +88,6 @@ export const uploadPrivateKeyBackup = async (
 export const downloadPrivateKeyBackup = async (
   userId: string
 ): Promise<PrivateKeyBackup> => {
-  console.log('Downloading private key backup...');
-  
   const token = await AsyncStorage.getItem('accessToken');
   
   const response = await fetch(`${BASE_URL}/keys/backup/${userId}`, {
@@ -115,7 +102,6 @@ export const downloadPrivateKeyBackup = async (
   
   const data = await response.json();
   const backup: PrivateKeyBackup = JSON.parse(data.backupData);
-  
-  console.log('Private key backup downloaded successfully');
+
   return backup;
 };

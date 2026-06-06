@@ -66,9 +66,6 @@ export const uploadImages = async (
     }
 
     const apiResponse: ApiResponse<ImageUploadResponse> = await response.json();
-    console.log('Raw image upload response:', apiResponse.data);
-    console.log('Raw URLs:', apiResponse.data.urls);
-    console.log('Keys:', apiResponse.data.keys);
 
     // 상대 경로 URL을 절대 경로로 변환
     const absoluteUrls = apiResponse.data.urls.map(url => {
@@ -222,24 +219,16 @@ export const createMemoWithImage = async (fileUris: string | string[]): Promise<
       } as any);
     }
 
-    console.log(`📤 createMemoWithImage: ${uris.length} image(s)`);
-    console.log(`📤 Sending to ${BASE_URL}/memos/image`);
-
     const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/memos/image`, {
       method: 'POST',
       body: formData,
     });
 
-    console.log(`📥 Response status: ${response.status}`);
-
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ API error response: ${errorText}`);
       throw new Error(`API error: ${response.status}`);
     }
 
     const apiResponse: ApiResponse<any> = await response.json();
-    console.log(`✅ createMemoWithImage success:`, apiResponse.data);
     return apiResponse.data;
   } catch (error) {
     console.error('Failed to create memo with image:', error);
@@ -256,31 +245,22 @@ export const createMemoWithVideo = async (fileUri: string): Promise<any> => {
 
     const filename = fileUri.split('/').pop() || 'video.mp4';
 
-    console.log(`📤 createMemoWithVideo: ${filename}`);
-
     formData.append('file', {
       uri: fileUri,
       type: 'video/mp4',
       name: filename,
     } as any);
 
-    console.log(`📤 Sending to ${BASE_URL}/memos/video`);
-
     const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/memos/video`, {
       method: 'POST',
       body: formData,
     });
 
-    console.log(`📥 Response status: ${response.status}`);
-
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ API error response: ${errorText}`);
       throw new Error(`API error: ${response.status}`);
     }
 
     const apiResponse: ApiResponse<any> = await response.json();
-    console.log(`✅ createMemoWithVideo success:`, apiResponse.data);
     return apiResponse.data;
   } catch (error) {
     console.error('Failed to create memo with video:', error);
@@ -297,31 +277,22 @@ export const createMemoWithFile = async (fileUri: string): Promise<any> => {
 
     const filename = fileUri.split('/').pop() || 'file';
 
-    console.log(`📤 createMemoWithFile: ${filename}`);
-
     formData.append('file', {
       uri: fileUri,
       type: 'application/octet-stream',
       name: filename,
     } as any);
 
-    console.log(`📤 Sending to ${BASE_URL}/memos/file`);
-
     const response = await fetchWithAutoLogoutHandler(`${BASE_URL}/memos/file`, {
       method: 'POST',
       body: formData,
     });
 
-    console.log(`📥 Response status: ${response.status}`);
-
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ API error response: ${errorText}`);
       throw new Error(`API error: ${response.status}`);
     }
 
     const apiResponse: ApiResponse<any> = await response.json();
-    console.log(`✅ createMemoWithFile success:`, apiResponse.data);
     return apiResponse.data;
   } catch (error) {
     console.error('Failed to create memo with file:', error);

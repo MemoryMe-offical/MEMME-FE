@@ -103,8 +103,7 @@ const LoginScreen = () => {
       }
 
       const apiResponse = await response.json();
-      const { accessToken, refreshToken, expiresIn } = apiResponse.data;
-      console.log('로그인 성공, 받은 토큰:', accessToken, 'expiresIn:', expiresIn);
+      const { accessToken, refreshToken } = apiResponse.data;
 
       if (!accessToken) {
         throw new Error('토큰이 응답에 없습니다.');
@@ -112,7 +111,6 @@ const LoginScreen = () => {
 
       // JWT에서 userId 추출
       const userId = extractUserIdFromJWT(accessToken);
-      console.log('🔥 JWT에서 추출한 userId:', userId);
 
       if (!userId) {
         throw new Error('토큰에서 userId를 추출할 수 없습니다.');
@@ -126,20 +124,6 @@ const LoginScreen = () => {
       await AsyncStorage.setItem('userId', userId);
       const autoLoginFlag = autoLogin ? 'true' : 'false';
       await AsyncStorage.setItem(STORAGE_KEYS.AUTO_LOGIN, autoLoginFlag);
-
-      console.log('📌 [Login] 저장 완료:');
-      console.log(`   - accessToken: ${accessToken.substring(0, 20)}...`);
-      console.log(`   - userId: ${userId}`);
-      console.log(`   - AUTO_LOGIN: ${autoLoginFlag}`);
-
-      // 저장 확인
-      const savedToken = await AsyncStorage.getItem('accessToken');
-      const savedUserId = await AsyncStorage.getItem('userId');
-      const savedAutoLogin = await AsyncStorage.getItem(STORAGE_KEYS.AUTO_LOGIN);
-      console.log('✅ [Login] 저장 확인:');
-      console.log(`   - accessToken 저장됨: ${!!savedToken}`);
-      console.log(`   - userId 저장됨: ${savedUserId}`);
-      console.log(`   - AUTO_LOGIN 저장됨: ${savedAutoLogin}`);
 
       navigation.reset({
         index: 0,
@@ -179,7 +163,6 @@ const LoginScreen = () => {
       return true;
     }
 
-    console.log('카카오 인가코드:', code);
     return true;
   };
 

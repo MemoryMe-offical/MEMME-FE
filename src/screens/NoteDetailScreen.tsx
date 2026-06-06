@@ -46,8 +46,6 @@ const ImagePreview = ({ imageUrl, onRemove }: { imageUrl: string; onRemove: () =
         source={{ uri: imageUrl }}
         style={styles.thumbnail}
         resizeMode="cover"
-        onError={(e) => console.log(`Image load error: ${imageUrl}`, e.nativeEvent.error)}
-        onLoad={() => console.log(`Image loaded: ${imageUrl}`)}
       />
       <TouchableOpacity
         style={styles['image-remove-btn']}
@@ -245,7 +243,6 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       } else if (note) {
         await noteService.updateNote(boardId, note.id, noteData);
       }
-      console.log('Note saved successfully');
       navigation.goBack();
     } catch (error) {
       console.error('Failed to save note:', error);
@@ -318,7 +315,6 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         setIsUploading(true);
         try {
           const response = await uploadImages(localUris);
-          console.log('Upload response:', response);
           // presigned URLs를 저장 (화면 렌더링용)
           setEditImageUris(prev => [...prev, ...response.urls]);
         } catch (error) {

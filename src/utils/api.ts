@@ -35,18 +35,14 @@ export interface ServerMessage {
  */
 export const pingServer = async (): Promise<boolean> => {
   try {
-    console.log('Server ping test...');
-    
     const response = await fetch(`${BASE_URL}/messages/ping`);
-    
+
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
     }
-    
-    console.log('Server ping success');
+
     return true;
   } catch (error) {
-    console.error('Server ping failed');
     return false;
   }
 };
@@ -65,8 +61,6 @@ export const sendMessage = async (
     deviceId?: string;
   }
 ): Promise<{ id: number; success: boolean }> => {
-  console.log('Sending message...');
-  
   const token = await AsyncStorage.getItem('accessToken');
   
   const response = await fetch(`${BASE_URL}/messages/test`, {
@@ -86,13 +80,12 @@ export const sendMessage = async (
       messageType: 'text',
     }),
   });
-  
+
   if (!response.ok) {
     throw new Error(`API error: ${response.status}`);
   }
-  
+
   const data = await response.json();
-  console.log('Message sent successfully');
   return data;
 };
 
@@ -103,8 +96,6 @@ export const sendFile = async (
   userId: string,
   filePayload: FilePayloadForServer
 ): Promise<{ id: number; success: boolean }> => {
-  console.log('Sending file...');
-  
   const token = await AsyncStorage.getItem('accessToken');
   
   const response = await fetch(`${BASE_URL}/messages/test`, {
@@ -131,9 +122,8 @@ export const sendFile = async (
   if (!response.ok) {
     throw new Error(`API error: ${response.status}`);
   }
-  
+
   const data = await response.json();
-  console.log('File sent successfully');
   return data;
 };
 
@@ -146,8 +136,6 @@ export const getMessages = async (
   messages: ServerMessage[];
   count: number;
 }> => {
-  console.log('Fetching messages...');
-  
   const token = await AsyncStorage.getItem('accessToken');
   
   const response = await fetch(`${BASE_URL}/messages/test/${userId}`, {
@@ -159,9 +147,8 @@ export const getMessages = async (
   if (!response.ok) {
     throw new Error(`API error: ${response.status}`);
   }
-  
+
   const data = await response.json();
-  console.log(`Fetched ${data.messages?.length || 0} messages`);
   return data;
 };
 
@@ -169,8 +156,6 @@ export const getMessages = async (
  * 모든 메시지 삭제
  */
 export const clearAllMessages = async (): Promise<void> => {
-  console.log('Clearing all messages...');
-  
   const token = await AsyncStorage.getItem('accessToken');
   
   const response = await fetch(`${BASE_URL}/messages/clear`, {
@@ -183,6 +168,4 @@ export const clearAllMessages = async (): Promise<void> => {
   if (!response.ok) {
     throw new Error(`API error: ${response.status}`);
   }
-  
-  console.log('All messages cleared');
 };
