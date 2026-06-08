@@ -7,12 +7,76 @@ const STORAGE_KEYS = {
   AUTO_LOGIN: 'AUTO_LOGIN',
 };
 
+const REFRESH_URL = 'https://memme.o-r.kr/v1/auth/refresh';
+
+let refreshPromise: Promise<boolean> | null = null;
+
+type FetchHeaders = NonNullable<RequestInit['headers']>;
+
 interface JWTPayload {
   sub?: string;
   exp?: number;
   iat?: number;
   [key: string]: any;
 }
+
+const decodeBase64 = (value: string): string => {
+  const chars =
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+  const globalAtob = (globalThis as unknown as {
+    atob?: (encoded: string) => string;
+  }).atob;
+
+  if (globalAtob) {
+    return globalAtob(value);
+  }
+
+  let output = '';
+  let index = 0;
+
+  while (index < value.length) {
+    const encoded1 = chars.indexOf(value.charAt(index++));
+    const encoded2 = chars.indexOf(value.charAt(index++));
+    const encoded3 = chars.indexOf(value.charAt(index++));
+    const encoded4 = chars.indexOf(value.charAt(index++));
+
+    const byte1 = encoded1 * 4 + Math.floor(encoded2 / 16);
+    const byte2 = (encoded2 % 16) * 16 + Math.floor(encoded3 / 4);
+    const byte3 = (encoded3 % 4) * 64 + encoded4;
+
+    output += String.fromCharCode(byte1);
+
+    if (encoded3 !== 64) {
+      output += String.fromCharCode(byte2);
+    }
+
+    if (encoded4 !== 64) {
+      output += String.fromCharCode(byte3);
+    }
+  }
+
+  return output;
+};
+
+const decodeJWTPart = (value: string): string => {
+  const base64 = value.replace(/-/g, '+').replace(/_/g, '/');
+  const paddedBase64 = base64.padEnd(
+    base64.length + ((4 - (base64.length % 4)) % 4),
+    '=',
+  );
+  const binary = decodeBase64(paddedBase64);
+
+  try {
+    return decodeURIComponent(
+      binary
+        .split('')
+        .map(char => `%${char.charCodeAt(0).toString(16).padStart(2, '0')}`)
+        .join(''),
+    );
+  } catch {
+    return binary;
+  }
+};
 
 /**
  * JWT 토큰 디코딩
@@ -24,11 +88,10 @@ export const decodeJWT = (token: string): JWTPayload | null => {
       return null;
     }
 
-    const payload = parts[1];
-    const decoded = atob(payload);
+    const decoded = decodeJWTPart(parts[1]);
     const json = JSON.parse(decoded);
     return json;
-  } catch (error) {
+  } catch {
     return null;
   }
 };
@@ -87,10 +150,51 @@ export const getStoredUserId = async (): Promise<string | null> => {
   return AsyncStorage.getItem(STORAGE_KEYS.USER_ID);
 };
 
+const parseHeaders = (headers?: FetchHeaders): Record<string, string> => {
+  if (!headers) {
+    return {};
+  }
+
+  if (Array.isArray(headers)) {
+    return Object.fromEntries(headers);
+  }
+
+  const maybeHeaders = headers as {
+    forEach?: (callback: (value: string, key: string) => void) => void;
+  };
+
+  if (typeof maybeHeaders.forEach === 'function') {
+    const parsedHeaders: Record<string, string> = {};
+    maybeHeaders.forEach((value, key) => {
+      parsedHeaders[key] = value;
+    });
+    return parsedHeaders;
+  }
+
+  return { ...(headers as Record<string, string>) };
+};
+
+const hasContentTypeHeader = (headers: Record<string, string>): boolean => {
+  return Object.keys(headers).some(key => key.toLowerCase() === 'content-type');
+};
+
+const saveTokens = async (
+  accessToken: string,
+  refreshToken?: string,
+): Promise<void> => {
+  const entries: [string, string][] = [[STORAGE_KEYS.ACCESS_TOKEN, accessToken]];
+
+  if (refreshToken) {
+    entries.push([STORAGE_KEYS.REFRESH_TOKEN, refreshToken]);
+  }
+
+  await AsyncStorage.multiSet(entries);
+};
+
 /**
  * RefreshToken으로 새 AccessToken 발급받기
  */
-export const refreshAccessToken = async (): Promise<boolean> => {
+const refreshAccessTokenInternal = async (): Promise<boolean> => {
   try {
     const refreshToken = await getStoredRefreshToken();
 
@@ -98,7 +202,7 @@ export const refreshAccessToken = async (): Promise<boolean> => {
       return false;
     }
 
-    const response = await fetch('https://memme.o-r.kr/v1/auth/refresh', {
+    const response = await fetch(REFRESH_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken }),
@@ -111,18 +215,29 @@ export const refreshAccessToken = async (): Promise<boolean> => {
 
     const data = await response.json();
     const newAccessToken = data?.data?.accessToken;
+    const newRefreshToken = data?.data?.refreshToken;
 
     if (!newAccessToken) {
       await clearAutoLoginData();
       return false;
     }
 
-    // 새 토큰 저장
-    await AsyncStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, newAccessToken);
+    // Refresh token rotation 대응: 서버가 새 refreshToken을 내려주면 반드시 같이 저장한다.
+    await saveTokens(newAccessToken, newRefreshToken);
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
+};
+
+export const refreshAccessToken = async (): Promise<boolean> => {
+  if (!refreshPromise) {
+    refreshPromise = refreshAccessTokenInternal().finally(() => {
+      refreshPromise = null;
+    });
+  }
+
+  return refreshPromise;
 };
 
 /**
@@ -159,7 +274,7 @@ export const isAutoLoginDataValid = async (): Promise<boolean> => {
     }
 
     return true;
-  } catch (error) {
+  } catch {
     return false;
   }
 };
@@ -169,7 +284,12 @@ export const isAutoLoginDataValid = async (): Promise<boolean> => {
  */
 export const clearAutoLoginData = async (): Promise<void> => {
   try {
-    await AsyncStorage.removeItem(STORAGE_KEYS.AUTO_LOGIN);
+    await AsyncStorage.multiRemove([
+      STORAGE_KEYS.ACCESS_TOKEN,
+      STORAGE_KEYS.REFRESH_TOKEN,
+      STORAGE_KEYS.USER_ID,
+      STORAGE_KEYS.AUTO_LOGIN,
+    ]);
   } catch (error) {
     throw error;
   }
@@ -186,27 +306,51 @@ export const fetchWithAutoLogoutHandler = async (
   options?: RequestInit,
 ): Promise<Response> => {
   try {
-    const token = await getStoredToken();
+    let token = await getStoredToken();
+
+    if (token && isTokenExpired(token)) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        token = await getStoredToken();
+      }
+    }
 
     // FormData 여부 확인 (자동으로 Content-Type 설정)
     const isFormData = options?.body instanceof FormData;
 
-    const headers: HeadersInit = {
-      ...(options?.headers || {}),
+    const headers: Record<string, string> = {
+      ...parseHeaders(options?.headers),
       ...(token && { 'Authorization': `Bearer ${token}` }),
     };
 
     // FormData가 아니면 JSON 타입 설정
-    if (!isFormData && !headers['Content-Type']) {
-      (headers as Record<string, string>)['Content-Type'] = 'application/json';
+    if (!isFormData && !hasContentTypeHeader(headers)) {
+      headers['Content-Type'] = 'application/json';
     }
 
-    const response = await fetch(url, {
+    let response = await fetch(url, {
       ...options,
       headers,
     });
 
-    // 401/403 응답 시 자동로그인 데이터 초기화
+    if ((response.status === 401 || response.status === 403) && url !== REFRESH_URL) {
+      const refreshed = await refreshAccessToken();
+
+      if (refreshed) {
+        const refreshedToken = await getStoredToken();
+        const retryHeaders: Record<string, string> = {
+          ...headers,
+          ...(refreshedToken && { 'Authorization': `Bearer ${refreshedToken}` }),
+        };
+
+        response = await fetch(url, {
+          ...options,
+          headers: retryHeaders,
+        });
+      }
+    }
+
+    // Refresh 실패 또는 재시도 후에도 401/403 응답 시 자동로그인 데이터 초기화
     if (response.status === 401 || response.status === 403) {
       await clearAutoLoginData();
       // 에러를 throw하면 호출한 곳에서 처리 (보통 Login 화면으로 이동)
