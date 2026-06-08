@@ -8,13 +8,22 @@
   npm run android:release
 
 [캐시 지운 후 시작]
-npx react-native start --reset-cache
-npm run android -- --clean
+  npx react-native start --reset-cache
+  npm run android -- --clean
 
 [요소 확인 툴 켜기]
   터미널에 npx react-devtools@6 입력
   애뮬레이터 새로고침(R)
   오른쪽 패널 아래 rendered by 확인
+
+[캐시 충돌 시 해결법 - Gradle 데몬]
+1. Gradle 데몬 중지
+  ./gradlew --stop
+2. node_modules 완전 재설치
+  npm install
+3. 캐시 초기화된 빌드
+  npm run android -- --clean
+
 
 -----
 <기타>
