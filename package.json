@@ -5,7 +5,8 @@
   "scripts": {
     "android": "node scripts/run-android.js",
     "android:release": "node scripts/run-android-release.js",
-    "ios": "react-native run-ios",
+    "ios": "react-native run-ios --extra-params \"-allowProvisioningUpdates -allowProvisioningDeviceRegistration\"",
+    "ios:provision": "react-native run-ios --device --extra-params \"-allowProvisioningUpdates -allowProvisioningDeviceRegistration\"",
     "lint": "eslint .",
     "postinstall": "patch-package",
     "start": "react-native start",
