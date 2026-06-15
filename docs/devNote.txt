@@ -24,6 +24,41 @@
 3. 캐시 초기화된 빌드
   npm run android -- --clean
 
+[Android 빌드 오류 총정리 - Gradle 9 + RN 0.83 환경]
+
+① Gradle transform 캐시 손상 (metadata.bin 오류)
+  원인: 이전 빌드 비정상 종료로 caches/9.0.0/transforms/ 내 파일 손상
+  해결: 해당 transform 폴더를 \\?\ 긴 경로 접두사로 삭제 후 재빌드
+  PowerShell: Remove-Item -LiteralPath "\\?\C:\Users\Owner\.gradle\caches\9.0.0\transforms\<hash>" -Recurse -Force
+
+② Kotlin/Java JVM 타겟 불일치 (JDK 17 없는 환경)
+  원인: Kotlin 2.1.x 기본값 JVM 21, Java 기본값 1.8 → 불일치
+         react.internal.disableJavaVersionAlignment=true 가 없으면 RN이 JDK 17 툴체인 탐색 → 실패
+  해결: android/gradle.properties에 두 속성 추가
+    org.gradle.configuration-cache=false
+    react.internal.disableJavaVersionAlignment=true   ← JDK 17 툴체인 탐색 방지
+    kotlin.jvm.target.validation.mode=IGNORE          ← JVM 타겟 불일치 검증 무시
+
+③ CMake 빌드 파일이 삭제된 transform 경로 참조
+  원인: transform 폴더 삭제 후 node_modules 네이티브 모듈의 build/ 디렉토리가 이전 경로 참조
+  해결: android/app/build, android/app/.cxx 및 영향받은 node_modules/*/android/build 삭제 후 재빌드
+
+④ PackageList.java의 @react-native-firebase/app import 오류
+  원인: 자동링킹이 io.invertase.firebase.ReactNativeFirebaseAppPackage 생성하지만
+        실제 클래스는 io.invertase.firebase.app.ReactNativeFirebaseAppPackage
+  해결: react-native.config.js에 dependencies 오버라이드 추가
+    '@react-native-firebase/app': {
+      platforms: { android: {
+        packageImportPath: 'import io.invertase.firebase.app.ReactNativeFirebaseAppPackage;',
+        packageInstance: 'new io.invertase.firebase.app.ReactNativeFirebaseAppPackage()',
+      }}
+    }
+
+⑤ @react-native-firebase 패키지 dist/ 빌드 파일 누락 (Metro 번들 오류)
+  원인: 패키지 설치는 됐으나 dist/module/index.js 등 빌드 결과물 없음
+  해결: npm install --force @react-native-firebase/app @react-native-firebase/analytics
+        → 24.1.1로 업데이트되며 해결됨
+
 
 -----
 <기타>
