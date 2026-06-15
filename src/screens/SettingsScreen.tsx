@@ -5,19 +5,33 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  Linking,
 } from 'react-native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../navigation/RootNavigator';
-import { ArrowLeftIcon } from '../components/common/Icons';
+import { ArrowLeftIcon, ChevronRightIcon } from '../components/common/Icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAlert } from '../context/AlertContext';
+import InAppBrowser from 'react-native-inappbrowser-reborn';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
 const SettingsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
   const { showAlert, showConfirm } = useAlert();
+
+  const openUrl = async (url: string) => {
+    try {
+      if (await InAppBrowser.isAvailable()) {
+        await InAppBrowser.open(url, { modalPresentationStyle: 'pageSheet' });
+      } else {
+        Linking.openURL(url);
+      }
+    } catch {
+      Linking.openURL(url);
+    }
+  };
 
   const handleLogout = () => {
     showConfirm({
@@ -79,9 +93,38 @@ const SettingsScreen = ({ navigation }: Props) => {
 
           <TouchableOpacity
             style={styles.menuItem}
+            onPress={() => openUrl('https://memme-landing.kro.kr/account-deletion')}
+          >
+            <Text style={[styles.menuItemText, styles.deleteText]}>회원 탈퇴 요청</Text>
+            <ChevronRightIcon color="#C0CDD8" size={16} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
             onPress={handleLogout}
           >
             <Text style={[styles.menuItemText, styles.logoutText]}>로그아웃</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 서비스 섹션 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>서비스</Text>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => openUrl('https://memme-landing.kro.kr/')}
+          >
+            <Text style={styles.menuItemText}>Memme 소개</Text>
+            <ChevronRightIcon color="#C0CDD8" size={16} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => openUrl('https://memme-landing.kro.kr/privacy')}
+          >
+            <Text style={styles.menuItemText}>개인정보 처리방침</Text>
+            <ChevronRightIcon color="#C0CDD8" size={16} />
           </TouchableOpacity>
         </View>
 
@@ -164,6 +207,10 @@ const styles = StyleSheet.create({
   logoutText: {
     color: '#FF3B30',
     fontWeight: '600',
+  },
+  deleteText: {
+    color: '#FF3B30',
+    fontWeight: '500',
   },
   menuItemValue: {
     fontSize: 14,
