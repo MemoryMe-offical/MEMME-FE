@@ -5,13 +5,15 @@ import analytics from '@react-native-firebase/analytics';
 import { AlertProvider } from './src/context/AlertContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import { logScreenView } from './src/utils/analytics';
+import useInAppUpdate from './src/hooks/useInAppUpdate';
 
 const App = () => {
   const navigationRef = useRef<NavigationContainerRef<any>>(null);
   const routeNameRef = useRef<string | undefined>(undefined);
 
+  useInAppUpdate();
+
   useEffect(() => {
-    // Firebase Analytics 초기화
     analytics().setAnalyticsCollectionEnabled(true);
   }, []);
 
