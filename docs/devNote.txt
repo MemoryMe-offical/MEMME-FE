@@ -7,6 +7,25 @@ android/app/build.gradle에서 버전 변경:
   versionCode 4        // 1씩 올려야 함 (무조건 이전보다 커야 함)
   versionName "1.0.3"  // 사용자에게 표시되는 버전
 
+2. 업데이트 단계 설정
+  src/hooks/useInAppUpdate.ts에서 22번 라인에
+
+  updateType: IAUUpdateKind.FLEXIBLE,   // 유연 (현재 설정)
+  updateType: IAUUpdateKind.IMMEDIATE,  // 즉시
+
+  둘 중 하나로 설정
+
+  FLEXIBLE (유연) — 현재 설정
+    다운로드가 백그라운드에서 진행되고 앱을 계속 쓸 수 있음
+    다운로드 완료 후 Alert로 재시작 유도
+    일반적인 기능 업데이트에 적합
+
+  IMMEDIATE (즉시)
+    전체 화면을 덮는 업데이트 UI가 뜨고 완료 전까지 앱 사용 불가
+    다운로드 완료되면 자동 재시작
+    보안 패치, 서버 호환성 필수 업데이트에 적합
+    onStatusUpdate 리스너와 Alert가 필요 없어짐 (자동이라서)
+
 2. AAB 다시 빌드
 
 cd android

@@ -37,7 +37,8 @@
     "react-native-screens": "^4.22.0",
     "react-native-svg": "^15.15.3",
     "react-native-vector-icons": "^10.3.0",
-    "react-native-webview": "^13.16.1"
+    "react-native-webview": "^13.16.1",
+    "sp-react-native-in-app-updates": "^1.5.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
