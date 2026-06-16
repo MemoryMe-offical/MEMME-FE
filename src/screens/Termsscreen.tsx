@@ -5,7 +5,9 @@ import {
   TouchableOpacity,
   ScrollView,
   Modal,
+  Linking,
 } from 'react-native';
+import InAppBrowser from 'react-native-inappbrowser-reborn';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -60,7 +62,20 @@ const TermsScreen = () => {
     setAllChecked(allTermsChecked);
   };
 
-  const showTermDetail = (type: 'service' | 'privacy' | 'marketing') => {
+  const openPrivacyPolicy = async () => {
+    const url = 'https://memme-landing.kro.kr/privacy';
+    try {
+      if (await InAppBrowser.isAvailable()) {
+        await InAppBrowser.open(url, { modalPresentationStyle: 'pageSheet' });
+      } else {
+        Linking.openURL(url);
+      }
+    } catch {
+      Linking.openURL(url);
+    }
+  };
+
+  const showTermDetail = (type: 'service' | 'marketing') => {
     let title = '';
     let content = '';
 
@@ -68,10 +83,6 @@ const TermsScreen = () => {
       case 'service':
         title = '서비스 이용약관';
         content = SERVICE_TERMS;
-        break;
-      case 'privacy':
-        title = '개인정보 처리방침';
-        content = PRIVACY_POLICY;
         break;
       case 'marketing':
         title = '마케팅 정보 수신 동의';
@@ -171,7 +182,7 @@ const TermsScreen = () => {
                 [필수] 개인정보 처리방침
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => showTermDetail('privacy')}>
+            <TouchableOpacity onPress={openPrivacyPolicy}>
               <Text style={styles['terms-item-detailButton']}>보기</Text>
             </TouchableOpacity>
           </View>
