@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 /**
  * Release build - JS bundle is included in the APK, no Metro needed.
+ * Always clears Metro/Babel cache to ensure .env changes are reflected.
  */
 const { execSync } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 
 const projectRoot = path.resolve(__dirname, '..');
 const androidDir = path.join(projectRoot, 'android');
@@ -14,6 +16,19 @@ function run(cmd, opts = {}) {
   execSync(cmd, { stdio: 'inherit', ...opts });
 }
 
+// 1. Clear Metro/Babel cache so .env changes are always picked up
+const cacheDir = path.join(projectRoot, 'node_modules', '.cache');
+if (fs.existsSync(cacheDir)) {
+  console.log('Clearing Metro/Babel cache...');
+  fs.rmSync(cacheDir, { recursive: true, force: true });
+  console.log('Cache cleared.\n');
+}
+
+// 2. Clean previous Gradle build output
+console.log('Cleaning Gradle build...');
+run('.\\gradlew.bat clean', { cwd: androidDir });
+
+// 3. Build Release APK (Metro bundler runs with --reset-cache via extraPackagerArgs)
 console.log('Building Release APK...');
 run('.\\gradlew.bat app:assembleRelease', { cwd: androidDir });
 

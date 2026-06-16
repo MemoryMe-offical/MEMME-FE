@@ -3,14 +3,15 @@
 [앱 업데이트]
 1. 코드 수정 후 버전 올리기
 
-android/app/build.gradle:92에서 버전 변경:
-  versionCode 2        // 1씩 올려야 함 (무조건 이전보다 커야 함)
-  versionName "1.0.1"  // 사용자에게 표시되는 버전
+android/app/build.gradle에서 버전 변경:
+  versionCode 4        // 1씩 올려야 함 (무조건 이전보다 커야 함)
+  versionName "1.0.3"  // 사용자에게 표시되는 버전
 
 2. AAB 다시 빌드
 
 cd android
 ./gradlew bundleRelease
+※ .env 변경 포함 캐시 초기화가 자동 적용됨 (extraPackagerArgs --reset-cache)
 
 3. 플레이 콘솔에 업로드
 
