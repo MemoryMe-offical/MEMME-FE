@@ -14,12 +14,14 @@ import { ArrowLeftIcon, ChevronRightIcon } from '../components/common/Icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAlert } from '../context/AlertContext';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
+import DeviceInfo from 'react-native-device-info';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
 const SettingsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
   const { showAlert, showConfirm } = useAlert();
+  const appVersion = DeviceInfo.getVersion();
 
   const openUrl = async (url: string) => {
     try {
@@ -134,7 +136,7 @@ const SettingsScreen = ({ navigation }: Props) => {
 
           <TouchableOpacity style={styles.menuItem} disabled>
             <Text style={styles.menuItemText}>앱 버전</Text>
-            <Text style={styles.menuItemValue}>1.0.0</Text>
+            <Text style={styles.menuItemValue}>{appVersion}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
