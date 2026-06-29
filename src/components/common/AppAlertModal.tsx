@@ -1,21 +1,24 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   Modal,
   View,
   Text,
   TouchableOpacity,
   Animated,
+  ActivityIndicator,
 } from 'react-native';
 import { appAlertModalStyles as styles } from '../../styles/AppAlertModal.styles';
 import type { AlertConfig } from '../../context/AlertContext';
 
 interface AppAlertModalProps {
   config: AlertConfig;
-  onClose: (confirmed: boolean) => void;
+  onClose: (confirmed: boolean) => void | Promise<void>;
 }
 
 export const AppAlertModal: React.FC<AppAlertModalProps> = ({ config, onClose }) => {
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const mountedRef = useRef(true);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -25,7 +28,29 @@ export const AppAlertModal: React.FC<AppAlertModalProps> = ({ config, onClose })
     }).start();
   }, [config, fadeAnim]);
 
-  const handleConfirm = () => {
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  const handleConfirm = async () => {
+    if (submitting) {
+      return;
+    }
+
+    if (config.onConfirm) {
+      setSubmitting(true);
+      try {
+        await onClose(true);
+      } finally {
+        if (mountedRef.current) {
+          setSubmitting(false);
+        }
+      }
+      return;
+    }
+
     Animated.timing(fadeAnim, {
       toValue: 0,
       duration: 100,
@@ -34,6 +59,10 @@ export const AppAlertModal: React.FC<AppAlertModalProps> = ({ config, onClose })
   };
 
   const handleCancel = () => {
+    if (submitting) {
+      return;
+    }
+
     Animated.timing(fadeAnim, {
       toValue: 0,
       duration: 100,
@@ -89,6 +118,7 @@ export const AppAlertModal: React.FC<AppAlertModalProps> = ({ config, onClose })
                 style={[styles.button, styles.cancelButton]}
                 activeOpacity={0.7}
                 onPress={handleCancel}
+                disabled={submitting}
               >
                 <Text style={styles.cancelButtonText}>{config.cancelText}</Text>
               </TouchableOpacity>
@@ -101,10 +131,15 @@ export const AppAlertModal: React.FC<AppAlertModalProps> = ({ config, onClose })
               ]}
               activeOpacity={0.7}
               onPress={handleConfirm}
+              disabled={submitting}
             >
-              <Text style={styles.confirmButtonText}>
-                {config.confirmText || '확인'}
-              </Text>
+              {submitting ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.confirmButtonText}>
+                  {config.confirmText || '확인'}
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
         </Animated.View>

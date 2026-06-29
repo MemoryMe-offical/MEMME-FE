@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,16 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../navigation/RootNavigator';
 import { ArrowLeftIcon, ChevronRightIcon } from '../components/common/Icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAlert } from '../context/AlertContext';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
+import {
+  clearAutoLoginData,
+  fetchWithAutoLogoutHandler,
+} from '../utils/tokenUtils';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Settings'>;
+
+const API_BASE_URL = 'https://memme.o-r.kr/v1';
 
 const SettingsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
@@ -42,13 +47,7 @@ const SettingsScreen = ({ navigation }: Props) => {
       destructive: true,
       onConfirm: async () => {
         try {
-          // AsyncStorage에서 인증 정보 삭제
-          await AsyncStorage.multiRemove([
-            'accessToken',
-            'refreshToken',
-            'userId',
-            'AUTO_LOGIN',
-          ]);
+          await clearAutoLoginData();
           // 로그인 화면으로 이동
           navigation.reset({
             index: 0,
@@ -59,6 +58,53 @@ const SettingsScreen = ({ navigation }: Props) => {
           showAlert({
             title: '오류',
             message: '로그아웃에 실패했습니다.',
+            type: 'error',
+          });
+        }
+      },
+    });
+  };
+
+  const handleWithdrawal = () => {
+    showConfirm({
+      title: '회원 탈퇴',
+      message:
+        '회원 탈퇴 시 계정과 모든 데이터가 삭제되며 복구할 수 없습니다. 정말 탈퇴하시겠습니까?',
+      confirmText: '탈퇴하기',
+      cancelText: '취소',
+      destructive: true,
+      onConfirm: async () => {
+        try {
+          const response = await fetchWithAutoLogoutHandler(
+            `${API_BASE_URL}/withdrawal`,
+            { method: 'DELETE' },
+          );
+
+          if (!response.ok) {
+            let message = '회원 탈퇴에 실패했습니다.';
+            try {
+              const data = await response.json();
+              message = data?.message || data?.error || message;
+            } catch {
+              // 서버가 JSON을 내려주지 않는 경우 기본 메시지를 사용한다.
+            }
+            throw new Error(message);
+          }
+
+          await clearAutoLoginData();
+
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          });
+        } catch (error) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : '회원 탈퇴에 실패했습니다.';
+          showAlert({
+            title: '회원 탈퇴 실패',
+            message,
             type: 'error',
           });
         }
@@ -93,10 +139,9 @@ const SettingsScreen = ({ navigation }: Props) => {
 
           <TouchableOpacity
             style={styles.menuItem}
-            onPress={() => openUrl('https://memme-landing.kro.kr/account-deletion')}
+            onPress={handleWithdrawal}
           >
-            <Text style={[styles.menuItemText, styles.deleteText]}>회원 탈퇴 요청</Text>
-            <ChevronRightIcon color="#C0CDD8" size={16} />
+            <Text style={[styles.menuItemText, styles.deleteText]}>회원 탈퇴</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
