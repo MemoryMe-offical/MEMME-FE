@@ -191,11 +191,16 @@ const saveTokens = async (
   await AsyncStorage.multiSet(entries);
 };
 
+const shouldClearAuthForRefreshFailure = (status: number): boolean => {
+  return status === 400 || status === 401 || status === 403;
+};
+
 /**
  * RefreshToken으로 새 AccessToken 발급받기
  */
 const refreshAccessTokenInternal = async (): Promise<boolean> => {
   try {
+    const accessToken = await getStoredToken();
     const refreshToken = await getStoredRefreshToken();
 
     if (!refreshToken) {
@@ -204,12 +209,17 @@ const refreshAccessTokenInternal = async (): Promise<boolean> => {
 
     const response = await fetch(REFRESH_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(accessToken && { 'Authorization': `Bearer ${accessToken}` }),
+      },
       body: JSON.stringify({ refreshToken }),
     });
 
     if (!response.ok) {
-      await clearAutoLoginData();
+      if (shouldClearAuthForRefreshFailure(response.status)) {
+        await clearAutoLoginData();
+      }
       return false;
     }
 
@@ -296,8 +306,10 @@ export const clearAutoLoginData = async (): Promise<void> => {
 };
 
 /**
- * 401/403 에러 처리를 포함한 fetch 래퍼
- * - 401/403 응답 시 자동로그인 데이터 초기화
+ * 401 에러 처리를 포함한 fetch 래퍼
+ * - 401 응답 시 토큰 갱신 시도
+ * - 토큰 갱신 실패 또는 재시도 후에도 401이면 자동로그인 데이터 초기화
+ * - 403은 권한 문제일 수 있으므로 세션을 지우지 않고 호출부가 처리한다.
  * - FormData 자동 감지 (Content-Type 자동 설정)
  * - 에러 로그 출력
  */
@@ -333,7 +345,7 @@ export const fetchWithAutoLogoutHandler = async (
       headers,
     });
 
-    if ((response.status === 401 || response.status === 403) && url !== REFRESH_URL) {
+    if (response.status === 401 && url !== REFRESH_URL) {
       const refreshed = await refreshAccessToken();
 
       if (refreshed) {
@@ -350,8 +362,8 @@ export const fetchWithAutoLogoutHandler = async (
       }
     }
 
-    // Refresh 실패 또는 재시도 후에도 401/403 응답 시 자동로그인 데이터 초기화
-    if (response.status === 401 || response.status === 403) {
+    // Refresh 실패 또는 재시도 후에도 401 응답 시 자동로그인 데이터 초기화
+    if (response.status === 401) {
       await clearAutoLoginData();
       // 에러를 throw하면 호출한 곳에서 처리 (보통 Login 화면으로 이동)
       throw new Error(`Unauthorized (${response.status})`);
