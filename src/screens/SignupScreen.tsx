@@ -28,6 +28,7 @@ const SignupScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const scrollViewRef = useRef<ScrollView>(null);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const signupCompletedRef = useRef(false);
   const { showAlert, showConfirm } = useAlert();
 
   const [email, setEmail] = useState('');
@@ -60,6 +61,25 @@ const SignupScreen = () => {
       }
     };
   }, []);
+
+  // 입력 진행 중 뒤로가기 시 확인 다이얼로그
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      if (signupCompletedRef.current) return;
+      const hasInput = !!userName || !!email || !!password || !!passwordConfirm || isCodeSent;
+      if (!hasInput) return;
+      e.preventDefault();
+      showConfirm({
+        title: '나가기',
+        message: '입력한 내용이 모두 사라집니다. 나가시겠습니까?',
+        confirmText: '나가기',
+        cancelText: '계속',
+        destructive: true,
+        onConfirm: () => navigation.dispatch(e.data.action),
+      });
+    });
+    return unsubscribe;
+  }, [navigation, userName, email, password, passwordConfirm, isCodeSent, showConfirm]);
 
   const validateEmail = (value: string) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -297,7 +317,10 @@ const SignupScreen = () => {
         confirmText: '확인',
         cancelText: undefined,
         destructive: false,
-        onConfirm: () => navigation.replace('Login'),
+        onConfirm: () => {
+          signupCompletedRef.current = true;
+          navigation.replace('Login');
+        },
       });
     } catch (error) {
       const message =

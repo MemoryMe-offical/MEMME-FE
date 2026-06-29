@@ -59,10 +59,12 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
     setIsEditing(true);
   };
 
-  const isDirty = () =>
+  const isDirty = useCallback(() =>
     editTitle.trim() !== board.title ||
     editDescription.trim() !== (board.description ?? '') ||
-    JSON.stringify(editTags) !== JSON.stringify(board.tags ?? []);
+    JSON.stringify(editTags) !== JSON.stringify(board.tags ?? []),
+    [editTitle, editDescription, editTags, board]
+  );
 
   const cancelEdit = () => {
     if (isDirty()) {
@@ -78,6 +80,23 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
       setIsEditing(false);
     }
   };
+
+  // 편집 모드에서 Android 하드웨어 백 / iOS 스와이프로 나갈 때 변경사항 보호
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      if (!isEditing || !isDirty()) return;
+      e.preventDefault();
+      showConfirm({
+        title: '편집 취소',
+        message: '수정사항이 사라집니다. 나가시겠습니까?',
+        confirmText: '나가기',
+        cancelText: '계속 편집',
+        destructive: true,
+        onConfirm: () => navigation.dispatch(e.data.action),
+      });
+    });
+    return unsubscribe;
+  }, [navigation, isEditing, isDirty, showConfirm]);
 
   const handleSave = async () => {
     if (!editTitle.trim()) return;

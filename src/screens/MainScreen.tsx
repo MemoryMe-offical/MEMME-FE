@@ -12,6 +12,7 @@ import {
   NativeModules,
   StatusBar,
   Keyboard,
+  BackHandler,
   Modal,
   ScrollView,
   Clipboard,
@@ -541,6 +542,19 @@ const MainScreen = () => {
       hideSub.remove();
     };
   }, []);
+
+  // Android: 키보드가 열린 상태에서 하드웨어 백 버튼 → 앱 종료 전 키보드 먼저 닫기
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      if (keyboardVisible) {
+        Keyboard.dismiss();
+        return true;
+      }
+      return false;
+    });
+    return () => backHandler.remove();
+  }, [keyboardVisible]);
 
   const toggleAllBoards = () => {
     const newState = !allBoardsExpanded;
