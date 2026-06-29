@@ -8,8 +8,9 @@ import {
   StyleSheet,
   Dimensions,
   Text,
+  Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CloseIcon } from './Icons';
 
 interface Props {
@@ -23,7 +24,10 @@ const { width, height } = Dimensions.get('window');
 
 const ImageViewerModal = ({ visible, imageUris, initialIndex = 0, onClose }: Props) => {
   const flatListRef = useRef<FlatList>(null);
+  const insets = useSafeAreaInsets();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
+  const iosTopInset = Platform.OS === 'ios' ? insets.top : 0;
+  const iosBottomInset = Platform.OS === 'ios' ? insets.bottom : 0;
 
   useEffect(() => {
     if (visible) {
@@ -46,10 +50,15 @@ const ImageViewerModal = ({ visible, imageUris, initialIndex = 0, onClose }: Pro
       onRequestClose={onClose}
     >
       <View style={styles.container}>
-        <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+        <SafeAreaView
+          style={styles.safeArea}
+          edges={Platform.OS === 'ios' ? ['bottom'] : []}>
           {/* 헤더 */}
-          <View style={styles.header}>
-            <TouchableOpacity onPress={onClose} hitSlop={8} style={styles.closeButton}>
+          <View style={[styles.header, { paddingTop: iosTopInset + 12 }]}>
+            <TouchableOpacity
+              onPress={onClose}
+              hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+              style={[styles.closeButton, { top: iosTopInset + 12 }]}>
               <CloseIcon color="#FFFFFF" size={24} />
             </TouchableOpacity>
             <Text style={styles.pageNumber}>
@@ -63,7 +72,11 @@ const ImageViewerModal = ({ visible, imageUris, initialIndex = 0, onClose }: Pro
             data={imageUris}
             keyExtractor={(_, idx) => idx.toString()}
             renderItem={({ item }) => (
-              <View style={styles.imageContainer}>
+              <View
+                style={[
+                  styles.imageContainer,
+                  { height: height - 60 - iosTopInset - iosBottomInset },
+                ]}>
                 <Image
                   source={{ uri: item }}
                   style={styles.image}
@@ -117,7 +130,6 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     width,
-    height: height - 60,
     justifyContent: 'center',
     alignItems: 'center',
   },

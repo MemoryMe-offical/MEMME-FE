@@ -261,6 +261,6 @@ export const loginStyles = StyleSheet.create({
   // 로그인 - 소셜 컨테이너 - 애플 버튼 - 이미지
   'login-socialContainer-appleButton-image': {
     width: '100%',
-    height: 50,
+    height: 55,
   },
 });
