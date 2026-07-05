@@ -16,6 +16,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { WebView, WebViewNavigation } from 'react-native-webview';
+import appleAuth from '@invertase/react-native-apple-authentication';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -45,6 +46,7 @@ const LoginScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const passwordInputRef = useRef<RNTextInput>(null);
   const kakaoLoginInProgressRef = useRef(false);
+  const appleLoginInProgressRef = useRef(false);
   const { showAlert } = useAlert();
 
   const [email, setEmail] = useState('');
@@ -72,6 +74,46 @@ const LoginScreen = () => {
     } catch {
       return '로그인 중 오류가 발생했습니다.';
     }
+  };
+
+  const getErrorMessage = (
+    error: unknown,
+    fallback: string,
+  ): string => {
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    if (typeof error === 'object' && error !== null) {
+      const nativeError = error as {
+        code?: unknown;
+        message?: unknown;
+        localizedDescription?: unknown;
+        nativeStackIOS?: unknown;
+      };
+      const parts = [
+        typeof nativeError.code === 'string' && `code: ${nativeError.code}`,
+        typeof nativeError.message === 'string' && nativeError.message,
+        typeof nativeError.localizedDescription === 'string' &&
+          nativeError.localizedDescription,
+      ].filter(Boolean);
+
+      if (parts.length > 0) {
+        return parts.join('\n');
+      }
+
+      try {
+        return JSON.stringify(error);
+      } catch {
+        return fallback;
+      }
+    }
+
+    if (typeof error === 'string') {
+      return error;
+    }
+
+    return fallback;
   };
 
   const persistLoginSession = async (
@@ -188,6 +230,40 @@ const LoginScreen = () => {
     }
   };
 
+  const completeAppleLogin = async (code: string) => {
+    try {
+      setLoading(true);
+  
+      const response = await fetch(`${API_BASE_URL}/v1/auth/apple`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({ code }),
+      });
+  
+      if (!response.ok) {
+        throw new Error(await parseErrorMessage(response));
+      }
+  
+      const apiResponse = await response.json();
+      const { accessToken, refreshToken } = apiResponse.data;
+  
+      await persistLoginSession(accessToken, refreshToken, true);
+      navigateToMain();
+    } catch (error) {
+      const message = getErrorMessage(
+        error,
+        '애플 로그인 중 오류가 발생했습니다.',
+      );
+      showAlert({ title: '애플 로그인 실패', message, type: 'error' });
+    } finally {
+      appleLoginInProgressRef.current = false;
+      setLoading(false);
+    }
+  };
+
   const handleKakaoRedirect = (url: string): boolean => {
     if (!url.startsWith(KAKAO_REDIRECT_URI)) {
       return false;
@@ -232,6 +308,63 @@ const LoginScreen = () => {
   const handleKakaoLogin = () => {
     kakaoLoginInProgressRef.current = false;
     setKakaoWebViewVisible(true);
+  };
+
+  const handleAppleLogin = async () => {
+    if (Platform.OS !== 'ios') {
+      showAlert({
+        title: '애플 로그인 안내',
+        message: '애플 로그인은 iOS에서 사용할 수 있습니다.',
+      });
+      return;
+    }
+
+    if (appleLoginInProgressRef.current) {
+      return;
+    }
+
+    appleLoginInProgressRef.current = true;
+
+    try {
+      setLoading(true);
+      console.log('[AppleLogin] start native request');
+
+      const response = await appleAuth.performRequest({
+        requestedOperation: appleAuth.Operation.LOGIN,
+        requestedScopes: [appleAuth.Scope.FULL_NAME, appleAuth.Scope.EMAIL],
+      });
+
+      const { authorizationCode } = response;
+      console.log('[AppleLogin] native response', {
+        hasAuthorizationCode: Boolean(authorizationCode),
+      });
+
+      if (!authorizationCode) {
+        throw new Error('인가코드를 받지 못했습니다.');
+      }
+
+      await completeAppleLogin(authorizationCode);
+    } catch (error) {
+      appleLoginInProgressRef.current = false;
+      setLoading(false);
+      console.warn('[AppleLogin] native request failed', error);
+
+      const isCanceled =
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === appleAuth.Error.CANCELED;
+
+      if (isCanceled) {
+        return;
+      }
+
+      const message = getErrorMessage(
+        error,
+        '애플 로그인 중 오류가 발생했습니다.',
+      );
+      showAlert({ title: '애플 로그인 실패', message, type: 'error' });
+    }
   };
 
   const handleSignup = () => {
@@ -378,6 +511,18 @@ const LoginScreen = () => {
                   resizeMode="contain"
                 />
               </TouchableOpacity>
+              {Platform.OS === 'ios' && (
+                <TouchableOpacity
+                  style={styles['login-socialContainer-appleButton']}
+                  onPress={handleAppleLogin}
+                  disabled={loading}>
+                  <Image
+                    source={require('../assets/imgs/appleLogin.png')}
+                    style={styles['login-socialContainer-appleButton-image']}
+                    resizeMode="contain"
+                  />
+                </TouchableOpacity>
+              )}
             </View>
           </ScrollView>
         </TouchableWithoutFeedback>
