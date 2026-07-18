@@ -1,243 +1,228 @@
-# MEMME-FE
+<div align="center">
+  <img width="180" alt="Memme Logo" src="https://github.com/user-attachments/assets/2320d022-f3da-481c-a669-bf775698e75a" />
 
-MemoryMe - Memme
+  # MEMME Frontend
 
+  React Native로 개발한 MEMME iOS·Android 애플리케이션입니다.
 
-# MEMME 서비스 개념 가이드
+  <br />
 
-> 이 문서는 MEMME 서비스의 목적과 구조를 처음 접하는 사람도 이해할 수 있도록 작성되었습니다.  
-> 개발자, 디자이너, 기획자 모두를 대상으로 합니다.
+  <img src="https://img.shields.io/badge/React_Native-0.83.1-20232A?style=flat-square&logo=react&logoColor=61DAFB" alt="React Native 0.83.1" />
+  <img src="https://img.shields.io/badge/TypeScript-5.8.3-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript 5.8.3" />
+  <img src="https://img.shields.io/badge/iOS-111111?style=flat-square&logo=apple&logoColor=white" alt="iOS" />
+  <img src="https://img.shields.io/badge/Android-3DDC84?style=flat-square&logo=android&logoColor=white" alt="Android" />
+</div>
 
----
+## 프로젝트 소개
 
-## MEMME는 어떤 서비스인가요?
+MEMME는 메신저처럼 생각을 빠르게 기록하고, 나중에 보드와 노트로 정리할 수 있는 개인 메모 앱입니다.
 
-MEMME는 **"나 자신과 대화하듯 생각을 기록하고, 나중에 정리하는"** 개인 메모 앱입니다.
+이 저장소는 iOS와 Android에서 동작하는 MEMME 모바일 클라이언트를 관리합니다.
 
-일상에서 이런 경험이 있을 것입니다:
+## 주요 화면
 
-> 지하철에서 갑자기 아이디어가 떠오른다.  
-> 친구에게 카톡을 보내듯 빠르게 적어두고 싶다.  
-> 그런데 나중에 보니 관련된 메모들이 여기저기 흩어져 있다.  
-> 정리하려니 어디서부터 시작해야 할지 모르겠다.
+### 시작과 로그인
 
-MEMME는 이 문제를 해결합니다.
+| 화면 | 설명 |
+|---|---|
+| **스플래시** | 최초 실행 여부와 저장된 로그인 정보를 확인해 온보딩, 로그인, 메인 화면으로 이동합니다. 만료된 Access Token은 Refresh Token으로 갱신을 시도합니다. |
+| **온보딩** | 빠른 메모, 보드·노트 정리, 검색이라는 MEMME의 주요 사용 방식을 세 장의 슬라이드로 소개합니다. |
+| **로그인** | 이메일 로그인과 카카오·Apple 로그인을 지원합니다. 자동 로그인을 선택하면 앱을 다시 실행할 때 세션을 확인합니다. |
+| **회원가입** | 이메일 인증 후 비밀번호를 설정하고, 필수 약관 동의를 거쳐 계정을 생성합니다. |
+| **비밀번호 찾기** | 이메일 인증번호를 확인한 뒤 새로운 비밀번호를 설정합니다. |
 
-**먼저 빠르게 던지고, 나중에 정리한다.**
+### 메인 타임라인
 
----
+메모와 보드가 시간순으로 함께 표시되는 앱의 중심 화면입니다. 최신 기록이 아래에 쌓이는 메신저 형태로 구성했습니다.
 
-## 핵심 개념 3가지
+- 하단 입력창에서 텍스트 메모 작성
+- 사진, 동영상, 파일을 선택해 미디어 메모 생성
+- 메모 펼치기, 북마크, 삭제, 보드로 변환
+- 보드와 노트의 펼침 상태 설정
+- 메모·보드·노트·태그 및 첨부 유형 검색
+- 외부 앱에서 공유된 링크 인박스 확인
+- 사이드 메뉴에서 미디어와 북마크 모아보기
 
-MEMME의 모든 기능은 세 가지 개념으로 이루어져 있습니다.
+### 보드 상세
 
----
+하나의 주제에 속한 노트를 관리하는 화면입니다. 보드의 제목, 설명, 태그를 수정할 수 있고 새 노트를 추가할 수 있습니다. 여러 노트를 선택해 한 번에 삭제하거나 다른 보드로 이동할 수도 있습니다.
 
-### 1. 메모 (Memo)
+### 노트 상세
 
-> **"일단 던져두는 한 줄 기록"**
+노트의 제목과 본문을 작성하고 다음 자료를 첨부합니다.
 
-메모는 생각이 떠오른 순간 바로 입력하는 짧은 텍스트입니다.  
-카카오톡에서 나 자신에게 메시지를 보내는 것과 같은 느낌입니다.
+| 첨부 유형 | 지원 기능 |
+|---|---|
+| **이미지** | 여러 이미지 선택, 미리보기, 삭제 |
+| **동영상** | 업로드, 썸네일·재생 시간 표시, 미리보기 |
+| **파일** | 문서 선택, 파일명 표시, 삭제 |
+| **링크** | OG 미리보기, 링크 삭제, AI 요약을 본문에 추가 |
 
-```
-예시:
-  "코딩 공부하기"
-  "결혼식 2월 31일 오후 12시"
-  "내일 팀 발표 준비 마저 하기"
-```
+수정 중 뒤로 가면 변경 내용을 버릴지 확인하고, 저장 중이거나 업로드 중일 때는 중복 동작을 막습니다.
 
-**메모의 특징:**
-- 입력창에 텍스트를 쓰고 전송하면 타임라인에 바로 쌓입니다.
-- 아직 정리되지 않은, 날 것 그대로의 기록입니다.
-- 나중에 **보드로 변환**하여 체계적으로 정리할 수 있습니다.
+### 미디어 모아보기
 
----
+메모와 노트에 흩어진 사진, 동영상, 파일, 링크, 북마크를 유형별로 모아봅니다. 항목을 선택하면 원본이 포함된 보드 상세 또는 타임라인 위치로 이동합니다.
 
-### 2. 보드 (Board)
+### 설정
 
-> **"관련된 노트들을 묶는 주제 공간"**
+로그아웃과 회원 탈퇴를 제공하며, 서비스 소개와 개인정보 처리방침은 외부 웹 페이지로 연결합니다. 현재 앱 버전도 이 화면에서 확인할 수 있습니다.
 
-보드는 여러 노트를 하나의 주제 아래 모아두는 컨테이너입니다.  
-물리적인 비유로는 **바인더** 또는 **폴더**에 가깝습니다.
+## 기술 스택
 
-```
-예시:
-  [수학교육 과동아리]    ← 보드 제목
-    설명: 동아리 관련 공지와 자료 모음
-    태그: #동아리 #학교
-```
+<p>
+  <img src="https://img.shields.io/badge/React_Native-20232A?style=flat-square&logo=react&logoColor=61DAFB" alt="React Native" />
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/React_Navigation-6B52AE?style=flat-square&logo=react&logoColor=white" alt="React Navigation" />
+  <img src="https://img.shields.io/badge/Swift-F05138?style=flat-square&logo=swift&logoColor=white" alt="Swift" />
+  <img src="https://img.shields.io/badge/Kotlin-7F52FF?style=flat-square&logo=kotlin&logoColor=white" alt="Kotlin" />
+</p>
+<p>
+  <img src="https://img.shields.io/badge/Firebase_Analytics-FFCA28?style=flat-square&logo=firebase&logoColor=111111" alt="Firebase Analytics" />
+  <img src="https://img.shields.io/badge/Kakao_Login-FFCD00?style=flat-square&logo=kakao&logoColor=111111" alt="Kakao Login" />
+  <img src="https://img.shields.io/badge/Sign_in_with_Apple-111111?style=flat-square&logo=apple&logoColor=white" alt="Sign in with Apple" />
+  <img src="https://img.shields.io/badge/Amazon_S3-569A31?style=flat-square&logo=amazons3&logoColor=white" alt="Amazon S3" />
+  <img src="https://img.shields.io/badge/Jest-C21325?style=flat-square&logo=jest&logoColor=white" alt="Jest" />
+</p>
 
-**보드의 특징:**
-- 제목, 설명, 태그만 가집니다. **이미지나 파일을 직접 갖지 않습니다.**
-- 보드의 역할은 "이 공간이 무엇에 관한 것인지"를 정의하는 것입니다.
-- 실제 내용은 모두 안에 있는 **노트**가 담당합니다.
-- 태그를 통해 나중에 검색하거나 카테고리별로 필터링할 수 있습니다.
+### 적용 방식
 
----
+| 영역 | 적용 방식 | 선택 이유 |
+|---|---|---|
+| **멀티 플랫폼** | React Native로 화면과 도메인 로직을 공유하고 공유 기능만 Swift·Kotlin으로 구현 | iOS와 Android의 UI를 함께 관리하면서 네이티브 진입점은 직접 제어하기 위해 |
+| **타임라인** | Cursor Pagination과 `inverted FlatList` 사용 | 새 기록이 계속 추가되어도 중복·누락을 줄이고 채팅형 UI를 유지하기 위해 |
+| **인증** | 401 발생 시 토큰 갱신 후 재시도하고, 동시 갱신 요청은 하나의 Promise로 공유 | 화면별 만료 처리를 없애고 Refresh API 중복 호출을 막기 위해 |
+| **미디어** | FormData 업로드 후 S3 Key와 Presigned URL 분리 관리 | 만료되는 URL 대신 Object Key를 기준으로 파일을 다시 조회하기 위해 |
+| **외부 공유** | iOS Share Extension, Android Sharing Intent 구현 | 앱이 실행되지 않은 상태에서도 공유된 링크를 놓치지 않기 위해 |
 
-### 3. 노트 (Note)
+핵심 구현은 [`tokenUtils.ts`](./src/utils/tokenUtils.ts), [`timelineService.ts`](./src/services/timelineService.ts), [`uploadService.ts`](./src/services/uploadService.ts)에서 확인할 수 있습니다.
 
-> **"보드 안에 속하는 실제 내용 단위"**
+## 프로젝트 구조
 
-노트는 보드 안에 들어가는 개별 내용 카드입니다.  
-텍스트뿐 아니라 이미지, 영상, 파일, 링크를 모두 담을 수 있습니다.
-
-```
-예시: [수학교육 과동아리] 보드 안의 노트들
-  ├── 여름 MT            ← 텍스트 + 사진
-  ├── 수학 모임 공지      ← 텍스트
-  └── 참고 링크          ← 링크 + OG 미리보기
-```
-
-**노트의 특징:**
-- 반드시 하나의 보드에 속해야 합니다. 단독으로 존재할 수 없습니다.
-- 이미지, 영상, 파일, 링크 등 **모든 미디어는 노트에 귀속**됩니다.
-- 노트를 다른 보드로 이동시킬 수 있습니다.
-
----
-
-## 세 개념의 관계
-
-```
-타임라인 (시간순 피드)
-  │
-  ├── 메모  ─────────────────────────────── 단독 존재
-  │         "코딩 공부하기"                  보드로 변환 가능
-  │
-  └── 보드  ─────────────────────────────── 단독 존재
-            제목 + 설명 + 태그              노트를 담는 컨테이너
-              │
-              ├── 노트 1 (텍스트 + 이미지)  보드 없이 존재 불가
-              ├── 노트 2 (링크)
-              └── 노트 3 (파일)
+```text
+src/
+├── screens/        화면
+├── components/     공통·도메인 UI
+├── services/       API와 응답 변환
+├── navigation/     Route와 화면 이동
+├── types/          도메인 타입
+└── utils/          인증·저장소·분석
 ```
 
-한 눈에 보는 비교표:
+플랫폼 코드는 `ios/`, `android/`에서, 전체 화면 구조는 [IA 문서](./docs/IA.md)에서 확인할 수 있습니다.
 
-| | 메모 | 보드 | 노트 |
-|--|------|------|------|
-| 단독 존재 가능 | ✅ | ✅ | ❌ (보드 필요) |
-| 제목 | ❌ | ✅ | ✅ |
-| 태그 | ❌ | ✅ | ❌ |
-| 이미지·파일·링크 | ❌ | ❌ | ✅ |
-| 수정 가능 | ❌ | ✅ | ✅ |
+## 시작하기
 
----
+### 요구 사항
 
-## 주요 사용 시나리오
+- Node.js 20 이상
+- npm
+- React Native CLI 개발 환경
+- Android Studio, Android SDK 및 ADB
+- iOS 개발 시 macOS, Xcode, CocoaPods, Bundler
 
-### 시나리오 1: 빠른 메모 → 나중에 정리
+네이티브 개발 환경은 [React Native 개발 환경 설정](https://reactnative.dev/docs/set-up-your-environment)을 참고해 준비합니다.
 
-```
-상황: 버스에서 갑자기 아이디어가 떠오름
+### 의존성 설치
 
-1. 앱 열기 → 입력창에 "앱 아이디어: 운동 루틴 자동화" 입력 → 전송
-   (메모로 타임라인에 저장)
-
-나중에 집에서:
-
-2. 해당 메모 롱프레스 → "보드로 변환"
-3. "새 보드 만들기" 선택
-4. 보드 제목 입력: "앱 사이드 프로젝트"
-   태그: #개발 #아이디어
-   첫 번째 노트 이름: "운동 루틴 자동화"  ← 자동 채워짐
-5. 저장 → 보드와 첫 노트가 생성됨
-
-이후 관련 내용이 생길 때마다 보드에 노트를 추가:
-   → "기술 스택 정리" 노트
-   → "레퍼런스 앱" 노트 (링크 첨부)
-   → "UI 스케치" 노트 (이미지 첨부)
+```bash
+npm install
 ```
 
----
+`postinstall`에서 `patch-package`가 자동으로 적용됩니다.
 
-### 시나리오 2: 외부 링크를 노트로 저장
+iOS를 개발하는 경우 Pod 의존성도 설치합니다.
 
-```
-상황: 유튜브에서 좋은 강의를 발견
-
-1. 유튜브 앱 → 공유 → MEMME 선택
-2. 앱 진입 시 헤더에 배지 표시 (1개 새 링크)
-3. 배지 탭 → 인박스에서 링크 미리보기 확인
-4. "기존 보드에 추가" 선택 → "스터디 그룹" 보드 선택
-5. 노트 이름 입력: "리액트 강의"
-6. 저장 → 링크가 "스터디 그룹" 보드의 노트로 저장됨
+```bash
+cd ios
+bundle install
+bundle exec pod install
+cd ..
 ```
 
----
+## 환경 설정
 
-### 시나리오 3: 노트를 다른 보드로 이동
+### 환경 변수
 
-```
-상황: "스터디 그룹" 보드의 "알고리즘 풀이" 노트가
-      사실 "개인 공부" 보드에 있어야 할 것 같음
+프로젝트 루트에 `.env` 파일을 생성합니다.
 
-1. "스터디 그룹" 보드 진입
-2. "알고리즘 풀이" 노트의 ··· 메뉴 → "다른 보드로 이동"
-3. 보드 목록에서 "개인 공부" 선택 (최근 수정순 + 검색 지원)
-4. 이동 완료
+```dotenv
+KAKAO_REST_API_KEY=your_kakao_rest_api_key
+KAKAO_REDIRECT_URI=your_kakao_redirect_uri
 ```
 
----
+환경 변수의 타입은 `env.d.ts`, Babel 설정은 `babel.config.js`에서 관리합니다.
 
-### 시나리오 4: 태그로 필터링
+### Firebase
 
-```
-상황: #업무 태그가 붙은 보드들만 보고 싶음
+각 플랫폼의 Firebase 설정 파일을 추가합니다.
 
-1. 검색/필터 버튼 탭
-2. 태그 "업무" 선택
-3. 타임라인이 #업무 태그가 있는 보드들만 표시
-```
-
----
-
-## 링크 인박스란?
-
-외부 앱(브라우저, 유튜브, 뉴스 앱 등)에서 공유 버튼을 눌러 MEMME로 보낸 링크는  
-**즉시 게시물로 만들어지지 않고, 인박스에 임시 보관**됩니다.
-
-이 방식을 선택한 이유:
-- 링크가 자동으로 만들어지면 의도치 않은 내용이 타임라인에 쌓입니다.
-- 사용자가 직접 **어느 보드에 어떤 이름으로 넣을지 결정**해야 의미 있는 정리가 됩니다.
-- 인박스에서 한꺼번에 처리할 수 있어 흐름이 끊기지 않습니다.
-
-```
-외부 공유 → 인박스 보관 → 사용자가 처리 시 노트로 변환
+```text
+android/app/google-services.json
+ios/MEMME/GoogleService-Info.plist
 ```
 
----
+`.env`와 Firebase 설정 파일은 Git에 포함하지 않습니다. 팀의 보안 채널을 통해 전달받아 사용합니다.
 
-## 용어 정리
+### 네이티브 로그인 설정
 
-| 용어 | 설명 |
-|------|------|
-| **메모** (Memo) | 빠르게 입력하는 한 줄 텍스트. 타임라인에 표시. |
-| **보드** (Board) | 노트를 묶는 주제 단위. 제목·설명·태그로 구성. |
-| **노트** (Note) | 보드 안의 실제 내용. 텍스트·이미지·링크·파일 포함 가능. |
-| **인박스** (Inbox) | 외부 공유로 들어온 링크의 임시 보관함. |
-| **태그** | 보드에 붙이는 검색·분류용 키워드. |
-| **타임라인** | 메모와 보드가 시간순으로 쌓이는 메인 피드. |
-| **북마크** | 자주 보는 메모·보드를 즐겨찾기로 표시. 사이드메뉴에서 모아볼 수 있음. |
+카카오 및 Apple 로그인은 환경 변수만으로 동작하지 않습니다. 각 개발자의 앱 등록 정보에 맞춰 다음 항목도 확인해야 합니다.
 
----
+- iOS URL Scheme, Bundle ID, Sign in with Apple Capability
+- Android Package Name, Key Hash, Redirect URI
+- 카카오 Developers에 등록된 플랫폼 및 Redirect URI
 
-## 데이터 구조 다이어그램
+## 실행
 
+Metro 서버를 먼저 실행합니다.
+
+```bash
+npm start
 ```
-User
- └── Timeline (시간순 피드)
-       ├── Memo
-       │     id, text, bookMark, createdAt
-       │
-       └── Board
-             id, title, description, tags[], bookMark, createdAt, updatedAt
-              └── Note[]
-                    id, title, content
-                    imageUris[], videoUris[], files[]
-                    url, ogData
 
-     PendingLink (인박스, 별도 관리)
-       id, url, ogData, receivedAt
+### iOS
+
+```bash
+# Simulator
+npm run ios
+
+# 연결된 기기
+npm run ios:provision
 ```
+
+### Android
+
+```bash
+npm run android
+```
+
+현재 `npm run android`는 Android 16의 streaming install 문제를 우회하기 위해 APK를 빌드한 뒤 ADB로 직접 설치합니다. 해당 스크립트는 Windows의 `gradlew.bat`을 기준으로 작성되어 있습니다.
+
+macOS 또는 Linux에서는 표준 React Native 명령을 사용할 수 있습니다.
+
+```bash
+npx react-native run-android
+```
+
+Release APK를 빌드하고 연결된 기기에 설치하려면 다음 명령을 사용합니다.
+
+```bash
+npm run android:release
+```
+
+Release 스크립트 역시 Windows 및 ADB 연결 환경을 기준으로 합니다.
+
+## 명령어
+
+| 명령어 | 설명 |
+|---|---|
+| `npm run ios` | iOS Simulator 실행 |
+| `npm run android` | Android Debug APK 빌드·설치·실행 |
+
+
+
+## 관련 문서
+
+| 문서 | 내용 |
+|---|---|
+| [Information Architecture](./docs/IA.md) | 화면 계층과 주요 사용자 흐름 |
