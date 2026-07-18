@@ -583,12 +583,13 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       }
 
       if (hasOversized || totalSize > MAX_UPLOAD_SIZE) {
-        Alert.alert(
-          '용량 초과',
-          hasOversized
+        showAlert({
+          title: '용량 초과',
+          message: hasOversized
             ? `'${oversizedFileName}' 파일이 100MB를 초과합니다.`
             : `최대 100MB까지 업로드할 수 있습니다.\n현재 선택 크기: ${(totalSize / (1024 * 1024)).toFixed(2)}MB`,
-        );
+          type: 'error',
+        });
         return;
       }
 

@@ -13,6 +13,7 @@ import { RootStackParamList } from '../navigation/RootNavigator';
 import { ArrowLeftIcon, ChevronRightIcon } from '../components/common/Icons';
 import { useAlert } from '../context/AlertContext';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
+import DeviceInfo from 'react-native-device-info';
 import {
   clearAutoLoginData,
   fetchWithAutoLogoutHandler,
@@ -25,6 +26,7 @@ const API_BASE_URL = 'https://memme.o-r.kr/v1';
 const SettingsScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
   const { showAlert, showConfirm } = useAlert();
+  const appVersion = DeviceInfo.getVersion();
 
   const openUrl = async (url: string) => {
     try {
@@ -179,7 +181,7 @@ const SettingsScreen = ({ navigation }: Props) => {
 
           <TouchableOpacity style={styles.menuItem} disabled>
             <Text style={styles.menuItemText}>앱 버전</Text>
-            <Text style={styles.menuItemValue}>1.0.0</Text>
+            <Text style={styles.menuItemValue}>{appVersion}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

@@ -554,6 +554,7 @@ const LoginScreen = () => {
             onNavigationStateChange={handleKakaoNavigationChange}
             onShouldStartLoadWithRequest={handleKakaoShouldStartLoad}
             originWhitelist={['*']}
+            incognito={true}
             startInLoadingState
             renderLoading={() => (
               <View style={webViewStyles.loading}>
