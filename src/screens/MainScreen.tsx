@@ -58,6 +58,10 @@ const MainScreen = () => {
   const [userId, setUserId] = useState<string>('');
   const [items, setItems] = useState<TimelineItem[]>([]);
   const [loaded, setLoaded] = useState(false);
+  // 타임라인 "더 불러오기"(과거 기록) 관련 상태
+  const [timelineHasMore, setTimelineHasMore] = useState(false);
+  const [timelineNextCursor, setTimelineNextCursor] = useState<string | null>(null);
+  const [isLoadingMoreTimeline, setIsLoadingMoreTimeline] = useState(false);
   const [inputText, setInputText] = useState('');
   const [expandedMemoId, setExpandedMemoId] = useState<string | null>(null);
   const [contextMenuItem, setContextMenuItem] = useState<TimelineItem | null>(null);
@@ -158,6 +162,12 @@ const MainScreen = () => {
   const [searchResults, setSearchResults] = useState<searchService.SearchItem[]>([]);
   const [nextSearchCursor, setNextSearchCursor] = useState<string | null>(null);
   const [searchHasMore, setSearchHasMore] = useState(false);
+  // 검색 결과 중 최근 타임라인(items)에 없는 보드/노트를 보여주기 위해
+  // 개별적으로 불러온 보드들. (검색은 서버 전체를 대상으로 하지만, 화면에는
+  // 최근에 불러온 items에 있는 것만 표시되고 있어서 오래된 보드가 검색해도
+  // 안 보이는 문제가 있었음)
+  const [searchOnlyBoards, setSearchOnlyBoards] = useState<Board[]>([]);
+  const searchAutoLoadAttemptsRef = useRef(0);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [recentBoards, setRecentBoards] = useState<Board[]>([]);
@@ -309,8 +319,13 @@ const MainScreen = () => {
     // 검색 모드이고 필터가 없을 때는 API 검색 결과로 필터링
     if (isSearchMode && searchResults.length > 0 && searchFieldFilters.size === 0) {
       const searchUids = new Set(searchResults.map(r => r.uid));
-      result = result.filter(i => searchUids.has(i.id));
-      return result;
+      // 검색은 서버 전체를 대상으로 하지만 items는 최근 항목만 들고 있으므로,
+      // items에 없어서 개별적으로 불러온 보드(searchOnlyBoards)도 후보에 포함한다.
+      const combined = [
+        ...result,
+        ...searchOnlyBoards.filter(b => !result.some(i => i.id === b.id)),
+      ];
+      return combined.filter(i => searchUids.has(i.id));
     }
 
     // 북마크 필터
@@ -319,16 +334,30 @@ const MainScreen = () => {
     }
 
     return result;
-  }, [items, isSearchMode, searchResults, searchFieldFilters, filterBookmarkOnly]);
+  }, [items, isSearchMode, searchResults, searchFieldFilters, filterBookmarkOnly, searchOnlyBoards]);
 
   const timelineItems = useMemo(() => [...filteredItems].reverse(), [filteredItems]);
 
+  // 검색된 메모 중 아직 화면에 표시하지 못한(과거 기록을 더 불러와야 하는) 개수.
+  // note/board는 개별적으로 다시 불러와 표시하지만, memo는 상세 화면이 따로
+  // 없어 타임라인에 로드되어야만 보여줄 수 있기 때문에 남아있는 경우가 있다.
+  const hiddenSearchMemoCount = useMemo(() => {
+    if (!isSearchMode) return 0;
+    return searchResults.filter(
+      r => r.type === 'memo' && !items.some(i => i.id === r.uid),
+    ).length;
+  }, [isSearchMode, searchResults, items]);
+
   // 검색 함수 (디바운싱 적용)
   const performSearch = useCallback(async (query: string) => {
+    // 새 검색이 시작되면 과거 기록 자동 추가 로드 횟수 제한도 초기화한다.
+    searchAutoLoadAttemptsRef.current = 0;
+
     if (!query.trim()) {
       setSearchResults([]);
       setNextSearchCursor(null);
       setSearchHasMore(false);
+      setSearchOnlyBoards([]);
       return;
     }
 
@@ -348,6 +377,51 @@ const MainScreen = () => {
       setIsLoadingSearch(false);
     }
   }, [showAlert]);
+
+  // 검색 결과 중 최근 items에 없는 보드/노트는 개별적으로 전체 데이터를
+  // 불러와 searchOnlyBoards에 채운다 (board/note는 fetchBoard로 확인 가능).
+  useEffect(() => {
+    if (!isSearchMode || searchResults.length === 0) {
+      if (searchOnlyBoards.length > 0) setSearchOnlyBoards([]);
+      return;
+    }
+
+    const neededBoardIds = new Set<string>();
+    searchResults.forEach(r => {
+      if (r.type === 'board') neededBoardIds.add(r.uid);
+      else if (r.type === 'note' && r.parentUid) neededBoardIds.add(r.parentUid);
+    });
+
+    const missingIds = Array.from(neededBoardIds).filter(
+      id => !items.some(i => i.id === id) && !searchOnlyBoards.some(b => b.id === id),
+    );
+
+    if (missingIds.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      const fetched = await Promise.all(
+        missingIds.map(async id => {
+          try {
+            return await boardService.fetchBoard(id);
+          } catch {
+            // 개별 보드 조회 실패는 그 보드만 검색 결과에서 빠지고 나머지는 정상 표시
+            return null;
+          }
+        }),
+      );
+      if (cancelled) return;
+      const newBoards = fetched.filter((b): b is Board => b !== null);
+      if (newBoards.length > 0) {
+        setSearchOnlyBoards(prev => [...prev, ...newBoards]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSearchMode, searchResults, items]);
 
   // 검색 텍스트 변경 시 디바운싱
   useEffect(() => {
@@ -404,13 +478,57 @@ const MainScreen = () => {
         shouldScrollToEnd.current = true;
       }
       setItems(response.items);
+      setTimelineHasMore(response.hasNext);
+      setTimelineNextCursor(response.nextCursor ?? null);
     } catch {
       // console.error('Failed to load timeline:', error);
       setItems([]);
+      setTimelineHasMore(false);
+      setTimelineNextCursor(null);
     } finally {
       setLoaded(true);
     }
   }, [route.params?.scrollToItemId]);
+
+  // 스크롤을 올려(inverted 리스트라 위로 스크롤 = 과거 방향) 더 오래된 기록을
+  // 이어서 불러온다. 기존에는 최근 50개만 불러오고 끝이라 그 이전 기록을
+  // 볼 방법이 전혀 없었다.
+  const loadMoreTimeline = useCallback(async () => {
+    if (isLoadingMoreTimeline || !timelineHasMore || !timelineNextCursor) return;
+    setIsLoadingMoreTimeline(true);
+    try {
+      const response = await timelineService.fetchTimeline({
+        sort: 'createdAt',
+        limit: 50,
+        cursor: timelineNextCursor,
+      });
+      // 더 오래된 항목들이므로 배열의 앞쪽(가장 오래된 쪽)에 이어붙인다.
+      setItems(prev => [...response.items, ...prev]);
+      setTimelineHasMore(response.hasNext);
+      setTimelineNextCursor(response.nextCursor ?? null);
+    } catch {
+      // 실패해도 timelineHasMore를 그대로 둬서 다음 스크롤 시 다시 시도할 수 있게 한다.
+    } finally {
+      setIsLoadingMoreTimeline(false);
+    }
+  }, [isLoadingMoreTimeline, timelineHasMore, timelineNextCursor]);
+
+  // 검색 결과 중 memo 타입은 items(최근 타임라인)에 있어야만 표시할 수 있다.
+  // 없으면 과거 기록을 더 불러와서(최대 5페이지) 찾아본다.
+  useEffect(() => {
+    if (!isSearchMode || searchResults.length === 0) return;
+    if (isLoadingMoreTimeline || !timelineHasMore) return;
+    if (searchAutoLoadAttemptsRef.current >= 5) return;
+
+    const hasMissingMemoMatch = searchResults.some(
+      r => r.type === 'memo' && !items.some(i => i.id === r.uid),
+    );
+
+    if (hasMissingMemoMatch) {
+      searchAutoLoadAttemptsRef.current += 1;
+      loadMoreTimeline();
+    }
+  }, [isSearchMode, searchResults, items, timelineHasMore, isLoadingMoreTimeline, loadMoreTimeline]);
 
   useEffect(() => {
     loadTimeline();
@@ -1162,6 +1280,17 @@ const MainScreen = () => {
             </View>
           ) : null}
 
+            {/* 검색된 메모 중 아직 못 불러온 게 남아있을 때 안내 */}
+            {isSearchMode && hiddenSearchMemoCount > 0 && !isLoadingMoreTimeline && (
+              <View style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#FFF7E0' }}>
+                <Text style={{ fontSize: 12, color: '#8A6D00', fontFamily: 'PretendardVariable' }}>
+                  {timelineHasMore
+                    ? `오래된 메모 검색 결과 ${hiddenSearchMemoCount}건은 아직 안 보여요. 화면을 위로 스크롤하면 더 불러옵니다.`
+                    : `오래된 메모 검색 결과 ${hiddenSearchMemoCount}건은 현재 타임라인에서 찾을 수 없습니다.`}
+                </Text>
+              </View>
+            )}
+
             {/* 일반 타임라인 리스트 */}
             <FlatList<TimelineItem>
               ref={flatListRef}
@@ -1176,6 +1305,19 @@ const MainScreen = () => {
                 scrollToLatestIfNeeded();
               }}
               onLayout={scrollToLatestIfNeeded}
+              // inverted 리스트라 "끝에 도달"이 시각적으로는 위로 스크롤해
+              // 과거 기록에 닿았을 때를 의미한다. 검색 모드에서도 그대로 켜둬서
+              // (검색 결과 중 아직 안 불러온 오래된 메모가 있을 때) 사용자가
+              // 위로 스크롤하면 더 불러오도록 한다.
+              onEndReached={loadMoreTimeline}
+              onEndReachedThreshold={0.4}
+              ListFooterComponent={
+                isLoadingMoreTimeline ? (
+                  <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+                    <ActivityIndicator size="small" color="#588DFF" />
+                  </View>
+                ) : null
+              }
               renderItem={({ item, index }) => {
                 // 다음 아이템의 시간과 비교하여 같은 시간에 보낸 것인지 확인
                 const currentTime = getHourMinute(item.createdAt);
