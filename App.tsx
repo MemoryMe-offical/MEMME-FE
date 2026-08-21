@@ -1,14 +1,14 @@
 import React, { useEffect, useRef } from 'react';
-import {NavigationContainer, NavigationContainerRef} from '@react-navigation/native';
+import {NavigationContainer} from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import analytics from '@react-native-firebase/analytics';
 import { AlertProvider } from './src/context/AlertContext';
 import RootNavigator from './src/navigation/RootNavigator';
+import { navigationRef } from './src/navigation/navigationRef';
 import { logScreenView } from './src/utils/analytics';
 import useInAppUpdate from './src/hooks/useInAppUpdate';
 
 const App = () => {
-  const navigationRef = useRef<NavigationContainerRef<any>>(null);
   const routeNameRef = useRef<string | undefined>(undefined);
 
   useInAppUpdate();

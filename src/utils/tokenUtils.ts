@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { resetToLogin } from '../navigation/navigationRef';
 
 const STORAGE_KEYS = {
   ACCESS_TOKEN: 'accessToken',
@@ -401,7 +402,9 @@ export const fetchWithAutoLogoutHandler = async (
     // Refresh 실패 또는 재시도 후에도 401 응답 시 자동로그인 데이터 초기화
     if (response.status === 401) {
       await clearAutoLoginData();
-      // 에러를 throw하면 호출한 곳에서 처리 (보통 Login 화면으로 이동)
+      // 화면들이 이 에러를 각자 catch해서 Login으로 보내주지 않는 경우가 많으므로,
+      // 세션이 확정적으로 무효화된 시점에 여기서 직접 Login으로 리셋한다.
+      resetToLogin();
       throw new Error(`Unauthorized (${response.status})`);
     }
 
