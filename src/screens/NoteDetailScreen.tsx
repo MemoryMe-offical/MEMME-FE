@@ -105,7 +105,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           }
         });
         await AsyncStorage.setItem(`note_summaries_${note.id}`, JSON.stringify(summaryMap));
-      } catch (error) {
+      } catch {
         // console.error('Failed to save summaries:', error);
       }
     };
@@ -139,7 +139,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
                 return savedSummary ? { ...ogData, summary: savedSummary } : ogData;
               });
             }
-          } catch (error) {
+          } catch {
             // console.error('Failed to load summaries:', error);
           }
         }
@@ -165,7 +165,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
             newOgDatas.push(ogData);
           }
           setEditOgDatas(newOgDatas);
-        } catch (error) {
+        } catch {
           // console.error('Failed to load OG data:', error);
         } finally {
           setIsLoadingOgData(false);
@@ -240,7 +240,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         await noteService.updateNote(boardId, note.id, noteData);
       }
       navigation.goBack();
-    } catch (error) {
+    } catch {
       // console.error('Failed to save note:', error);
       showAlert({ title: '오류', message: '노트 저장에 실패했습니다.', type: 'error' });
       isSavingRef.current = false;
@@ -263,7 +263,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
             await noteService.deleteNote(boardId, note.id);
           }
           navigation.goBack();
-        } catch (error) {
+        } catch {
           showAlert({ title: '오류', message: '노트 삭제에 실패했습니다.', type: 'error' });
           // console.error('Failed to delete note:', error);
         } finally {
@@ -283,6 +283,11 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       const result = await launchImageLibrary({
         mediaType: 'photo',
         selectionLimit: Math.max(1, 10 - editImageUris.length),
+        // 원본을 그대로 올리면 작은 썸네일에서도 매번 큰 원본을 내려받아
+        // 로딩이 느려지므로 업로드 전에 리사이즈/압축한다.
+        quality: 0.8,
+        maxWidth: 1920,
+        maxHeight: 1920,
       });
       if (result.assets && result.assets.length > 0) {
         // 파일 크기 검증
@@ -313,7 +318,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           const response = await uploadImages(localUris);
           // presigned URLs를 저장 (화면 렌더링용)
           setEditImageUris(prev => [...prev, ...response.urls]);
-        } catch (error) {
+        } catch {
           showAlert({ title: '오류', message: '이미지 업로드에 실패했습니다.', type: 'error' });
           // console.error('Image upload error:', error);
         } finally {
@@ -379,7 +384,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
             duration: r.duration,
           }));
           setEditVideos(prev => [...prev, ...newVideos]);
-        } catch (error) {
+        } catch {
           showAlert({ title: '오류', message: '동영상 업로드에 실패했습니다.', type: 'error' });
           // console.error('Video upload error:', error);
         } finally {
@@ -604,7 +609,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         });
         const newFiles = await Promise.all(uploadPromises);
         setEditFiles(prev => [...prev, ...newFiles]);
-      } catch (error) {
+      } catch {
         showAlert({ title: '오류', message: '파일 업로드에 실패했습니다.', type: 'error' });
         // console.error('File upload error:', error);
       } finally {

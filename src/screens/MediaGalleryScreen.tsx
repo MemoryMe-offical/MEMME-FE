@@ -25,6 +25,8 @@ type Props = NativeStackScreenProps<RootStackParamList, 'MediaGallery'>;
 interface MediaItem {
   id: string;
   uri: string;
+  // S3 object key. presigned URL(uri)이 만료됐을 때 새 URL을 다시 받아오는 데 사용.
+  objectKey?: string;
   title?: string;
   createdAt: string;
   type: 'image' | 'video' | 'file' | 'link';
@@ -35,10 +37,11 @@ interface MediaItem {
   timelineItem?: any;
 }
 
-const GalleryImageThumbnail = ({ imageUrl, width, height }: { imageUrl: string; width: number; height: number }) => {
+const GalleryImageThumbnail = ({ imageUrl, objectKey, width, height }: { imageUrl: string; objectKey?: string; width: number; height: number }) => {
   return (
     <LoadingImage
       source={{ uri: imageUrl }}
+      objectKey={objectKey}
       style={[styles.thumbnail, { width, height, backgroundColor: '#EEF3FF' }]}
     />
   );
@@ -92,6 +95,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
               items.push({
                 id: `img-${board.id}-${note.id}-${idx}`,
                 uri,
+                objectKey: note.imageKeys?.[idx],
                 type: 'image',
                 createdAt: board.updatedAt || board.createdAt,
                 note,
@@ -169,6 +173,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
             items.push({
               id: `memo-img-${memo.id}-${idx}`,
               uri,
+              objectKey: memo.imageKeys?.[idx],
               type: 'image',
               createdAt: memo.updatedAt || memo.createdAt,
               timelineItem: memo,
@@ -281,7 +286,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
                 if (ogData) {
                   newCachedOgData[linkId] = ogData;
                 }
-              } catch (error) {
+              } catch {
                 // console.error(`Failed to fetch OG data for ${url}:`, error);
               }
             }
@@ -295,7 +300,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
               if (ogData) {
                 newCachedOgData[linkId] = ogData;
               }
-            } catch (error) {
+            } catch {
               // console.error(`Failed to fetch OG data for ${note.url}:`, error);
             }
           }
@@ -316,7 +321,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
               if (ogData) {
                 newCachedOgData[linkId] = ogData;
               }
-            } catch (error) {
+            } catch {
               // console.error(`Failed to fetch OG data for ${url}:`, error);
             }
           }
@@ -330,7 +335,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
             if (ogData) {
               newCachedOgData[linkId] = ogData;
             }
-          } catch (error) {
+          } catch {
             // console.error(`Failed to fetch OG data for ${memo.url}:`, error);
           }
         }
@@ -375,7 +380,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
           });
         }}
       >
-        <GalleryImageThumbnail imageUrl={item.uri} width={thumbnailSize} height={thumbnailSize} />
+        <GalleryImageThumbnail imageUrl={item.uri} objectKey={item.objectKey} width={thumbnailSize} height={thumbnailSize} />
       </TouchableOpacity>
     );
   };
@@ -414,7 +419,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
           }
           Linking.openURL(fileUrl);
         }
-      } catch (error) {
+      } catch {
         // console.error('Failed to open file:', error);
       }
     };
@@ -444,7 +449,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
         } else {
           Linking.openURL(linkUrl);
         }
-      } catch (error) {
+      } catch {
         Linking.openURL(linkUrl);
       }
     };

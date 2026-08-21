@@ -16,7 +16,7 @@ const formatTime = (isoString: string): string => {
   return `${isAM ? '오전' : '오후'} ${displayHours}:${minutes.toString().padStart(2, '0')}`;
 };
 
-const CardImageThumbnail = ({ imageUrl, onPress }: { imageUrl: string; onPress: () => void }) => {
+const CardImageThumbnail = ({ imageUrl, objectKey, onPress }: { imageUrl: string; objectKey?: string; onPress: () => void }) => {
   return (
     <Pressable
       onPress={onPress}
@@ -26,6 +26,7 @@ const CardImageThumbnail = ({ imageUrl, onPress }: { imageUrl: string; onPress: 
       ]}>
       <LoadingImage
         source={{ uri: imageUrl }}
+        objectKey={objectKey}
         style={styles['card-image-thumbnail']}
         resizeMode="cover"
       />
@@ -108,7 +109,7 @@ const BoardCard = ({
               ...prev,
               [url]: ogData,
             }));
-          } catch (error) {
+          } catch {
             // console.error('Failed to load OG data for URL:', url, error);
           }
         }
@@ -221,6 +222,7 @@ const BoardCard = ({
                                             <CardImageThumbnail
                                               key={`${note.id}-img-${idx}`}
                                               imageUrl={imageUrl}
+                                              objectKey={note.imageKeys?.[idx]}
                                               onPress={() => {
                                                 openImageViewer(note.imageUris!);
                                               }}
