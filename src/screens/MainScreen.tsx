@@ -194,15 +194,30 @@ const MainScreen = () => {
 
     const loadRecentBoards = async () => {
       try {
+        // limit을 작게 주면(예: 5) 최근에 "수정"은 안 됐지만 실제로는
+        // 존재하는 보드가 목록/검색(MemoConvertSheet)에서 아예 보이지
+        // 않는 문제가 있었다. 개수를 제한하지 않고 정렬만(최근 수정순)
+        // 적용해 모든 보드가 보이도록 한다. limit은 백엔드 최대치(100)로
+        // 지정해 사실상 전체를 가져오되 과도한 응답은 방지한다.
         const response = await timelineService.fetchTimeline({
           type: 'board',
           sort: 'updatedAt',
-          limit: 5,
+          limit: 100,
         });
-        setRecentBoards(response.items as Board[]);
+        // fetchTimeline은 채팅형 타임라인(오래된 게 위로 오도록) 기준으로
+        // 항상 응답 순서를 뒤집기 때문에, 여기서는 최근 수정순으로 다시
+        // 정렬해야 한다(그렇지 않으면 오래된 보드가 위로 옴).
+        const sortedBoards = (response.items as Board[])
+          .slice()
+          .sort((a, b) => (b.updatedAt ?? b.createdAt).localeCompare(a.updatedAt ?? a.createdAt));
+        setRecentBoards(sortedBoards);
       } catch {
         // console.error('Failed to load recent boards:', error);
-        const boards = (items.filter(i => i.type === 'board') as Board[]).slice(0, 5);
+        // API 호출이 실패했을 때의 대체 경로: 로컬에 이미 로드된 타임라인
+        // 항목에서 보드만 추려서 최근 수정순으로 정렬한다.
+        const boards = (items.filter(i => i.type === 'board') as Board[])
+          .slice()
+          .sort((a, b) => (b.updatedAt ?? b.createdAt).localeCompare(a.updatedAt ?? a.createdAt));
         setRecentBoards(boards);
       }
     };
