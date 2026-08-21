@@ -74,7 +74,7 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
     setIsLoadingOg(true);
     fetchOgData(firstLink)
       .then(data => setDetectedOgData(data || null))
-      .catch(error => {
+      .catch(() => {
         // console.error('Failed to fetch OG data:', error);
         setDetectedOgData(null);
       })

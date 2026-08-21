@@ -65,7 +65,7 @@ export const loadPendingLinks = async (): Promise<PendingLink[]> => {
       ...link,
       id: link.uid || link.id,
     }));
-  } catch (error) {
+  } catch {
     // console.error('Failed to load pending links:', error);
     return [];
   }

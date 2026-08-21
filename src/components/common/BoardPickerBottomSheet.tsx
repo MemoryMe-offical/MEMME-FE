@@ -71,7 +71,7 @@ const BoardPickerBottomSheet = ({
       });
       const allBoards = (Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : [])) as Board[];
       setBoards(allBoards.length > 0 ? allBoards : (initialBoards ?? []));
-    } catch (error) {
+    } catch {
       // console.error('Failed to load boards:', error);
       setBoards(initialBoards ?? []);
     }

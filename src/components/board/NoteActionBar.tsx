@@ -49,7 +49,7 @@ const NoteActionBar = ({
             )
           );
           onDeleteSuccess();
-        } catch (error) {
+        } catch {
           // console.error('Failed to delete notes:', error);
           showAlert({ title: '오류', message: '노트 삭제에 실패했습니다.', type: 'error' });
         } finally {
@@ -70,7 +70,7 @@ const NoteActionBar = ({
       await noteService.moveNotes(currentBoardId, selectedNoteIds, targetBoard.id);
       onMoveSuccess();
       setShowBoardPicker(false);
-    } catch (error) {
+    } catch {
       // console.error('Failed to move notes:', error);
       showAlert({ title: '오류', message: '노트 이동에 실패했습니다.', type: 'error' });
     } finally {

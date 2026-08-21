@@ -60,7 +60,7 @@ const SplashScreen = ({ navigation }: Props) => {
           // 최초 사용자면 온보딩으로
           navigation.replace('Onboarding');
         }
-      } catch (error) {
+      } catch {
         navigation.replace('Onboarding');
       }
     };

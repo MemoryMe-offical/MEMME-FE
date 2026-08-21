@@ -55,7 +55,7 @@ const SettingsScreen = ({ navigation }: Props) => {
             index: 0,
             routes: [{ name: 'Login' }],
           });
-        } catch (error) {
+        } catch {
           // console.error('Failed to logout:', error);
           showAlert({
             title: '오류',

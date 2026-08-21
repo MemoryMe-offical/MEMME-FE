@@ -146,7 +146,7 @@ const OnboardingScreen = ({ navigation }: Props) => {
     try {
       await AsyncStorage.setItem('@hasSeenOnboarding', 'true');
       navigation.replace('Login');
-    } catch (error) {
+    } catch {
       // console.error('온보딩 완료 저장 실패:', error);
       navigation.replace('Login');
     }

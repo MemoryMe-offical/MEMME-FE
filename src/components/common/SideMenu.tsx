@@ -110,7 +110,7 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                   ...prev,
                   [url]: ogData,
                 }));
-              } catch (error) {
+              } catch {
                 // console.error('Failed to fetch OG data for link:', url, error);
               }
             }
@@ -122,7 +122,7 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                 ...prev,
                 [note.url]: ogData,
               }));
-            } catch (error) {
+            } catch {
               // console.error('Failed to fetch OG data for link:', note.url, error);
             }
           }
@@ -572,7 +572,7 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                               } else {
                                 Linking.openURL(link.url);
                               }
-                            } catch (error) {
+                            } catch {
                               Linking.openURL(link.url);
                             }
                           }}
@@ -641,7 +641,7 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                                 fileUrl = `https://memme.o-r.kr${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
                               }
                               Linking.openURL(fileUrl);
-                            } catch (error) {
+                            } catch {
                               // console.error('Failed to open file:', error);
                             }
                           }}

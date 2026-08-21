@@ -111,7 +111,7 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
       setBoard(updated);
       setIsEditing(false);
       onSave?.(updated);
-    } catch (error) {
+    } catch {
       // console.error('Failed to save board:', error);
       showAlert({ title: '오류', message: '보드 저장에 실패했습니다.', type: 'error' });
     } finally {
@@ -179,7 +179,7 @@ const BoardDetailScreen = ({ route, navigation }: Props) => {
         try {
           const updatedBoard = await boardService.fetchBoard(board.id);
           setBoard(updatedBoard);
-        } catch (error) {
+        } catch {
           // console.error('Failed to refresh board:', error);
         }
       };
