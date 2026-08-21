@@ -81,7 +81,7 @@ const fetchOgDataDirect = async (url: string): Promise<OgData> => {
     const ogData = extractOgDataFromHtml(html, url);
     return ogData;
   } catch (error) {
-    console.error('Failed to fetch OG data directly:', error);
+    // console.error('Failed to fetch OG data directly:', error);
     return { title: url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || url };
   }
 };
@@ -139,7 +139,7 @@ export const fetchOgData = async (url: string): Promise<OgData> => {
 
     return directData;
   } catch (error) {
-    console.error('Failed to fetch OG data:', error);
+    // console.error('Failed to fetch OG data:', error);
     return { title: url };
   }
 };

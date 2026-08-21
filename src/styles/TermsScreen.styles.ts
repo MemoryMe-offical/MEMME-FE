@@ -1,13 +1,16 @@
-import { StyleSheet, Platform, Dimensions,StatusBar } from 'react-native';
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+import { StyleSheet, Platform, StatusBar } from 'react-native';
 
 const isIOS = Platform.OS === 'ios';
-const isIPhoneX = isIOS && SCREEN_HEIGHT >= 812;
 
+// iOS의 노치/홈 인디케이터 유무는 화면 높이로 추정하지 않는다.
+// (Mac에서 실행되는 경우 창 높이가 812pt를 넘는 경우가 대부분이라
+//  실제로는 노치가 없는데도 있다고 오판하게 된다.)
+// 여기서는 기기 형태와 무관한 기본값(노치 없음 기준)만 두고,
+// 실제 노치 유무는 화면 컴포넌트에서 useSafeAreaInsets()로 판단해
+// 인라인 스타일로 덮어쓴다.
 const getStatusBarHeight = () => {
   if (isIOS) {
-    return isIPhoneX ? 44 : 20; // iPhone X 이상: 44, 이하: 20
+    return 20;
   }
   return StatusBar.currentHeight || 0;
 };
@@ -189,7 +192,7 @@ export const termsStyles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: 20,
-    paddingBottom: isIPhoneX ? 34 : 20, // iPhone X 홈 인디케이터
+    paddingBottom: 20, // 노치 기기 보정값은 화면에서 useSafeAreaInsets()로 덮어씀
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#F0F0F0',
@@ -272,7 +275,7 @@ export const termsStyles = StyleSheet.create({
   // 약관 - 모달 - 확인 버튼 섹션
   'terms-modal-confirmButtonSection': {
     padding: 20,
-    paddingBottom: isIPhoneX ? 14 + 20 : 20,
+    paddingBottom: 20, // 노치 기기 보정값은 화면에서 useSafeAreaInsets()로 덮어씀
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#F0F0F0',

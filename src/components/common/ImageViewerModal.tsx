@@ -6,7 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
+  useWindowDimensions,
   Text,
   Platform,
 } from 'react-native';
@@ -20,9 +20,9 @@ interface Props {
   onClose: () => void;
 }
 
-const { width, height } = Dimensions.get('window');
-
 const ImageViewerModal = ({ visible, imageUris, initialIndex = 0, onClose }: Props) => {
+  // 창 크기에 따라 실시간으로 다시 계산 (Mac에서는 창 크기를 조절할 수 있음)
+  const { width, height } = useWindowDimensions();
   const flatListRef = useRef<FlatList>(null);
   const insets = useSafeAreaInsets();
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
@@ -75,7 +75,7 @@ const ImageViewerModal = ({ visible, imageUris, initialIndex = 0, onClose }: Pro
               <View
                 style={[
                   styles.imageContainer,
-                  { height: height - 60 - iosTopInset - iosBottomInset },
+                  { width, height: height - 60 - iosTopInset - iosBottomInset },
                 ]}>
                 <Image
                   source={{ uri: item }}
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     fontFamily: 'PretendardVariable',
   },
   imageContainer: {
-    width,
+    // width는 컴포넌트에서 인라인으로 덮어씀 (창 크기에 따라 실시간 계산)
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -139,7 +139,7 @@ export const fetchTimeline = async (query?: TimelineQuery): Promise<TimelineResp
       limit,
     };
   } catch (error) {
-    console.error('Failed to fetch timeline:', error);
+    // console.error('Failed to fetch timeline:', error);
     throw error;
   }
 };

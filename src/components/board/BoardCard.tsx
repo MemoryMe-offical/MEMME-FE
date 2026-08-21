@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Linking, Modal, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity, Linking, Modal, Pressable, useWindowDimensions } from 'react-native';
 import { Board, OgData } from '../../types';
 import { boardCardStyles as styles } from '../../styles/BoardCard.styles';
 import { ChevronDownIcon, ChevronUpIcon, MoreIcon, LinkIcon, FileIcon } from '../common/Icons';
@@ -55,6 +55,9 @@ const BoardCard = ({
   expandedNoteIds: propsExpandedNoteIds,
   onNoteExpandChange,
 }: BoardCardProps) => {
+  // 창 크기에 따라 실시간으로 다시 계산 (Mac에서는 창 크기를 조절할 수 있음)
+  const { width: windowWidth } = useWindowDimensions();
+  const cardWidth = (windowWidth - 48) / 1.3;
   const [isExpanded, setIsExpanded] = useState(true);
   const hasNotes = Array.isArray(item.notes) && item.notes.length > 0;
   const [expandedNoteIds, setExpandedNoteIds] = useState<string[]>([]);
@@ -106,7 +109,7 @@ const BoardCard = ({
               [url]: ogData,
             }));
           } catch (error) {
-            console.error('Failed to load OG data for URL:', url, error);
+            // console.error('Failed to load OG data for URL:', url, error);
           }
         }
       }
@@ -120,7 +123,7 @@ const BoardCard = ({
       {showTime && <Text style={styles['card-time']}>{formatTime(item.createdAt)}</Text>}
       <View
         onLongPress={() => onContextMenu(item)}
-        style={styles['card-wrapper']}>
+        style={[styles['card-wrapper'], { width: cardWidth }]}>
 
         {/* 헤더 */}
         <View style={styles['card-header']}>
@@ -296,7 +299,7 @@ const BoardCard = ({
                                               style={styles['card-file-item']}
                                               onPress={() => {
                                                 Linking.openURL(file.url).catch(() => {
-                                                  console.error('Failed to open file:', file.url);
+                                                  // console.error('Failed to open file:', file.url);
                                                 });
                                               }}
                                               activeOpacity={0.7}>
@@ -344,7 +347,7 @@ const BoardCard = ({
                                                   style={styles['card-link-card']}
                                                   onPress={() => {
                                                     Linking.openURL(url).catch(() => {
-                                                      console.error('Failed to open URL:', url);
+                                                      // console.error('Failed to open URL:', url);
                                                     });
                                                   }}
                                                   activeOpacity={0.7}>
@@ -432,7 +435,7 @@ const BoardCard = ({
               style={styles['video-player-container']}
               onPress={() => {
                 Linking.openURL(selectedVideoUrl).catch(() => {
-                  console.error('Failed to open video:', selectedVideoUrl);
+                  // console.error('Failed to open video:', selectedVideoUrl);
                 });
               }}>
               <Text style={styles['video-play-icon']}>▶</Text>

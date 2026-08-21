@@ -21,7 +21,7 @@ const OgPreviewCard = ({ url, ogData, onRemove, containerStyle, isEditMode }: Og
   const handlePress = () => {
     if (url) {
       Linking.openURL(url).catch(() => {
-        console.error('Failed to open URL:', url);
+        // console.error('Failed to open URL:', url);
       });
     }
   };

@@ -6,9 +6,10 @@ import {
   ScrollView,
   Modal,
   Linking,
+  Platform,
 } from 'react-native';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -19,6 +20,12 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const TermsScreen = () => {
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
+  // 노치/홈 인디케이터 유무는 화면 높이 추정이 아니라 실제 safe area
+  // inset으로 판단한다. 실제 노치 기기와 동일한 여백을 주되, 노치가
+  // 없는 기기(및 Mac에서 실행되는 경우)에는 여분의 여백을 더하지 않는다.
+  const hasNotchTop = Platform.OS === 'ios' && insets.top > 0;
+  const hasNotchBottom = Platform.OS === 'ios' && insets.bottom > 0;
   const { showAlert } = useAlert();
   const [allChecked, setAllChecked] = useState(false);
   const [terms, setTerms] = useState({
@@ -225,7 +232,11 @@ const TermsScreen = () => {
       </ScrollView>
 
       {/* 다음 버튼 */}
-      <View style={styles['terms-bottomSection']}>
+      <View
+        style={[
+          styles['terms-bottomSection'],
+          hasNotchBottom && { paddingBottom: 34 },
+        ]}>
         <TouchableOpacity
           style={[
             styles['terms-bottomSection-nextButton'],
@@ -253,7 +264,11 @@ const TermsScreen = () => {
   }}>
   <View style={styles['terms-modal']}>
     {/* ⭐ SafeAreaView 제거, 직접 패딩 */}
-    <View style={styles['terms-modal-header-safe']}>
+    <View
+      style={[
+        styles['terms-modal-header-safe'],
+        hasNotchTop && { paddingTop: 44 },
+      ]}>
       <View style={styles['terms-modal-header']}>
         <Text style={styles['terms-modal-header-title']}>
           {modalContent.title}
@@ -272,7 +287,11 @@ const TermsScreen = () => {
       </Text>
     </ScrollView>
     
-    <View style={styles['terms-modal-confirmButtonSection']}>
+    <View
+      style={[
+        styles['terms-modal-confirmButtonSection'],
+        hasNotchBottom && { paddingBottom: 14 + 20 },
+      ]}>
       <TouchableOpacity
         style={styles['terms-modal-confirmButton']}
         onPress={() => setModalVisible(false)}>

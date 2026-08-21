@@ -5,7 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
-  Dimensions,
+  useWindowDimensions,
   Linking,
   Modal,
   Image,
@@ -21,9 +21,6 @@ import LoadingImage from '../components/common/LoadingImage';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'MediaGallery'>;
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const THUMBNAIL_SIZE = (SCREEN_WIDTH - 48) / 3;
 
 interface MediaItem {
   id: string;
@@ -50,6 +47,9 @@ const GalleryImageThumbnail = ({ imageUrl, width, height }: { imageUrl: string; 
 const MediaGalleryScreen = ({ route, navigation }: Props) => {
   const { items: allItems, galleryType } = route.params;
   const insets = useSafeAreaInsets();
+  // 창 크기에 따라 실시간으로 다시 계산 (Mac에서는 창 크기를 조절할 수 있음)
+  const { width: windowWidth } = useWindowDimensions();
+  const thumbnailSize = (windowWidth - 48) / 3;
   const [cachedOgData, setCachedOgData] = useState<Record<string, any>>({});
   const [imageViewerState, setImageViewerState] = useState({
     visible: false,
@@ -282,7 +282,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
                   newCachedOgData[linkId] = ogData;
                 }
               } catch (error) {
-                console.error(`Failed to fetch OG data for ${url}:`, error);
+                // console.error(`Failed to fetch OG data for ${url}:`, error);
               }
             }
           } else if (note.url) {
@@ -296,7 +296,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
                 newCachedOgData[linkId] = ogData;
               }
             } catch (error) {
-              console.error(`Failed to fetch OG data for ${note.url}:`, error);
+              // console.error(`Failed to fetch OG data for ${note.url}:`, error);
             }
           }
         }
@@ -317,7 +317,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
                 newCachedOgData[linkId] = ogData;
               }
             } catch (error) {
-              console.error(`Failed to fetch OG data for ${url}:`, error);
+              // console.error(`Failed to fetch OG data for ${url}:`, error);
             }
           }
         } else if (memo.url) {
@@ -331,7 +331,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
               newCachedOgData[linkId] = ogData;
             }
           } catch (error) {
-            console.error(`Failed to fetch OG data for ${memo.url}:`, error);
+            // console.error(`Failed to fetch OG data for ${memo.url}:`, error);
           }
         }
       }
@@ -344,7 +344,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
 
   const renderBookmarkItem = ({ item }: { item: MediaItem }) => (
     <TouchableOpacity
-      style={[styles.bookmarkItem, { width: THUMBNAIL_SIZE }]}
+      style={[styles.bookmarkItem, { width: thumbnailSize, height: thumbnailSize }]}
       onPress={() => {
         if (item.board) {
           navigation.navigate('BoardDetail', { board: item.board });
@@ -375,7 +375,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
           });
         }}
       >
-        <GalleryImageThumbnail imageUrl={item.uri} width={THUMBNAIL_SIZE} height={THUMBNAIL_SIZE} />
+        <GalleryImageThumbnail imageUrl={item.uri} width={thumbnailSize} height={thumbnailSize} />
       </TouchableOpacity>
     );
   };
@@ -384,7 +384,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
     <TouchableOpacity
       onPress={() => setVideoViewerState({ visible: true, url: item.uri })}
     >
-      <View style={[styles.thumbnail, { width: THUMBNAIL_SIZE, height: THUMBNAIL_SIZE }]}>
+      <View style={[styles.thumbnail, { width: thumbnailSize, height: thumbnailSize }]}>
         {(item.file as any)?.thumbnailUrl ? (
           <>
             <Image
@@ -415,13 +415,13 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
           Linking.openURL(fileUrl);
         }
       } catch (error) {
-        console.error('Failed to open file:', error);
+        // console.error('Failed to open file:', error);
       }
     };
 
     return (
       <TouchableOpacity onPress={handleOpenFile}>
-        <View style={[styles.fileItem, { width: THUMBNAIL_SIZE }]}>
+        <View style={[styles.fileItem, { width: thumbnailSize, height: thumbnailSize }]}>
           <View style={styles.fileIconContainer}>
             <FileIcon color="#588DFF" size={28} />
           </View>
@@ -451,16 +451,16 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
 
     return (
       <TouchableOpacity
-        style={[styles.linkItem, { width: THUMBNAIL_SIZE }]}
+        style={[styles.linkItem, { width: thumbnailSize }]}
         onPress={handleOpenLink}
       >
         {item.ogData?.imageUrl ? (
           <Image
             source={{ uri: item.ogData.imageUrl }}
-            style={styles.linkImage}
+            style={[styles.linkImage, { height: thumbnailSize * 0.6 }]}
           />
         ) : (
-          <View style={styles.linkImagePlaceholder} />
+          <View style={[styles.linkImagePlaceholder, { height: thumbnailSize * 0.6 }]} />
         )}
         <View style={styles.linkContent}>
           <Text style={styles.linkTitle} numberOfLines={2}>{linkTitle}</Text>
@@ -548,7 +548,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
               style={styles.videoPlayerContainer}
               onPress={() => {
                 Linking.openURL(videoViewerState.url).catch(() => {
-                  console.error('Failed to open video:', videoViewerState.url);
+                  // console.error('Failed to open video:', videoViewerState.url);
                 });
               }}
             >
@@ -628,7 +628,7 @@ const styles = StyleSheet.create({
     gap: 8,
     borderWidth: 1,
     borderColor: '#E8EEF8',
-    height: THUMBNAIL_SIZE,
+    // height는 thumbnailSize를 인라인으로 덮어씀 (창 크기에 따라 실시간 계산)
     justifyContent: 'center',
   },
   fileIconContainer: {
@@ -657,12 +657,12 @@ const styles = StyleSheet.create({
   },
   linkImage: {
     width: '100%',
-    height: THUMBNAIL_SIZE * 0.6,
+    // height는 thumbnailSize * 0.6을 인라인으로 덮어씀 (창 크기에 따라 실시간 계산)
     backgroundColor: '#F0F5FF',
   },
   linkImagePlaceholder: {
     width: '100%',
-    height: THUMBNAIL_SIZE * 0.6,
+    // height는 thumbnailSize * 0.6을 인라인으로 덮어씀 (창 크기에 따라 실시간 계산)
     backgroundColor: '#F0F5FF',
   },
   linkContent: {
@@ -708,7 +708,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E4ECFF',
     padding: 12,
-    height: THUMBNAIL_SIZE,
+    // height는 thumbnailSize를 인라인으로 덮어씀 (창 크기에 따라 실시간 계산)
     justifyContent: 'center',
     alignItems: 'center',
   },

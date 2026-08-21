@@ -1,6 +1,4 @@
-import { StyleSheet, Dimensions } from 'react-native';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+import { StyleSheet } from 'react-native';
 
 export const onboardingStyles = StyleSheet.create({
   // 온보딩 - 메인 컨테이너
@@ -27,8 +25,8 @@ export const onboardingStyles = StyleSheet.create({
   },
 
   // 온보딩 - 슬라이드
+  // width는 창 크기에 따라 실시간 계산되어 인라인으로 덮어씀 (Mac 창 리사이즈 대응)
   'onboarding-slide': {
-    width: SCREEN_WIDTH,
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
@@ -37,9 +35,8 @@ export const onboardingStyles = StyleSheet.create({
   },
 
   // 온보딩 - 슬라이드 - 이미지
+  // width/height도 창 크기에 따라 실시간 계산되어 인라인으로 덮어씀
   'onboarding-slide-image': {
-    width: SCREEN_WIDTH * 0.6,
-    height: SCREEN_HEIGHT * 0.35,
     marginBottom: 60,
   },
 

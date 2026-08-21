@@ -10,20 +10,19 @@ import {
   Animated,
   Image,
   StatusBar,
-  Dimensions,
+  useWindowDimensions,
   Linking,
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Board, TimelineItem, Memo, FileAttachment, OgData } from '../../types';
 import { CloseIcon, EditIcon, SettingsIcon, ChevronRightIcon, FileIcon } from './Icons';
-import { SIDE_MENU_WIDTH, sideMenuStyles as styles } from '../../styles/SideMenu.styles';
+import { sideMenuStyles as styles } from '../../styles/SideMenu.styles';
 import { fetchOgData } from '../../services/ogService';
 import ImageViewerModal from './ImageViewerModal';
 import LoadingImage from './LoadingImage';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
 
-const SCREEN_HEIGHT = Dimensions.get('window').height;
 const MAX_DISPLAY_ITEMS = 4;
 
 const SideMenuImageThumbnail = ({ imageUrl, onPress }: { imageUrl: string; onPress: () => void }) => {
@@ -50,7 +49,10 @@ interface Props {
 }
 
 const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBookmarkPress, isBookmarkFilterActive, onBookmarkFilterToggle, onMediaGalleryPress }: Props) => {
-  const slideAnim = useRef(new Animated.Value(SIDE_MENU_WIDTH)).current;
+  // 창 크기에 따라 실시간으로 다시 계산 (Mac에서는 창 크기를 조절할 수 있음)
+  const { width: windowWidth, height: SCREEN_HEIGHT } = useWindowDimensions();
+  const sideMenuWidth = windowWidth * 0.82;
+  const slideAnim = useRef(new Animated.Value(sideMenuWidth)).current;
   const insets = useSafeAreaInsets();
   const panelTopInset =
     Platform.OS === 'android'
@@ -65,7 +67,7 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
 
   useEffect(() => {
     if (visible) {
-      slideAnim.setValue(SIDE_MENU_WIDTH);
+      slideAnim.setValue(sideMenuWidth);
       if (Platform.OS === 'android') {
         StatusBar.setBackgroundColor('transparent');
       }
@@ -76,11 +78,11 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
         useNativeDriver: true,
       }).start();
     }
-  }, [visible, slideAnim]);
+  }, [visible, slideAnim, sideMenuWidth]);
 
   const handleClose = () => {
     Animated.spring(slideAnim, {
-      toValue: SIDE_MENU_WIDTH,
+      toValue: sideMenuWidth,
       bounciness: 3,
       speed: 14,
       useNativeDriver: true,
@@ -109,7 +111,7 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                   [url]: ogData,
                 }));
               } catch (error) {
-                console.error('Failed to fetch OG data for link:', url, error);
+                // console.error('Failed to fetch OG data for link:', url, error);
               }
             }
           } else if (note.url && !cachedOgData[note.url] && !note.ogData) {
@@ -121,7 +123,7 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                 [note.url]: ogData,
               }));
             } catch (error) {
-              console.error('Failed to fetch OG data for link:', note.url, error);
+              // console.error('Failed to fetch OG data for link:', note.url, error);
             }
           }
         }
@@ -238,6 +240,7 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
           style={[
             styles['sideMenu-panel'],
             {
+              width: sideMenuWidth,
               marginTop: panelTopInset,
               height: SCREEN_HEIGHT - panelTopInset - insets.bottom,
               transform: [{ translateX: slideAnim }],
@@ -639,7 +642,7 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                               }
                               Linking.openURL(fileUrl);
                             } catch (error) {
-                              console.error('Failed to open file:', error);
+                              // console.error('Failed to open file:', error);
                             }
                           }}
                         >

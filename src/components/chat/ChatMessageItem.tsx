@@ -1,9 +1,9 @@
 // 채팅 아이템 컴포넌트
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Image, Linking, ActivityIndicator, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Linking, ActivityIndicator, FlatList, useWindowDimensions } from 'react-native';
 import { Memo } from '../../types';
-import { chatMessageItemStyles as styles, CHAT_MESSAGE_MAX_WIDTH, CHAT_LINK_CARD_MAX_WIDTH } from '../../styles/ChatMessageItem.styles';
+import { chatMessageItemStyles as styles } from '../../styles/ChatMessageItem.styles';
 import { fetchOgData } from '../../services/ogService';
 import { FileIcon } from '../common/Icons';
 
@@ -36,6 +36,10 @@ interface ChatMessageItemProps {
 }
 
 const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpand, onLongPress, onOpenLinkModal, onImagePress }: ChatMessageItemProps) => {
+  // 창 크기에 따라 실시간으로 다시 계산 (Mac에서는 창 크기를 조절할 수 있음)
+  const { width: windowWidth } = useWindowDimensions();
+  const chatMessageMaxWidth = (windowWidth - 48) / 1.3;
+  const chatLinkCardMaxWidth = chatMessageMaxWidth * 0.85;
   const maxChars = 500;
   const text = item.text || '';
   const isLong = text.length > maxChars;
@@ -71,7 +75,7 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
     fetchOgData(firstLink)
       .then(data => setDetectedOgData(data || null))
       .catch(error => {
-        console.error('Failed to fetch OG data:', error);
+        // console.error('Failed to fetch OG data:', error);
         setDetectedOgData(null);
       })
       .finally(() => setIsLoadingOg(false));
@@ -79,7 +83,7 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
 
   const handleLinkPress = (url: string) => {
     Linking.openURL(url).catch(() => {
-      console.error('Failed to open URL:', url);
+      // console.error('Failed to open URL:', url);
     });
   };
 
@@ -130,7 +134,7 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
     if (!item.imageUris || item.imageUris.length === 0) return null;
 
     const imageCount = item.imageUris.length;
-    const imageSize = (CHAT_MESSAGE_MAX_WIDTH - 4) / 2;
+    const imageSize = (chatMessageMaxWidth - 4) / 2;
 
     if (imageCount === 1) {
       // 1장: 전체 너비
@@ -139,7 +143,7 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
           onPress={() => onImagePress?.(item.imageUris![0], item.imageUris!)}
           onLongPress={() => onLongPress(item)}
           delayLongPress={400}
-          style={[styles['media-container'], { width: CHAT_MESSAGE_MAX_WIDTH }]}>
+          style={[styles['media-container'], { width: chatMessageMaxWidth }]}>
           <View style={{ width: '100%', aspectRatio: 1, borderRadius: 12, overflow: 'hidden' }}>
             {renderImageWithLoader(item.imageUris![0], { width: '100%', height: '100%' })}
           </View>
@@ -151,7 +155,7 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
       // 2장: 나란히 2열
       return (
         <View
-          style={[styles['media-container'], { width: CHAT_MESSAGE_MAX_WIDTH }]}>
+          style={[styles['media-container'], { width: chatMessageMaxWidth }]}>
           <View style={styles['image-row']}>
             {item.imageUris!.slice(0, 2).map((uri, idx) => (
               <TouchableOpacity
@@ -172,7 +176,7 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
       // 3장: 상단 2열 + 하단 1열
       return (
         <View
-          style={[styles['media-container'], { width: CHAT_MESSAGE_MAX_WIDTH }]}>
+          style={[styles['media-container'], { width: chatMessageMaxWidth }]}>
           <View style={styles['image-grid']}>
             {/* 첫 2장 */}
             <View style={styles['image-row']}>
@@ -206,7 +210,7 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
     const maxGridHeight = Math.min(gridHeight, 800); // 최대 800px까지만 스크롤 가능하게 제한
 
     return (
-      <View style={[styles['media-container'], { marginBottom: 8 }]}>
+      <View style={[styles['media-container'], { marginBottom: 8, maxWidth: chatMessageMaxWidth }]}>
         <FlatList
           data={item.imageUris}
           numColumns={2}
@@ -215,7 +219,7 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
           nestedScrollEnabled={true}
           scrollEventThrottle={16}
           style={{
-            width: CHAT_MESSAGE_MAX_WIDTH,
+            width: chatMessageMaxWidth,
             maxHeight: maxGridHeight,
           }}
           columnWrapperStyle={{ gap: 4, marginBottom: 4 }}
@@ -240,14 +244,14 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
     const video = item.videos[0];
 
     return (
-      <View style={styles['video-container']}>
+      <View style={[styles['video-container'], { maxWidth: chatMessageMaxWidth }]}>
         <TouchableOpacity
           onLongPress={() => onLongPress(item)}
           delayLongPress={400}
           style={{ width: '100%' }}
           onPress={() => {
             Linking.openURL(video.url).catch(() => {
-              console.error('Failed to open video:', video.url);
+              // console.error('Failed to open video:', video.url);
             });
           }}>
           {video.thumbnailUrl ? (
@@ -281,10 +285,10 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
       <TouchableOpacity
         onLongPress={() => onLongPress(item)}
         delayLongPress={400}
-        style={styles['file-container']}
+        style={[styles['file-container'], { maxWidth: chatMessageMaxWidth }]}
         onPress={() => {
           Linking.openURL(file.url).catch(() => {
-            console.error('Failed to open file:', file.url);
+            // console.error('Failed to open file:', file.url);
           });
         }}>
         <View style={styles['file-icon-container']}>
@@ -318,7 +322,7 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
         )}
 
         {/* 텍스트 메시지 (있으면 표시) */}
-        <View style={styles['message-bubble-wrapper']}>
+        <View style={[styles['message-bubble-wrapper'], { maxWidth: chatMessageMaxWidth }]}>
           {hasText && (
             <TouchableOpacity
               style={styles['chatMessageItem-bubble']}
@@ -366,7 +370,7 @@ const ChatMessageItem = ({ item, expanded = false, showTime = true, onToggleExpa
               onPress={() => handleLinkPress(firstLink)}
               onLongPress={() => onLongPress(item)}
               delayLongPress={400}
-              style={[styles['link-card'], { marginTop: text.trim().length > 0 ? 8 : 0, marginRight: 8 }]}>
+              style={[styles['link-card'], { marginTop: text.trim().length > 0 ? 8 : 0, marginRight: 8, maxWidth: chatLinkCardMaxWidth }]}>
               {/* 썸네일 */}
               <View style={{ width: '100%', height: 120, overflow: 'hidden' }}>
                 {firstOgData.imageUrl ? (

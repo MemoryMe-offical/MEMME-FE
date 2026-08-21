@@ -1,9 +1,4 @@
-import { StyleSheet, Platform, Dimensions } from 'react-native';
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-const isIOS = Platform.OS === 'ios';
-const isIPhoneX = isIOS && SCREEN_HEIGHT >= 812;
+import { StyleSheet } from 'react-native';
 
 export const forgotPasswordStyles = StyleSheet.create({
   // 비밀번호 찾기 - 메인 컨테이너

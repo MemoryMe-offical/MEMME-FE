@@ -56,7 +56,7 @@ const SettingsScreen = ({ navigation }: Props) => {
             routes: [{ name: 'Login' }],
           });
         } catch (error) {
-          console.error('Failed to logout:', error);
+          // console.error('Failed to logout:', error);
           showAlert({
             title: '오류',
             message: '로그아웃에 실패했습니다.',

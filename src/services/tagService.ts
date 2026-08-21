@@ -23,7 +23,7 @@ export const fetchTags = async (): Promise<TagData[]> => {
     const data = await response.json();
     return data.tags || [];
   } catch (error) {
-    console.error('Failed to fetch tags:', error);
+    // console.error('Failed to fetch tags:', error);
     throw error;
   }
 };

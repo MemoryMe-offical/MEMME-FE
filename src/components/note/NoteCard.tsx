@@ -73,7 +73,7 @@ const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: Not
             [url]: ogData,
           }));
         } catch (error) {
-          console.error('Failed to load OG data for URL:', url, error);
+          // console.error('Failed to load OG data for URL:', url, error);
         }
       }
     };
@@ -215,7 +215,7 @@ const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: Not
                       style={styles['file-item']}
                       onPress={() => {
                         Linking.openURL(file.url).catch(() => {
-                          console.error('Failed to open file:', file.url);
+                          // console.error('Failed to open file:', file.url);
                         });
                       }}
                       activeOpacity={0.7}>
@@ -264,7 +264,7 @@ const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: Not
                         style={styles['link-card']}
                         onPress={() => {
                           Linking.openURL(url).catch(() => {
-                            console.error('Failed to open URL:', url);
+                            // console.error('Failed to open URL:', url);
                           });
                         }}
                         activeOpacity={0.7}>
@@ -328,7 +328,7 @@ const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: Not
               style={styles['video-player-container']}
               onPress={() => {
                 Linking.openURL(selectedVideoUrl).catch(() => {
-                  console.error('Failed to open video:', selectedVideoUrl);
+                  // console.error('Failed to open video:', selectedVideoUrl);
                 });
               }}>
               <Text style={styles['video-play-icon']}>▶</Text>

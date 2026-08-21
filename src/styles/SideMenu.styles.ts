@@ -1,6 +1,4 @@
-import { Dimensions, StyleSheet } from 'react-native';
-
-export const SIDE_MENU_WIDTH = Dimensions.get('window').width * 0.82;
+import { StyleSheet } from 'react-native';
 
 export const sideMenuStyles = StyleSheet.create({
   // 최상위 오버레이
@@ -14,8 +12,8 @@ export const sideMenuStyles = StyleSheet.create({
     flex: 1,
   },
 
+  // width는 컴포넌트에서 인라인으로 덮어씀 (창 크기에 따라 실시간 계산)
   'sideMenu-panel': {
-    width: SIDE_MENU_WIDTH,
     backgroundColor: '#FFFFFF',
     borderTopLeftRadius: 30,
     borderBottomLeftRadius: 30,

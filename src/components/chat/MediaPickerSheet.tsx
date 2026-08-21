@@ -48,7 +48,7 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
         }
       }
     } catch (error) {
-      console.error('Failed to pick images:', error);
+      // console.error('Failed to pick images:', error);
       showAlert({ title: '오류', message: '이미지 선택에 실패했습니다.', type: 'error' });
     }
   }, [onPickImages, onClose, showAlert]);
@@ -67,7 +67,7 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
         onClose();
       }
     } catch (error) {
-      console.error('Failed to pick video:', error);
+      // console.error('Failed to pick video:', error);
       showAlert({ title: '오류', message: '동영상 선택에 실패했습니다.', type: 'error' });
     }
   }, [onPickVideo, onClose, showAlert]);
@@ -92,10 +92,10 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
         if (err.code === errorCodes.OPERATION_CANCELED) {
           // User cancelled the operation
         } else {
-          console.error('파일 선택 오류:', err);
+          // console.error('파일 선택 오류:', err);
         }
       } else {
-        console.error('파일 선택 오류:', err);
+        // console.error('파일 선택 오류:', err);
       }
     }
   }, [onPickFile, onClose]);

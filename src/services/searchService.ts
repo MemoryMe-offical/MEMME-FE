@@ -64,7 +64,7 @@ export const search = async (
     const apiResponse: ApiResponse<SearchResponse> = await response.json();
     return apiResponse.data;
   } catch (error) {
-    console.error('Search failed:', error);
+    // console.error('Search failed:', error);
     throw error;
   }
 };
@@ -98,7 +98,7 @@ export const reindex = async (): Promise<{
 
     return apiResponse.data;
   } catch (error) {
-    console.error('Reindex failed:', error);
+    // console.error('Reindex failed:', error);
     throw error;
   }
 };

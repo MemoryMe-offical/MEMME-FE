@@ -82,7 +82,7 @@ const PendingLinksBottomSheet = ({
             [link.url]: ogData,
           }));
         } catch (error) {
-          console.error('Failed to load OG data:', link.url, error);
+          // console.error('Failed to load OG data:', link.url, error);
         }
       }
 
@@ -140,7 +140,7 @@ const PendingLinksBottomSheet = ({
       setNewBoardName('');
       setActivePendingLink(null);
     } catch (error) {
-      console.error('Failed to create board:', error);
+      // console.error('Failed to create board:', error);
     } finally {
       setIsCreatingBoard(false);
     }

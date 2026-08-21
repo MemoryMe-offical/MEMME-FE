@@ -1,9 +1,4 @@
-import { StyleSheet, Platform, Dimensions } from 'react-native';
-
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-const isIOS = Platform.OS === 'ios';
-const isIPhoneX = isIOS && SCREEN_HEIGHT >= 812;
+import { StyleSheet } from 'react-native';
 
 export const signupStyles = StyleSheet.create({
   // 회원가입 - 메인 컨테이너
@@ -271,7 +266,7 @@ export const signupStyles = StyleSheet.create({
   // 회원가입 - 약관 컨테이너
   'signup-termsContainer': {
     paddingHorizontal: 32,
-    paddingBottom: isIPhoneX ? 34 : 20,
+    paddingBottom: 20, // 노치 기기 보정값은 화면에서 useSafeAreaInsets()로 덮어씀
   },
 
   // 회원가입 - 약관 컨테이너 - 텍스트

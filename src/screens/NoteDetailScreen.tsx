@@ -88,14 +88,10 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
   // 저장 버튼으로 인한 goBack()과 일반 뒤로가기를 구분하는 플래그
   const isSavingRef = useRef(false);
 
-  // editContent 변경 시 높이 자동 업데이트
-  useEffect(() => {
-    const lineCount = editContent.split('\n').length;
-    const lineHeight = 26;
-    const paddingVertical = 14;
-    const newHeight = Math.max(140, lineCount * lineHeight + paddingVertical);
-    setContentHeight(newHeight);
-  }, [editContent]);
+  // 내용 입력창 높이는 onContentSizeChange가 측정하는 실제 렌더링 크기만을
+  // 기준으로 삼는다. 줄바꿈(\n) 개수만 세는 계산을 별도로 두면 두 값이
+  // 서로를 덮어쓰는 경쟁 상태가 생겨, 타이밍에 따라 박스 높이가 늘어나지
+  // 않고 고정된 것처럼 보이는 문제가 있었다.
 
   // AsyncStorage에 요약 저장
   useEffect(() => {
@@ -110,7 +106,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         });
         await AsyncStorage.setItem(`note_summaries_${note.id}`, JSON.stringify(summaryMap));
       } catch (error) {
-        console.error('Failed to save summaries:', error);
+        // console.error('Failed to save summaries:', error);
       }
     };
     saveSummaries();
@@ -144,7 +140,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
               });
             }
           } catch (error) {
-            console.error('Failed to load summaries:', error);
+            // console.error('Failed to load summaries:', error);
           }
         }
 
@@ -170,7 +166,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           }
           setEditOgDatas(newOgDatas);
         } catch (error) {
-          console.error('Failed to load OG data:', error);
+          // console.error('Failed to load OG data:', error);
         } finally {
           setIsLoadingOgData(false);
         }
@@ -236,7 +232,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         files: editFiles.length > 0 ? editFiles : undefined,
         ogDatas: editOgDatas.length > 0 ? editOgDatas : undefined,
       };
-      console.log('Saving note with data:', noteData);
+      // console.log('Saving note with data:', noteData);
 
       if (isNew) {
         await noteService.createNote(boardId, noteData);
@@ -245,7 +241,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
       }
       navigation.goBack();
     } catch (error) {
-      console.error('Failed to save note:', error);
+      // console.error('Failed to save note:', error);
       showAlert({ title: '오류', message: '노트 저장에 실패했습니다.', type: 'error' });
       isSavingRef.current = false;
     } finally {
@@ -269,7 +265,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           navigation.goBack();
         } catch (error) {
           showAlert({ title: '오류', message: '노트 삭제에 실패했습니다.', type: 'error' });
-          console.error('Failed to delete note:', error);
+          // console.error('Failed to delete note:', error);
         } finally {
           setIsSaving(false);
         }
@@ -319,7 +315,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           setEditImageUris(prev => [...prev, ...response.urls]);
         } catch (error) {
           showAlert({ title: '오류', message: '이미지 업로드에 실패했습니다.', type: 'error' });
-          console.error('Image upload error:', error);
+          // console.error('Image upload error:', error);
         } finally {
           setIsUploading(false);
         }
@@ -385,7 +381,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
           setEditVideos(prev => [...prev, ...newVideos]);
         } catch (error) {
           showAlert({ title: '오류', message: '동영상 업로드에 실패했습니다.', type: 'error' });
-          console.error('Video upload error:', error);
+          // console.error('Video upload error:', error);
         } finally {
           setIsUploading(false);
         }
@@ -610,7 +606,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
         setEditFiles(prev => [...prev, ...newFiles]);
       } catch (error) {
         showAlert({ title: '오류', message: '파일 업로드에 실패했습니다.', type: 'error' });
-        console.error('File upload error:', error);
+        // console.error('File upload error:', error);
       } finally {
         setIsUploading(false);
       }
@@ -950,7 +946,7 @@ const NoteDetailScreen = ({ route, navigation }: Props) => {
               style={styles['video-player-container']}
               onPress={() => {
                 Linking.openURL(selectedVideoUrl).catch(() => {
-                  console.error('Failed to open video:', selectedVideoUrl);
+                  // console.error('Failed to open video:', selectedVideoUrl);
                 });
               }}>
               <Text style={styles['video-play-icon']}>▶</Text>
@@ -1008,8 +1004,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#1A1A1A',
     fontFamily: 'PretendardVariable',
-    lineHeight: 28,
-    paddingVertical: 8,
+    // lineHeight를 폰트 크기보다 과도하게 크게 주면 텍스트 렌더링 엔진마다
+    // 남는 여백을 위/아래로 나누는 방식이 달라 텍스트가 위/아래로 치우쳐
+    // 보일 수 있다. 대신 paddingVertical로 세로 중앙 정렬을 맞춘다.
+    paddingVertical: 14,
     paddingHorizontal: 14,
     backgroundColor: '#FFFFFF',
     borderRadius: 10,

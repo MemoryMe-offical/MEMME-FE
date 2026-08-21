@@ -120,7 +120,7 @@ const MainScreen = () => {
         const id = await AsyncStorage.getItem('userId');
         setUserId(id || '');
       } catch (error) {
-        console.error('Failed to load userId:', error);
+        // console.error('Failed to load userId:', error);
       }
     };
     loadUserId();
@@ -182,7 +182,7 @@ const MainScreen = () => {
           setExpandInitialSettings(settings);
         }
       } catch (error) {
-        console.error('Failed to load expand settings:', error);
+        // console.error('Failed to load expand settings:', error);
       }
     };
     loadExpandSettings();
@@ -201,7 +201,7 @@ const MainScreen = () => {
         });
         setRecentBoards(response.items as Board[]);
       } catch (error) {
-        console.error('Failed to load recent boards:', error);
+        // console.error('Failed to load recent boards:', error);
         const boards = (items.filter(i => i.type === 'board') as Board[]).slice(0, 5);
         setRecentBoards(boards);
       }
@@ -324,7 +324,7 @@ const MainScreen = () => {
       setNextSearchCursor(response.nextCursor);
       setSearchHasMore(response.hasNext);
     } catch (error) {
-      console.error('Search error:', error);
+      // console.error('Search error:', error);
       showAlert({ title: '검색 오류', message: '검색 중 오류가 발생했습니다.', type: 'error' });
       setSearchResults([]);
       setNextSearchCursor(null);
@@ -375,7 +375,7 @@ const MainScreen = () => {
         onAlert: msg => showAlert({ message: msg }),
       });
     } catch (error) {
-      console.error('Failed to handle shared URL:', error);
+      // console.error('Failed to handle shared URL:', error);
     }
   };
 
@@ -390,7 +390,7 @@ const MainScreen = () => {
       }
       setItems(response.items);
     } catch (error) {
-      console.error('Failed to load timeline:', error);
+      // console.error('Failed to load timeline:', error);
       setItems([]);
     } finally {
       setLoaded(true);
@@ -409,7 +409,7 @@ const MainScreen = () => {
             const ogData = await fetchOgData(link.url);
             return { ...link, ogData };
           } catch (error) {
-            console.error('Failed to load OG data:', link.url, error);
+            // console.error('Failed to load OG data:', link.url, error);
             return link;
           }
         })
@@ -477,7 +477,7 @@ const MainScreen = () => {
             setExpandInitialSettings(settings);
           }
         } catch (error) {
-          console.error('Failed to load expand settings:', error);
+          // console.error('Failed to load expand settings:', error);
         }
       };
       loadExpandSettings();
@@ -504,7 +504,7 @@ const MainScreen = () => {
           await nativeShareModule.clearSharedURL();
         }
       } catch (error) {
-        console.error('Failed to handle shared URL:', error);
+        // console.error('Failed to handle shared URL:', error);
       }
     };
 
@@ -611,7 +611,7 @@ const MainScreen = () => {
         return;
       }
     } catch (error) {
-      console.error('Failed to copy to clipboard:', error);
+      // console.error('Failed to copy to clipboard:', error);
       showToastNotification({
         message: '복사 실패',
         onAlert: msg => showAlert({ message: msg }),
@@ -640,7 +640,7 @@ const MainScreen = () => {
         );
       }
     } catch (error) {
-      console.error('Failed to toggle bookmark:', error);
+      // console.error('Failed to toggle bookmark:', error);
       showAlert({ title: '오류', message: '북마크 설정에 실패했습니다.', type: 'error' });
     }
   };
@@ -712,7 +712,7 @@ const MainScreen = () => {
       setItems(prev => [...prev, newMemo]);
       setInputText('');
     } catch (error) {
-      console.error('Failed to create memo:', error);
+      // console.error('Failed to create memo:', error);
       showAlert({ title: '오류', message: '메모 저장에 실패했습니다.', type: 'error' });
       setInputText(text);
     }
@@ -754,7 +754,7 @@ const MainScreen = () => {
         });
       }
     } catch (error) {
-      console.error('Failed to handle link:', error);
+      // console.error('Failed to handle link:', error);
       showAlert({ title: '오류', message: '링크 처리에 실패했습니다.', type: 'error' });
     }
 
@@ -794,7 +794,7 @@ const MainScreen = () => {
       setShowNewBoardFormInLinkModal(false);
       setNewBoardNameInLinkModal('');
     } catch (error) {
-      console.error('Failed to create board and add link:', error);
+      // console.error('Failed to create board and add link:', error);
       showAlert({ title: '오류', message: '보드 생성 중 오류가 발생했습니다.', type: 'error' });
     } finally {
       setIsCreatingBoardInLinkModal(false);
@@ -822,7 +822,7 @@ const MainScreen = () => {
           setItems(prev => prev.filter(i => i.id !== id));
           handleCloseContextMenu();
         } catch (error) {
-          console.error('Failed to delete item:', error);
+          // console.error('Failed to delete item:', error);
           showAlert({ title: '오류', message: '삭제에 실패했습니다.', type: 'error' });
         }
       },
@@ -861,7 +861,7 @@ const MainScreen = () => {
           setLinkOgData(data || null);
         })
         .catch(error => {
-          console.error('Failed to fetch OG data:', error);
+          // console.error('Failed to fetch OG data:', error);
           setLinkOgData(null);
         })
         .finally(() => {
@@ -933,7 +933,7 @@ const MainScreen = () => {
       shouldScrollToEnd.current = true;
       setItems(prev => [...prev, newMemo]);
     } catch (error) {
-      console.error('Failed to upload images:', error);
+      // console.error('Failed to upload images:', error);
       showAlert({ title: '오류', message: '이미지 업로드에 실패했습니다.', type: 'error' });
     } finally {
       setIsUploadingMedia(false);
@@ -957,7 +957,7 @@ const MainScreen = () => {
       shouldScrollToEnd.current = true;
       setItems(prev => [...prev, newMemo]);
     } catch (error) {
-      console.error('Failed to upload video:', error);
+      // console.error('Failed to upload video:', error);
       showAlert({ title: '오류', message: '동영상 업로드에 실패했습니다.', type: 'error' });
     } finally {
       setIsUploadingMedia(false);
@@ -980,7 +980,7 @@ const MainScreen = () => {
       shouldScrollToEnd.current = true;
       setItems(prev => [...prev, newMemo]);
     } catch (error) {
-      console.error('Failed to upload file:', error);
+      // console.error('Failed to upload file:', error);
       showAlert({ title: '오류', message: '파일 업로드에 실패했습니다.', type: 'error' });
     } finally {
       setIsUploadingMedia(false);
@@ -1020,7 +1020,7 @@ const MainScreen = () => {
 
       setPendingLinks(prev => prev.filter(l => l.id !== link.id));
     } catch (error) {
-      console.error('Failed to add note to board:', error);
+      // console.error('Failed to add note to board:', error);
       showAlert({ title: '오류', message: '노트 추가에 실패했습니다.', type: 'error' });
     }
   };
@@ -1030,7 +1030,7 @@ const MainScreen = () => {
       await pendingLinkService.removePendingLink(linkId);
       setPendingLinks(prev => prev.filter(l => l.id !== linkId));
     } catch (error) {
-      console.error('Failed to dismiss pending link:', error);
+      // console.error('Failed to dismiss pending link:', error);
       showAlert({ title: '오류', message: '링크 삭제에 실패했습니다.', type: 'error' });
     }
   };
@@ -1115,10 +1115,14 @@ const MainScreen = () => {
         <View
           style={styles['main-content']}
           onLayout={({ nativeEvent }) => {
-            if (watermarkFrame) return;
-
             const { width, height } = nativeEvent.layout;
-            setWatermarkFrame({ width, height });
+            // 값이 실제로 바뀌었을 때만 갱신 (Mac에서 창 크기를 조절해도
+            // 워터마크 크기가 최초 측정값에 고정되지 않도록 함)
+            setWatermarkFrame(prev =>
+              prev && prev.width === width && prev.height === height
+                ? prev
+                : { width, height },
+            );
           }}>
           {watermarkFrame ? (
             <View

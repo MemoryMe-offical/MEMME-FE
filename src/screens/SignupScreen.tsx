@@ -13,7 +13,7 @@ import {
   TextInput as RNTextInput,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -26,6 +26,11 @@ const API_BASE_URL = 'https://memme.o-r.kr';
 
 const SignupScreen = () => {
   const navigation = useNavigation<NavigationProp>();
+  const insets = useSafeAreaInsets();
+  // 노치/홈 인디케이터 유무는 화면 높이 추정이 아니라 실제 safe area
+  // inset으로 판단한다(Mac에서 실행되는 경우 창 높이가 노치 기기 기준을
+  // 넘어 오판하는 것을 방지).
+  const hasNotchBottom = Platform.OS === 'ios' && insets.bottom > 0;
   const scrollViewRef = useRef<ScrollView>(null);
   const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const signupCompletedRef = useRef(false);
@@ -627,7 +632,11 @@ const SignupScreen = () => {
               </View>
 
               {/* 약관 동의 안내 */}
-              <View style={styles['signup-termsContainer']}>
+              <View
+                style={[
+                  styles['signup-termsContainer'],
+                  hasNotchBottom && { paddingBottom: 34 },
+                ]}>
                 <Text style={styles['signup-termsContainer-text']}>
                   가입 시{' '}
                   <Text

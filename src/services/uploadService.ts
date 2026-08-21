@@ -80,7 +80,7 @@ export const uploadImages = async (
       names: apiResponse.data.names,
     };
   } catch (error) {
-    console.error('Failed to upload images:', error);
+    // console.error('Failed to upload images:', error);
     throw error;
   }
 };
@@ -117,7 +117,7 @@ export const uploadVideo = async (fileUri: string): Promise<VideoUploadResponse>
         : `${BASE_URL}/${apiResponse.data.url}`;
     return { ...apiResponse.data, url };
   } catch (error) {
-    console.error('Failed to upload video:', error);
+    // console.error('Failed to upload video:', error);
     throw error;
   }
 };
@@ -154,7 +154,7 @@ export const uploadFile = async (fileUri: string): Promise<FileUploadResponse> =
         : `${BASE_URL}/${apiResponse.data.url}`;
     return { ...apiResponse.data, url };
   } catch (error) {
-    console.error('Failed to upload file:', error);
+    // console.error('Failed to upload file:', error);
     throw error;
   }
 };
@@ -175,7 +175,7 @@ export const getUploadObjectUrl = async (key: string): Promise<string> => {
     const apiResponse: ApiResponse<{ url: string }> = await response.json();
     return apiResponse.data.url;
   } catch (error) {
-    console.error('Failed to get upload object URL:', error);
+    // console.error('Failed to get upload object URL:', error);
     throw error;
   }
 };
@@ -196,7 +196,7 @@ export const getUploadObject = async (key: string): Promise<any> => {
     const apiResponse: ApiResponse<any> = await response.json();
     return apiResponse.data;
   } catch (error) {
-    console.error('Failed to get upload object:', error);
+    // console.error('Failed to get upload object:', error);
     throw error;
   }
 };
@@ -235,7 +235,7 @@ export const createMemoWithImage = async (fileUris: string | string[]): Promise<
     const apiResponse: ApiResponse<any> = await response.json();
     return apiResponse.data;
   } catch (error) {
-    console.error('Failed to create memo with image:', error);
+    // console.error('Failed to create memo with image:', error);
     throw error;
   }
 };
@@ -267,7 +267,7 @@ export const createMemoWithVideo = async (fileUri: string, videoName?: string): 
     const apiResponse: ApiResponse<any> = await response.json();
     return apiResponse.data;
   } catch (error) {
-    console.error('Failed to create memo with video:', error);
+    // console.error('Failed to create memo with video:', error);
     throw error;
   }
 };
@@ -299,7 +299,7 @@ export const createMemoWithFile = async (fileUri: string, fileName?: string): Pr
     const apiResponse: ApiResponse<any> = await response.json();
     return apiResponse.data;
   } catch (error) {
-    console.error('Failed to create memo with file:', error);
+    // console.error('Failed to create memo with file:', error);
     throw error;
   }
 };
