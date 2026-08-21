@@ -9,7 +9,16 @@ const STORAGE_KEYS = {
 
 const REFRESH_URL = 'https://memme.o-r.kr/v1/auth/refresh';
 
-let refreshPromise: Promise<boolean> | null = null;
+interface RefreshResult {
+  success: boolean;
+  // true: 서버가 명확히 거부했거나(400/401/403) 응답에 accessToken이 없어
+  //       재로그인이 필요한 상태로 확정된 경우
+  // false: 네트워크 오류 등으로 서버 응답 자체를 확인하지 못한 경우
+  //        (저장된 토큰이 실제로 무효인지는 알 수 없음)
+  definitiveFailure: boolean;
+}
+
+let refreshPromise: Promise<RefreshResult> | null = null;
 
 type FetchHeaders = NonNullable<RequestInit['headers']>;
 
@@ -197,14 +206,25 @@ const shouldClearAuthForRefreshFailure = (status: number): boolean => {
 
 /**
  * RefreshToken으로 새 AccessToken 발급받기
+ *
+ * 실패를 두 가지로 구분한다:
+ * - definitiveFailure: true  → 서버가 명확히 거부(400/401/403)했거나 응답에
+ *   accessToken이 없어 재로그인이 필요함이 확정된 경우. 이 경우에만 저장된
+ *   토큰을 지운다.
+ * - definitiveFailure: false → fetch 자체가 실패(오프라인, 타임아웃 등)해서
+ *   서버 응답을 확인하지 못한 경우. 저장된 토큰이 실제로 무효인지 알 수
+ *   없으므로 지우지 않는다. 호출부(isAutoLoginDataValid)가 이 경우를
+ *   "로그아웃 확정"과 다르게 처리해야 콜드 스타트 시 일시적인 네트워크
+ *   문제만으로 자동로그인이 풀리는 것을 막을 수 있다.
  */
-const refreshAccessTokenInternal = async (): Promise<boolean> => {
+const refreshAccessTokenInternal = async (): Promise<RefreshResult> => {
   try {
     const accessToken = await getStoredToken();
     const refreshToken = await getStoredRefreshToken();
 
     if (!refreshToken) {
-      return false;
+      // 애초에 저장된 refreshToken이 없으면 확정적으로 로그인 필요
+      return { success: false, definitiveFailure: true };
     }
 
     const response = await fetch(REFRESH_URL, {
@@ -217,10 +237,11 @@ const refreshAccessTokenInternal = async (): Promise<boolean> => {
     });
 
     if (!response.ok) {
-      if (shouldClearAuthForRefreshFailure(response.status)) {
+      const definitiveFailure = shouldClearAuthForRefreshFailure(response.status);
+      if (definitiveFailure) {
         await clearAutoLoginData();
       }
-      return false;
+      return { success: false, definitiveFailure };
     }
 
     const data = await response.json();
@@ -229,18 +250,19 @@ const refreshAccessTokenInternal = async (): Promise<boolean> => {
 
     if (!newAccessToken) {
       await clearAutoLoginData();
-      return false;
+      return { success: false, definitiveFailure: true };
     }
 
     // Refresh token rotation 대응: 서버가 새 refreshToken을 내려주면 반드시 같이 저장한다.
     await saveTokens(newAccessToken, newRefreshToken);
-    return true;
+    return { success: true, definitiveFailure: false };
   } catch {
-    return false;
+    // 네트워크 오류 등으로 서버 응답을 확인하지 못함 → 확정 실패 아님
+    return { success: false, definitiveFailure: false };
   }
 };
 
-export const refreshAccessToken = async (): Promise<boolean> => {
+const refreshAccessTokenWithReason = async (): Promise<RefreshResult> => {
   if (!refreshPromise) {
     refreshPromise = refreshAccessTokenInternal().finally(() => {
       refreshPromise = null;
@@ -250,12 +272,24 @@ export const refreshAccessToken = async (): Promise<boolean> => {
   return refreshPromise;
 };
 
+export const refreshAccessToken = async (): Promise<boolean> => {
+  const result = await refreshAccessTokenWithReason();
+  return result.success;
+};
+
 /**
  * 자동로그인 데이터가 유효한지 확인
  * - AUTO_LOGIN이 true
  * - accessToken 존재
  * - userId 존재
  * - 토큰 만료되지 않음 (만료되면 RefreshToken으로 갱신 시도)
+ *
+ * 갱신이 실패했을 때, 서버가 명확히 거부한 경우(definitiveFailure)에만
+ * 로그인 화면으로 보낸다. 네트워크 오류 등으로 서버 응답을 확인하지
+ * 못한 경우에는 저장된 토큰을 신뢰하고 일단 통과시킨다 — 실제로 토큰이
+ * 무효했다면 이후 API 호출에서 fetchWithAutoLogoutHandler가 401을 감지해
+ * 처리한다. 이렇게 해야 콜드 스타트 시 일시적인 네트워크 문제 한 번으로
+ * 자동로그인이 풀리는 것을 막을 수 있다.
  */
 export const isAutoLoginDataValid = async (): Promise<boolean> => {
   try {
@@ -277,10 +311,12 @@ export const isAutoLoginDataValid = async (): Promise<boolean> => {
     const expired = isTokenExpired(token);
 
     if (expired) {
-      const refreshed = await refreshAccessToken();
-      if (!refreshed) {
+      const { success, definitiveFailure } = await refreshAccessTokenWithReason();
+      if (!success && definitiveFailure) {
         return false;
       }
+      // success === false && definitiveFailure === false:
+      // 네트워크 오류 등으로 갱신 여부를 확인 못함 → 로그아웃시키지 않는다.
     }
 
     return true;
