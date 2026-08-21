@@ -116,11 +116,12 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
             }
           } else if (note.url && !cachedOgData[note.url] && !note.ogData) {
             // 레거시 단수 형식 호환
+            const noteUrl = note.url;
             try {
-              const ogData = await fetchOgData(note.url);
+              const ogData = await fetchOgData(noteUrl);
               setCachedOgData(prev => ({
                 ...prev,
-                [note.url]: ogData,
+                [noteUrl]: ogData,
               }));
             } catch {
               // console.error('Failed to fetch OG data for link:', note.url, error);
@@ -160,7 +161,9 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
             const ogData = (note.ogDatas?.[idx]) || cachedOgData[url];
             links.push({
               url,
-              title: ogData?.title || new URL(url).hostname,
+              // RN의 URL 폴리필은 hostname을 지원하지 않으므로(항상 undefined)
+              // 다른 화면들과 동일하게 정규식으로 도메인을 추출한다.
+              title: ogData?.title || url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || url,
               imageUrl: ogData?.imageUrl,
               hasOgData: !!(note.ogDatas?.[idx] || cachedOgData[url]),
             });
@@ -170,7 +173,7 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
           const ogData = note.ogData || cachedOgData[note.url];
           links.push({
             url: note.url,
-            title: ogData?.title || new URL(note.url).hostname,
+            title: ogData?.title || note.url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || note.url,
             imageUrl: ogData?.imageUrl,
             hasOgData: !!(note.ogData || cachedOgData[note.url]),
           });

@@ -122,7 +122,11 @@ const BoardCard = ({
   return (
     <View style={styles['card-row']}>
       {showTime && <Text style={styles['card-time']}>{formatTime(item.createdAt)}</Text>}
-      <View
+      {/* View는 onLongPress를 지원하지 않아 길게 누르기가 아예 동작하지
+          않았음(RN에서 조용히 무시됨) — Pressable로 교체해 실제로
+          동작하도록 수정. 내부 TouchableOpacity들의 onPress 동작에는
+          영향 없음(이 Pressable 자체는 onPress를 갖지 않음). */}
+      <Pressable
         onLongPress={() => onContextMenu(item)}
         style={[styles['card-wrapper'], { width: cardWidth }]}>
 
@@ -291,9 +295,7 @@ const BoardCard = ({
                                   {(note.files?.length ?? 0) > 0 && (
                                     <>
                                       <View style={styles['card-section-row']}>
-                                        <View style={styles['card-file-header']}>
-                                          <Text style={styles['card-section-label']}>파일</Text>
-                                        </View>
+                                        <Text style={styles['card-section-label']}>파일</Text>
                                         <View style={styles['card-files-preview']}>
                                           {note.files!.slice(0, 2).map((file, idx) => (
                                             <TouchableOpacity
@@ -409,7 +411,7 @@ const BoardCard = ({
               )}
           </View>
         )}
-      </View>
+      </Pressable>
 
       {/* 이미지 뷰어 모달 */}
       <ImageViewerModal

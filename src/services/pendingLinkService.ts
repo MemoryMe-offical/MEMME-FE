@@ -33,7 +33,7 @@ export const addPendingLink = async (link: Omit<PendingLink, 'id'>): Promise<Pen
 
     return {
       ...apiResponse.data.pendingLink,
-      id: apiResponse.data.pendingLink.id || apiResponse.data.pendingLink.uid,
+      id: apiResponse.data.pendingLink.id || apiResponse.data.pendingLink.uid || '',
     };
   } catch (error) {
     // console.error('Failed to add pending link:', error);

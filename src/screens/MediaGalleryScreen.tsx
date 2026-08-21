@@ -13,7 +13,7 @@ import {
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from '../navigation/RootNavigator';
-import { Board, Note, FileAttachment, Memo } from '../types';
+import { Board, Note, FileAttachment, MediaAttachment, Memo } from '../types';
 import { ArrowLeftIcon, FileIcon } from '../components/common/Icons';
 import { fetchOgData } from '../services/ogService';
 import ImageViewerModal from '../components/common/ImageViewerModal';
@@ -32,7 +32,9 @@ interface MediaItem {
   type: 'image' | 'video' | 'file' | 'link';
   note?: Note;
   board?: Board;
-  file?: FileAttachment;
+  // 'file' 타입 항목은 FileAttachment, 'video' 타입 항목은 MediaAttachment
+  // (thumbnailUrl/duration 포함)를 담는다.
+  file?: FileAttachment | MediaAttachment;
   ogData?: any;
   timelineItem?: any;
 }
@@ -354,8 +356,11 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
         if (item.board) {
           navigation.navigate('BoardDetail', { board: item.board });
         } else if (item.timelineItem) {
-          navigation.setParams({ scrollToItemId: item.timelineItem.id });
-          navigation.goBack();
+          // setParams는 이 화면(MediaGallery) 자신의 params만 바꾸므로
+          // Main 화면에 scrollToItemId가 전달되지 않아 스크롤 이동이
+          // 동작하지 않았음. 이미 스택에 있는 Main으로 navigate하면
+          // 뒤로가기와 동일하게 돌아가면서 params도 함께 전달된다.
+          navigation.navigate('Main', { scrollToItemId: item.timelineItem.id });
         }
       }}
     >
@@ -430,7 +435,7 @@ const MediaGalleryScreen = ({ route, navigation }: Props) => {
           <View style={styles.fileIconContainer}>
             <FileIcon color="#588DFF" size={28} />
           </View>
-          <Text style={styles.fileName} numberOfLines={2}>{decodeURIComponent(item.title)}</Text>
+          <Text style={styles.fileName} numberOfLines={2}>{decodeURIComponent(item.title ?? '')}</Text>
         </View>
       </TouchableOpacity>
     );

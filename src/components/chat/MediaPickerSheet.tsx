@@ -17,7 +17,7 @@ interface MediaPickerSheetProps {
   visible: boolean;
   onClose: () => void;
   onPickImages: (uris: string[]) => void;
-  onPickVideo: (uri: string) => void;
+  onPickVideo: (uri: string, name?: string) => void;
   onPickFile: (uri: string, name: string) => void;
   isLoading?: boolean;
 }

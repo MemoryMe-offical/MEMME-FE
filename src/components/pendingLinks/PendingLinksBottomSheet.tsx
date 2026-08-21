@@ -425,14 +425,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     maxHeight: '60%',
   },
-  'modal-handle': {
-    width: 40,
-    height: 4,
-    backgroundColor: '#E0E8F8',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
+  // 'modal-handle'은 위에서 이미 정의됨 (중복 정의였음, 두 사용처 모두 동일한
+  // 스타일을 참조하므로 제거해도 동작 차이 없음)
   'new-board-header': {
     flexDirection: 'row',
     alignItems: 'center',

@@ -92,6 +92,9 @@ export interface OgData {
 // ── 링크 인박스 임시 항목 ─────────────────────
 export interface PendingLink {
   id: string;
+  // 백엔드 응답이 id 대신 uid로 내려오는 경우가 있어 방어적으로 대응
+  // (pendingLinkService.ts의 loadPendingLinks/addPendingLink 참고)
+  uid?: string;
   userId: string;
   url: string;
   ogData?: OgData;
