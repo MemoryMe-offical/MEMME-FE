@@ -55,8 +55,8 @@ const SettingsScreen = ({ navigation }: Props) => {
             index: 0,
             routes: [{ name: 'Login' }],
           });
-        } catch (error) {
-          console.error('Failed to logout:', error);
+        } catch {
+          // console.error('Failed to logout:', error);
           showAlert({
             title: '오류',
             message: '로그아웃에 실패했습니다.',
@@ -139,18 +139,20 @@ const SettingsScreen = ({ navigation }: Props) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>계정</Text>
 
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={handleWithdrawal}
-          >
-            <Text style={[styles.menuItemText, styles.deleteText]}>회원 탈퇴</Text>
-          </TouchableOpacity>
-
+          {/* 되돌릴 수 없는 회원 탈퇴보다 로그아웃을 먼저 두어, 로그아웃하려다
+              탈퇴를 잘못 누르는 사고를 줄인다. */}
           <TouchableOpacity
             style={styles.menuItem}
             onPress={handleLogout}
           >
             <Text style={[styles.menuItemText, styles.logoutText]}>로그아웃</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={handleWithdrawal}
+          >
+            <Text style={[styles.menuItemText, styles.deleteText]}>회원 탈퇴</Text>
           </TouchableOpacity>
         </View>
 

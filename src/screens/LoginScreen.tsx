@@ -327,7 +327,7 @@ const LoginScreen = () => {
 
     try {
       setLoading(true);
-      console.log('[AppleLogin] start native request');
+      // console.log('[AppleLogin] start native request');
 
       const response = await appleAuth.performRequest({
         requestedOperation: appleAuth.Operation.LOGIN,
@@ -335,9 +335,9 @@ const LoginScreen = () => {
       });
 
       const { authorizationCode } = response;
-      console.log('[AppleLogin] native response', {
-        hasAuthorizationCode: Boolean(authorizationCode),
-      });
+      // console.log('[AppleLogin] native response', {
+        // hasAuthorizationCode: Boolean(authorizationCode),
+      // });
 
       if (!authorizationCode) {
         throw new Error('인가코드를 받지 못했습니다.');
@@ -347,7 +347,7 @@ const LoginScreen = () => {
     } catch (error) {
       appleLoginInProgressRef.current = false;
       setLoading(false);
-      console.warn('[AppleLogin] native request failed', error);
+      // console.warn('[AppleLogin] native request failed', error);
 
       const isCanceled =
         typeof error === 'object' &&

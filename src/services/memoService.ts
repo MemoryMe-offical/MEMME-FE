@@ -57,7 +57,7 @@ export const createMemo = async (
       createdAt: memo.createdAt,
     };
   } catch (error) {
-    console.error('Failed to create memo:', error);
+    // console.error('Failed to create memo:', error);
     throw error;
   }
 };
@@ -75,7 +75,7 @@ export const deleteMemo = async (memoUid: string): Promise<void> => {
       throw new Error(`API error: ${response.status}`);
     }
   } catch (error) {
-    console.error('Failed to delete memo:', error);
+    // console.error('Failed to delete memo:', error);
     throw error;
   }
 };
@@ -111,7 +111,7 @@ export const toggleMemoBookmark = async (memoUid: string, bookmarked?: boolean):
       createdAt: memo.createdAt,
     };
   } catch (error) {
-    console.error('Failed to toggle memo bookmark:', error);
+    // console.error('Failed to toggle memo bookmark:', error);
     throw error;
   }
 };

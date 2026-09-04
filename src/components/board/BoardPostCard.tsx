@@ -29,13 +29,48 @@ interface BoardPostCardProps {
 const normalizeUrl = (url: string) =>
   /^https?:\/\//i.test(url) ? url : `https://${url}`;
 
+// 링크 미리보기 카드
+const OgCard = ({ url, ogData, onOpenUrl }: { url: string; ogData?: BoardPost['ogData']; onOpenUrl: (url: string) => void }) => (
+  <View style={styles['card-og-card']}>
+    {ogData && (
+      <LoadingImage
+        source={ogData.imageUrl ? { uri: ogData.imageUrl } : require('../../assets/imgs/mainlogo.png')}
+        style={styles['card-og-image']}
+        resizeMode="cover"
+      />
+    )}
+    <View style={styles['card-og-body']}>
+      <View style={styles['card-og-text']}>
+        {ogData?.siteName && (
+          <Text style={styles['card-og-sitename']}>{ogData.siteName}</Text>
+        )}
+        <Text style={styles['card-og-title']} numberOfLines={2}>
+          {ogData?.title || url}
+        </Text>
+        {ogData?.description && (
+          <Text style={styles['card-og-desc']} numberOfLines={2}>
+            {ogData.description}
+          </Text>
+        )}
+        <Text style={styles['card-og-url']} numberOfLines={1}>{url}</Text>
+      </View>
+      <TouchableOpacity
+        style={styles['card-og-goto']}
+        onPress={() => onOpenUrl(url)}
+        activeOpacity={0.8}>
+        <Text style={styles['card-og-goto-text']}>바로가기</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+);
+
 // 링크 섹션 (url 없으면 숨김)
-const LinkSection = ({ url, ogData }: { url?: string; ogData?: BoardPost['ogData'] }) => {
+const LinkSection = ({ url, ogData, onOpenUrl }: { url?: string; ogData?: BoardPost['ogData']; onOpenUrl: (url: string) => void }) => {
   if (!url) return null;
   return (
     <View style={styles['card-section-row']}>
       <Text style={styles['card-section-label']}>링크</Text>
-      <OgCard url={url} ogData={ogData} />
+      <OgCard url={url} ogData={ogData} onOpenUrl={onOpenUrl} />
     </View>
   );
 };
@@ -75,40 +110,6 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardPos
       }
     }
   };
-
-  const OgCard = ({ url, ogData }: { url: string; ogData?: BoardPost['ogData'] }) => (
-    <View style={styles['card-og-card']}>
-      {ogData && (
-        <LoadingImage
-          source={ogData.imageUrl ? { uri: ogData.imageUrl } : require('../../assets/imgs/mainlogo.png')}
-          style={styles['card-og-image']}
-          resizeMode="cover"
-        />
-      )}
-      <View style={styles['card-og-body']}>
-        <View style={styles['card-og-text']}>
-          {ogData?.siteName && (
-            <Text style={styles['card-og-sitename']}>{ogData.siteName}</Text>
-          )}
-          <Text style={styles['card-og-title']} numberOfLines={2}>
-            {ogData?.title || url}
-          </Text>
-          {ogData?.description && (
-            <Text style={styles['card-og-desc']} numberOfLines={2}>
-              {ogData.description}
-            </Text>
-          )}
-          <Text style={styles['card-og-url']} numberOfLines={1}>{url}</Text>
-        </View>
-        <TouchableOpacity
-          style={styles['card-og-goto']}
-          onPress={() => handleOpenUrl(url)}
-          activeOpacity={0.8}>
-          <Text style={styles['card-og-goto-text']}>바로가기</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
 
   return (
     <View style={styles['card-row']}>
@@ -186,7 +187,7 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardPos
                               </View>
                             </>
                           )}
-                          <LinkSection url={sub.url ?? item.url} ogData={sub.ogData ?? item.ogData} />
+                          <LinkSection url={sub.url ?? item.url} ogData={sub.ogData ?? item.ogData} onOpenUrl={handleOpenUrl} />
                         </View>
                       )}
                     </View>
@@ -210,7 +211,7 @@ const BoardPostCard = ({ item, onContextMenu, onDetailPress, onPress }: BoardPos
                       </View>
                     </>
                   )}
-                  <LinkSection url={item.url} ogData={item.ogData} />
+                  <LinkSection url={item.url} ogData={item.ogData} onOpenUrl={handleOpenUrl} />
                 </View>
             }
           </View>

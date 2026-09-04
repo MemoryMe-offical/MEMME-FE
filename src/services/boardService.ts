@@ -63,7 +63,7 @@ export const createBoard = async (boardData: {
     const responseBoard = data.data;
     return transformBoard(responseBoard);
   } catch (error) {
-    console.error('Failed to create board:', error);
+    // console.error('Failed to create board:', error);
     throw error;
   }
 };
@@ -85,7 +85,7 @@ export const fetchBoard = async (boardUid: string): Promise<Board> => {
     const responseBoard = data.data;
     return transformBoard(responseBoard);
   } catch (error) {
-    console.error('Failed to fetch board:', error);
+    // console.error('Failed to fetch board:', error);
     throw error;
   }
 };
@@ -115,7 +115,7 @@ export const updateBoard = async (
     const responseBoard = data.data;
     return transformBoard(responseBoard);
   } catch (error) {
-    console.error('Failed to update board:', error);
+    // console.error('Failed to update board:', error);
     throw error;
   }
 };
@@ -133,7 +133,7 @@ export const deleteBoard = async (boardUid: string): Promise<void> => {
       throw new Error(`API error: ${response.status}`);
     }
   } catch (error) {
-    console.error('Failed to delete board:', error);
+    // console.error('Failed to delete board:', error);
     throw error;
   }
 };
@@ -156,7 +156,7 @@ export const toggleBoardBookmark = async (boardUid: string, bookmarked?: boolean
     const responseBoard = data.data;
     return transformBoard(responseBoard);
   } catch (error) {
-    console.error('Failed to toggle board bookmark:', error);
+    // console.error('Failed to toggle board bookmark:', error);
     throw error;
   }
 };

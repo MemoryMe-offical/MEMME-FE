@@ -3,7 +3,7 @@ import {
   View,
   Text,
   FlatList,
-  Dimensions,
+  useWindowDimensions,
   TouchableOpacity,
   Animated,
   Image,
@@ -14,8 +14,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { onboardingStyles as styles } from '../styles/OnboardingScreen.styles';
 import LinearGradient from 'react-native-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Onboarding'>;
 
@@ -49,6 +47,8 @@ const onboardingData: OnboardingItem[] = [
 
 const OnboardingScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
+  // 창 크기에 따라 실시간으로 다시 계산 (Mac에서는 창 크기를 조절할 수 있음)
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -146,14 +146,14 @@ const OnboardingScreen = ({ navigation }: Props) => {
     try {
       await AsyncStorage.setItem('@hasSeenOnboarding', 'true');
       navigation.replace('Login');
-    } catch (error) {
-      console.error('온보딩 완료 저장 실패:', error);
+    } catch {
+      // console.error('온보딩 완료 저장 실패:', error);
       navigation.replace('Login');
     }
   };
 
   const renderItem = ({ item, index }: { item: OnboardingItem; index: number }) => (
-    <View style={styles['onboarding-slide']}>
+    <View style={[styles['onboarding-slide'], { width: SCREEN_WIDTH }]}>
       {/* 🎬 이미지 애니메이션 */}
       <Animated.View
         style={{
@@ -164,10 +164,13 @@ const OnboardingScreen = ({ navigation }: Props) => {
           ],
         }}
       >
-        <Image 
-          source={item.image} 
-          style={styles['onboarding-slide-image']} 
-          resizeMode="contain" 
+        <Image
+          source={item.image}
+          style={[
+            styles['onboarding-slide-image'],
+            { width: SCREEN_WIDTH * 0.6, height: SCREEN_HEIGHT * 0.35 },
+          ]}
+          resizeMode="contain"
         />
       </Animated.View>
 

@@ -7,8 +7,8 @@ export const logScreenView = async (screenName: string) => {
       screen_name: screenName,
       screen_class: screenName,
     });
-  } catch (error) {
-    console.error('Analytics screen view error:', error);
+  } catch {
+    // console.error('Analytics screen view error:', error);
   }
 };
 
@@ -19,8 +19,8 @@ export const logEvent = async (
 ) => {
   try {
     await analytics().logEvent(eventName, params);
-  } catch (error) {
-    console.error('Analytics event error:', error);
+  } catch {
+    // console.error('Analytics event error:', error);
   }
 };
 
@@ -28,8 +28,8 @@ export const logEvent = async (
 export const setUserId = async (userId: string) => {
   try {
     await analytics().setUserId(userId);
-  } catch (error) {
-    console.error('Analytics setUserId error:', error);
+  } catch {
+    // console.error('Analytics setUserId error:', error);
   }
 };
 
@@ -37,8 +37,8 @@ export const setUserId = async (userId: string) => {
 export const setUserProperties = async (properties: Record<string, string>) => {
   try {
     await analytics().setUserProperties(properties);
-  } catch (error) {
-    console.error('Analytics setUserProperties error:', error);
+  } catch {
+    // console.error('Analytics setUserProperties error:', error);
   }
 };
 

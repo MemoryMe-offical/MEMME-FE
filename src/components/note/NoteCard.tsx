@@ -21,7 +21,7 @@ interface NoteCardProps {
   selectionMode?: boolean;
 }
 
-const ImageThumbnail = ({ imageUrl, onPress }: { imageUrl: string; onPress: () => void }) => {
+const ImageThumbnail = ({ imageUrl, objectKey, onPress }: { imageUrl: string; objectKey?: string; onPress: () => void }) => {
   return (
     <Pressable
       onPress={onPress}
@@ -31,6 +31,7 @@ const ImageThumbnail = ({ imageUrl, onPress }: { imageUrl: string; onPress: () =
       ]}>
       <LoadingImage
         source={{ uri: imageUrl }}
+        objectKey={objectKey}
         style={styles['image-thumbnail']}
         resizeMode="cover"
       />
@@ -72,8 +73,8 @@ const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: Not
             ...prev,
             [url]: ogData,
           }));
-        } catch (error) {
-          console.error('Failed to load OG data for URL:', url, error);
+        } catch {
+          // console.error('Failed to load OG data for URL:', url, error);
         }
       }
     };
@@ -124,10 +125,11 @@ const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: Not
                 scrollIndicatorInsets={{ bottom: 4 }}
                 contentContainerStyle={styles['images-preview']}>
                 <>
-                  {note.imageUris!.slice(0, maxMediaItems).map((imageUrl) => (
+                  {note.imageUris!.slice(0, maxMediaItems).map((imageUrl, index) => (
                     <ImageThumbnail
                       key={imageUrl}
                       imageUrl={imageUrl}
+                      objectKey={note.imageKeys?.[index]}
                       onPress={() => {
                         openImageViewer(note.imageUris!);
                       }}
@@ -215,7 +217,7 @@ const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: Not
                       style={styles['file-item']}
                       onPress={() => {
                         Linking.openURL(file.url).catch(() => {
-                          console.error('Failed to open file:', file.url);
+                          // console.error('Failed to open file:', file.url);
                         });
                       }}
                       activeOpacity={0.7}>
@@ -264,7 +266,7 @@ const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: Not
                         style={styles['link-card']}
                         onPress={() => {
                           Linking.openURL(url).catch(() => {
-                            console.error('Failed to open URL:', url);
+                            // console.error('Failed to open URL:', url);
                           });
                         }}
                         activeOpacity={0.7}>
@@ -328,7 +330,7 @@ const NoteCard = ({ note, onPress, isSelected, onLongPress, selectionMode }: Not
               style={styles['video-player-container']}
               onPress={() => {
                 Linking.openURL(selectedVideoUrl).catch(() => {
-                  console.error('Failed to open video:', selectedVideoUrl);
+                  // console.error('Failed to open video:', selectedVideoUrl);
                 });
               }}>
               <Text style={styles['video-play-icon']}>▶</Text>

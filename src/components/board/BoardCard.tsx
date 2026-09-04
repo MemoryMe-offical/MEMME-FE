@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Linking, Modal, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity, Linking, Modal, Pressable, useWindowDimensions } from 'react-native';
 import { Board, OgData } from '../../types';
 import { boardCardStyles as styles } from '../../styles/BoardCard.styles';
 import { ChevronDownIcon, ChevronUpIcon, MoreIcon, LinkIcon, FileIcon } from '../common/Icons';
@@ -16,7 +16,7 @@ const formatTime = (isoString: string): string => {
   return `${isAM ? '오전' : '오후'} ${displayHours}:${minutes.toString().padStart(2, '0')}`;
 };
 
-const CardImageThumbnail = ({ imageUrl, onPress }: { imageUrl: string; onPress: () => void }) => {
+const CardImageThumbnail = ({ imageUrl, objectKey, onPress }: { imageUrl: string; objectKey?: string; onPress: () => void }) => {
   return (
     <Pressable
       onPress={onPress}
@@ -26,6 +26,7 @@ const CardImageThumbnail = ({ imageUrl, onPress }: { imageUrl: string; onPress: 
       ]}>
       <LoadingImage
         source={{ uri: imageUrl }}
+        objectKey={objectKey}
         style={styles['card-image-thumbnail']}
         resizeMode="cover"
       />
@@ -55,6 +56,9 @@ const BoardCard = ({
   expandedNoteIds: propsExpandedNoteIds,
   onNoteExpandChange,
 }: BoardCardProps) => {
+  // 창 크기에 따라 실시간으로 다시 계산 (Mac에서는 창 크기를 조절할 수 있음)
+  const { width: windowWidth } = useWindowDimensions();
+  const cardWidth = (windowWidth - 48) / 1.3;
   const [isExpanded, setIsExpanded] = useState(true);
   const hasNotes = Array.isArray(item.notes) && item.notes.length > 0;
   const [expandedNoteIds, setExpandedNoteIds] = useState<string[]>([]);
@@ -105,8 +109,8 @@ const BoardCard = ({
               ...prev,
               [url]: ogData,
             }));
-          } catch (error) {
-            console.error('Failed to load OG data for URL:', url, error);
+          } catch {
+            // console.error('Failed to load OG data for URL:', url, error);
           }
         }
       }
@@ -118,9 +122,13 @@ const BoardCard = ({
   return (
     <View style={styles['card-row']}>
       {showTime && <Text style={styles['card-time']}>{formatTime(item.createdAt)}</Text>}
-      <View
+      {/* View는 onLongPress를 지원하지 않아 길게 누르기가 아예 동작하지
+          않았음(RN에서 조용히 무시됨) — Pressable로 교체해 실제로
+          동작하도록 수정. 내부 TouchableOpacity들의 onPress 동작에는
+          영향 없음(이 Pressable 자체는 onPress를 갖지 않음). */}
+      <Pressable
         onLongPress={() => onContextMenu(item)}
-        style={styles['card-wrapper']}>
+        style={[styles['card-wrapper'], { width: cardWidth }]}>
 
         {/* 헤더 */}
         <View style={styles['card-header']}>
@@ -218,6 +226,7 @@ const BoardCard = ({
                                             <CardImageThumbnail
                                               key={`${note.id}-img-${idx}`}
                                               imageUrl={imageUrl}
+                                              objectKey={note.imageKeys?.[idx]}
                                               onPress={() => {
                                                 openImageViewer(note.imageUris!);
                                               }}
@@ -286,9 +295,7 @@ const BoardCard = ({
                                   {(note.files?.length ?? 0) > 0 && (
                                     <>
                                       <View style={styles['card-section-row']}>
-                                        <View style={styles['card-file-header']}>
-                                          <Text style={styles['card-section-label']}>파일</Text>
-                                        </View>
+                                        <Text style={styles['card-section-label']}>파일</Text>
                                         <View style={styles['card-files-preview']}>
                                           {note.files!.slice(0, 2).map((file, idx) => (
                                             <TouchableOpacity
@@ -296,7 +303,7 @@ const BoardCard = ({
                                               style={styles['card-file-item']}
                                               onPress={() => {
                                                 Linking.openURL(file.url).catch(() => {
-                                                  console.error('Failed to open file:', file.url);
+                                                  // console.error('Failed to open file:', file.url);
                                                 });
                                               }}
                                               activeOpacity={0.7}>
@@ -344,7 +351,7 @@ const BoardCard = ({
                                                   style={styles['card-link-card']}
                                                   onPress={() => {
                                                     Linking.openURL(url).catch(() => {
-                                                      console.error('Failed to open URL:', url);
+                                                      // console.error('Failed to open URL:', url);
                                                     });
                                                   }}
                                                   activeOpacity={0.7}>
@@ -404,7 +411,7 @@ const BoardCard = ({
               )}
           </View>
         )}
-      </View>
+      </Pressable>
 
       {/* 이미지 뷰어 모달 */}
       <ImageViewerModal
@@ -432,7 +439,7 @@ const BoardCard = ({
               style={styles['video-player-container']}
               onPress={() => {
                 Linking.openURL(selectedVideoUrl).catch(() => {
-                  console.error('Failed to open video:', selectedVideoUrl);
+                  // console.error('Failed to open video:', selectedVideoUrl);
                 });
               }}>
               <Text style={styles['video-play-icon']}>▶</Text>

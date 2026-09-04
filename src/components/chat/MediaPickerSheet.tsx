@@ -17,7 +17,7 @@ interface MediaPickerSheetProps {
   visible: boolean;
   onClose: () => void;
   onPickImages: (uris: string[]) => void;
-  onPickVideo: (uri: string) => void;
+  onPickVideo: (uri: string, name?: string) => void;
   onPickFile: (uri: string, name: string) => void;
   isLoading?: boolean;
 }
@@ -38,6 +38,11 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
       const result = await launchImageLibrary({
         mediaType: 'photo',
         selectionLimit: 10,
+        // 원본을 그대로 올리면 작은 썸네일에서도 매번 큰 원본을 내려받아
+        // 로딩이 느려지므로 업로드 전에 리사이즈/압축한다.
+        quality: 0.8,
+        maxWidth: 1920,
+        maxHeight: 1920,
       });
 
       if (result.assets && result.assets.length > 0) {
@@ -47,8 +52,8 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
           onClose();
         }
       }
-    } catch (error) {
-      console.error('Failed to pick images:', error);
+    } catch {
+      // console.error('Failed to pick images:', error);
       showAlert({ title: '오류', message: '이미지 선택에 실패했습니다.', type: 'error' });
     }
   }, [onPickImages, onClose, showAlert]);
@@ -66,8 +71,8 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
         onPickVideo(videoUri, videoName);
         onClose();
       }
-    } catch (error) {
-      console.error('Failed to pick video:', error);
+    } catch {
+      // console.error('Failed to pick video:', error);
       showAlert({ title: '오류', message: '동영상 선택에 실패했습니다.', type: 'error' });
     }
   }, [onPickVideo, onClose, showAlert]);
@@ -92,10 +97,10 @@ const MediaPickerSheet: React.FC<MediaPickerSheetProps> = ({
         if (err.code === errorCodes.OPERATION_CANCELED) {
           // User cancelled the operation
         } else {
-          console.error('파일 선택 오류:', err);
+          // console.error('파일 선택 오류:', err);
         }
       } else {
-        console.error('파일 선택 오류:', err);
+        // console.error('파일 선택 오류:', err);
       }
     }
   }, [onPickFile, onClose]);

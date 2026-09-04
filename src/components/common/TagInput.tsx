@@ -45,7 +45,7 @@ const TagInput = ({ tags, onChange, maxTags = 10, suggestions: initialSuggestion
         } else {
           setSuggestions(initialSuggestions);
         }
-      } catch (error) {
+      } catch {
         setSuggestions(initialSuggestions);
       }
     };

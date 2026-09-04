@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Image, Animated } from 'react-native';
+import { View, Text, Image, Animated, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/RootNavigator';
@@ -17,6 +17,8 @@ const FREEZE_SPLASH = false;
 type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
 const SplashScreen = ({ navigation }: Props) => {
+  // 창 크기에 따라 실시간으로 다시 계산 (Mac에서는 창 크기를 조절할 수 있음)
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const characterAnim = useRef(new Animated.Value(50)).current;
 
@@ -58,7 +60,7 @@ const SplashScreen = ({ navigation }: Props) => {
           // 최초 사용자면 온보딩으로
           navigation.replace('Onboarding');
         }
-      } catch (error) {
+      } catch {
         navigation.replace('Onboarding');
       }
     };
@@ -111,6 +113,8 @@ const SplashScreen = ({ navigation }: Props) => {
         style={[
           styles['splash-characterContainer'],
           {
+            bottom: -SCREEN_HEIGHT * 0.2,
+            left: SCREEN_WIDTH * 0.05, // 왼쪽 밖으로
             opacity: fadeAnim,
             transform: [{ translateY: characterAnim }],
           },
@@ -119,7 +123,8 @@ const SplashScreen = ({ navigation }: Props) => {
           source={require('../assets/imgs/artV1.png')}
           style={[
             styles['splash-characterContainer-image'],
-            // { transform: [{ rotate: '-21deg' }] }, 
+            { width: SCREEN_WIDTH, height: SCREEN_HEIGHT },
+            // { transform: [{ rotate: '-21deg' }] },
           ]}
         />
       </Animated.View>

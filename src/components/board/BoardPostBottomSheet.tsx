@@ -7,14 +7,12 @@ import {
   Text,
   TouchableOpacity,
   Animated,
-  Dimensions,
+  useWindowDimensions,
   ScrollView,
 } from 'react-native';
 import { Board } from '../../types';
 import { boardPostBottomSheetStyles as styles } from '../../styles/BoardPostBottomSheet.styles';
 import { CloseIcon, EditIcon } from '../common/Icons';
-
-const SHEET_HEIGHT = Dimensions.get('window').height * 0.55;
 
 const formatFullTime = (isoString: string): string => {
   const date = new Date(isoString);
@@ -35,6 +33,9 @@ interface Props {
 }
 
 const BoardPostBottomSheet = ({ post, onClose, onEdit }: Props) => {
+  // 창 크기에 따라 실시간으로 다시 계산 (Mac에서는 창 크기를 조절할 수 있음)
+  const { height: windowHeight } = useWindowDimensions();
+  const sheetHeight = windowHeight * 0.55;
   const slideAnim = useRef(new Animated.Value(0)).current;
   const visible = post !== null;
 
@@ -42,12 +43,12 @@ const BoardPostBottomSheet = ({ post, onClose, onEdit }: Props) => {
     if (visible) {
       slideAnim.setValue(0);
       Animated.spring(slideAnim, {
-        toValue: SHEET_HEIGHT,
+        toValue: sheetHeight,
         bounciness: 4,
         useNativeDriver: false,
       }).start();
     }
-  }, [visible, slideAnim]);
+  }, [visible, slideAnim, sheetHeight]);
 
   const handleClose = () => {
     Animated.timing(slideAnim, {

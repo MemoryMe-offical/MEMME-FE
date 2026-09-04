@@ -1,8 +1,7 @@
-import { StyleSheet, Dimensions } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-export const CHAT_MESSAGE_MAX_WIDTH = (SCREEN_WIDTH - 48) / 1.3;
-export const CHAT_LINK_CARD_MAX_WIDTH = CHAT_MESSAGE_MAX_WIDTH * 0.85;
+// 메시지 버블 등의 최대 너비는 창 크기에 따라 실시간 계산되어(useWindowDimensions)
+// 사용하는 컴포넌트(ChatMessageItem)에서 인라인으로 덮어씀 (Mac 창 리사이즈 대응)
 
 export const chatMessageItemStyles = StyleSheet.create({
   // 메인 컨테이너
@@ -39,9 +38,9 @@ export const chatMessageItemStyles = StyleSheet.create({
   },
 
   // 메시지 bubble 래퍼
+  // maxWidth는 컴포넌트에서 인라인으로 덮어씀
   'message-bubble-wrapper': {
     flexShrink: 1,
-    maxWidth: CHAT_MESSAGE_MAX_WIDTH,
   },
 
   // 말풍선
@@ -100,8 +99,8 @@ export const chatMessageItemStyles = StyleSheet.create({
   },
 
   // 링크 카드
+  // maxWidth는 컴포넌트에서 인라인으로 덮어씀
   'link-card': {
-    maxWidth: CHAT_LINK_CARD_MAX_WIDTH,
     borderRadius: 8,
     overflow: 'hidden',
     backgroundColor: '#FFFFFF',
@@ -175,10 +174,10 @@ export const chatMessageItemStyles = StyleSheet.create({
   },
 
   // 미디어 컨테이너
+  // maxWidth는 컴포넌트에서 인라인으로 덮어씀
   'media-container': {
     marginTop: 8,
     alignSelf: 'flex-end',
-    maxWidth: CHAT_MESSAGE_MAX_WIDTH,
   },
 
   // 이미지 그리드 컨테이너
@@ -230,6 +229,7 @@ export const chatMessageItemStyles = StyleSheet.create({
   },
 
   // 동영상 컨테이너
+  // maxWidth는 컴포넌트에서 인라인으로 덮어씀
   'video-container': {
     width: '100%',
     aspectRatio: 16 / 9,
@@ -239,7 +239,6 @@ export const chatMessageItemStyles = StyleSheet.create({
     position: 'relative',
     marginTop: 8,
     alignSelf: 'flex-end',
-    maxWidth: CHAT_MESSAGE_MAX_WIDTH,
   },
 
   'video-thumbnail': {
@@ -268,6 +267,7 @@ export const chatMessageItemStyles = StyleSheet.create({
   },
 
   // 파일 카드
+  // maxWidth는 컴포넌트에서 인라인으로 덮어씀
   'file-container': {
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -280,7 +280,6 @@ export const chatMessageItemStyles = StyleSheet.create({
     gap: 10,
     marginTop: 8,
     alignSelf: 'flex-end',
-    maxWidth: CHAT_MESSAGE_MAX_WIDTH,
   },
 
   'file-icon-container': {

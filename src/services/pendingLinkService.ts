@@ -33,10 +33,10 @@ export const addPendingLink = async (link: Omit<PendingLink, 'id'>): Promise<Pen
 
     return {
       ...apiResponse.data.pendingLink,
-      id: apiResponse.data.pendingLink.id || apiResponse.data.pendingLink.uid,
+      id: apiResponse.data.pendingLink.id || apiResponse.data.pendingLink.uid || '',
     };
   } catch (error) {
-    console.error('Failed to add pending link:', error);
+    // console.error('Failed to add pending link:', error);
     throw error;
   }
 };
@@ -65,8 +65,8 @@ export const loadPendingLinks = async (): Promise<PendingLink[]> => {
       ...link,
       id: link.uid || link.id,
     }));
-  } catch (error) {
-    console.error('Failed to load pending links:', error);
+  } catch {
+    // console.error('Failed to load pending links:', error);
     return [];
   }
 };
@@ -84,7 +84,7 @@ export const removePendingLink = async (id: string): Promise<void> => {
       throw new Error(`API error: ${response.status}`);
     }
   } catch (error) {
-    console.error('Failed to remove pending link:', error);
+    // console.error('Failed to remove pending link:', error);
     throw error;
   }
 };

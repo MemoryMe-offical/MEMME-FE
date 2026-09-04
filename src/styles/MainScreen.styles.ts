@@ -1,6 +1,4 @@
-import { StyleSheet, Dimensions } from 'react-native';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
+import { StyleSheet } from 'react-native';
 
 export const mainStyles = StyleSheet.create({
   // 메인 - 최상위 SafeArea
@@ -140,9 +138,8 @@ export const mainStyles = StyleSheet.create({
   },
 
   // 메인 - 워터마크 이미지
+  // width/height는 컴포넌트에서 실제 측정된 컨테이너 크기 기준으로 인라인 덮어씀
   'main-watermark-image': {
-    width: SCREEN_WIDTH * 0.55,
-    height: SCREEN_WIDTH * 0.55,
     opacity: 0.07,
     resizeMode: 'contain',
   },

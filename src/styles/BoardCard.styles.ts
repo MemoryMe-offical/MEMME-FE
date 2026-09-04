@@ -1,7 +1,4 @@
-import { StyleSheet, Dimensions } from 'react-native';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = (SCREEN_WIDTH - 48) / 1.3; // 화면 너비의 절반
+import { StyleSheet } from 'react-native';
 
 export const boardCardStyles = StyleSheet.create({
   // 행 컨테이너
@@ -22,8 +19,8 @@ export const boardCardStyles = StyleSheet.create({
   },
 
   // 카드 전체 래퍼
+  // width는 창 크기에 따라 실시간 계산되어 인라인으로 덮어씀 (Mac 창 리사이즈 대응)
   'card-wrapper': {
-    width: CARD_WIDTH,
     borderRadius: 16,
     backgroundColor: '#cfdfff',
     shadowColor: '#3A6FCC',

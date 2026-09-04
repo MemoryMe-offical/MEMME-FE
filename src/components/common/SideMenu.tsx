@@ -10,20 +10,19 @@ import {
   Animated,
   Image,
   StatusBar,
-  Dimensions,
+  useWindowDimensions,
   Linking,
   Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Board, TimelineItem, Memo, FileAttachment, OgData } from '../../types';
 import { CloseIcon, EditIcon, SettingsIcon, ChevronRightIcon, FileIcon } from './Icons';
-import { SIDE_MENU_WIDTH, sideMenuStyles as styles } from '../../styles/SideMenu.styles';
+import { sideMenuStyles as styles } from '../../styles/SideMenu.styles';
 import { fetchOgData } from '../../services/ogService';
 import ImageViewerModal from './ImageViewerModal';
 import LoadingImage from './LoadingImage';
 import InAppBrowser from 'react-native-inappbrowser-reborn';
 
-const SCREEN_HEIGHT = Dimensions.get('window').height;
 const MAX_DISPLAY_ITEMS = 4;
 
 const SideMenuImageThumbnail = ({ imageUrl, onPress }: { imageUrl: string; onPress: () => void }) => {
@@ -50,7 +49,10 @@ interface Props {
 }
 
 const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBookmarkPress, isBookmarkFilterActive, onBookmarkFilterToggle, onMediaGalleryPress }: Props) => {
-  const slideAnim = useRef(new Animated.Value(SIDE_MENU_WIDTH)).current;
+  // 창 크기에 따라 실시간으로 다시 계산 (Mac에서는 창 크기를 조절할 수 있음)
+  const { width: windowWidth, height: SCREEN_HEIGHT } = useWindowDimensions();
+  const sideMenuWidth = windowWidth * 0.82;
+  const slideAnim = useRef(new Animated.Value(sideMenuWidth)).current;
   const insets = useSafeAreaInsets();
   const panelTopInset =
     Platform.OS === 'android'
@@ -65,7 +67,7 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
 
   useEffect(() => {
     if (visible) {
-      slideAnim.setValue(SIDE_MENU_WIDTH);
+      slideAnim.setValue(sideMenuWidth);
       if (Platform.OS === 'android') {
         StatusBar.setBackgroundColor('transparent');
       }
@@ -76,11 +78,11 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
         useNativeDriver: true,
       }).start();
     }
-  }, [visible, slideAnim]);
+  }, [visible, slideAnim, sideMenuWidth]);
 
   const handleClose = () => {
     Animated.spring(slideAnim, {
-      toValue: SIDE_MENU_WIDTH,
+      toValue: sideMenuWidth,
       bounciness: 3,
       speed: 14,
       useNativeDriver: true,
@@ -108,20 +110,21 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                   ...prev,
                   [url]: ogData,
                 }));
-              } catch (error) {
-                console.error('Failed to fetch OG data for link:', url, error);
+              } catch {
+                // console.error('Failed to fetch OG data for link:', url, error);
               }
             }
           } else if (note.url && !cachedOgData[note.url] && !note.ogData) {
             // 레거시 단수 형식 호환
+            const noteUrl = note.url;
             try {
-              const ogData = await fetchOgData(note.url);
+              const ogData = await fetchOgData(noteUrl);
               setCachedOgData(prev => ({
                 ...prev,
-                [note.url]: ogData,
+                [noteUrl]: ogData,
               }));
-            } catch (error) {
-              console.error('Failed to fetch OG data for link:', note.url, error);
+            } catch {
+              // console.error('Failed to fetch OG data for link:', note.url, error);
             }
           }
         }
@@ -158,7 +161,9 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
             const ogData = (note.ogDatas?.[idx]) || cachedOgData[url];
             links.push({
               url,
-              title: ogData?.title || new URL(url).hostname,
+              // RN의 URL 폴리필은 hostname을 지원하지 않으므로(항상 undefined)
+              // 다른 화면들과 동일하게 정규식으로 도메인을 추출한다.
+              title: ogData?.title || url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || url,
               imageUrl: ogData?.imageUrl,
               hasOgData: !!(note.ogDatas?.[idx] || cachedOgData[url]),
             });
@@ -168,7 +173,7 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
           const ogData = note.ogData || cachedOgData[note.url];
           links.push({
             url: note.url,
-            title: ogData?.title || new URL(note.url).hostname,
+            title: ogData?.title || note.url.match(/^(?:https?:\/\/)?([^/?#]+)/)?.[1] || note.url,
             imageUrl: ogData?.imageUrl,
             hasOgData: !!(note.ogData || cachedOgData[note.url]),
           });
@@ -238,6 +243,7 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
           style={[
             styles['sideMenu-panel'],
             {
+              width: sideMenuWidth,
               marginTop: panelTopInset,
               height: SCREEN_HEIGHT - panelTopInset - insets.bottom,
               transform: [{ translateX: slideAnim }],
@@ -569,7 +575,7 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                               } else {
                                 Linking.openURL(link.url);
                               }
-                            } catch (error) {
+                            } catch {
                               Linking.openURL(link.url);
                             }
                           }}
@@ -638,8 +644,8 @@ const SideMenu = ({ visible, items, storageUsed = 0, onClose, onSettings, onBook
                                 fileUrl = `https://memme.o-r.kr${fileUrl.startsWith('/') ? '' : '/'}${fileUrl}`;
                               }
                               Linking.openURL(fileUrl);
-                            } catch (error) {
-                              console.error('Failed to open file:', error);
+                            } catch {
+                              // console.error('Failed to open file:', error);
                             }
                           }}
                         >

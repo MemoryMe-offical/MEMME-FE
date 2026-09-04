@@ -81,8 +81,8 @@ const PendingLinksBottomSheet = ({
             ...prev,
             [link.url]: ogData,
           }));
-        } catch (error) {
-          console.error('Failed to load OG data:', link.url, error);
+        } catch {
+          // console.error('Failed to load OG data:', link.url, error);
         }
       }
 
@@ -139,8 +139,8 @@ const PendingLinksBottomSheet = ({
       setShowNewBoardForm(false);
       setNewBoardName('');
       setActivePendingLink(null);
-    } catch (error) {
-      console.error('Failed to create board:', error);
+    } catch {
+      // console.error('Failed to create board:', error);
     } finally {
       setIsCreatingBoard(false);
     }
@@ -425,14 +425,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     maxHeight: '60%',
   },
-  'modal-handle': {
-    width: 40,
-    height: 4,
-    backgroundColor: '#E0E8F8',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 16,
-  },
+  // 'modal-handle'은 위에서 이미 정의됨 (중복 정의였음, 두 사용처 모두 동일한
+  // 스타일을 참조하므로 제거해도 동작 차이 없음)
   'new-board-header': {
     flexDirection: 'row',
     alignItems: 'center',

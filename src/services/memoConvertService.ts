@@ -70,7 +70,7 @@ export const convertMemoToNewBoard = async (
     };
     return result;
   } catch (error) {
-    console.error('Failed to convert memo to new board:', error);
+    // console.error('Failed to convert memo to new board:', error);
     throw error;
   }
 };
@@ -139,7 +139,7 @@ export const convertMemoToExistingBoard = async (
     };
     return result;
   } catch (error) {
-    console.error('Failed to convert memo to existing board:', error);
+    // console.error('Failed to convert memo to existing board:', error);
     throw error;
   }
 };

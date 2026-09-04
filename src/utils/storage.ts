@@ -84,7 +84,10 @@ export const migrateFromV1 = async (): Promise<void> => {
       description: item.content || undefined,
       tags: item.tags,
       notes: existingNotes.length > 0 ? existingNotes : undefined,
-      bookMark: item.bookMark,
+      // 'bookMark'는 존재하지 않는 필드명 오타였음 — 위 memo 마이그레이션과
+      // 동일하게 신/구 필드명을 모두 방어적으로 처리 (기존에는 이 값이
+      // 항상 유실되어 마이그레이션된 보드의 북마크 상태가 초기화됐음)
+      bookmarked: item.bookmarked ?? item.bookMark ?? false,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
     };

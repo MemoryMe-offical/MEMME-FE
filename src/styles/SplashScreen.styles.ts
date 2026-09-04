@@ -1,6 +1,4 @@
-import { StyleSheet, Dimensions } from 'react-native';
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+import { StyleSheet } from 'react-native';
 
 export const splashStyles = StyleSheet.create({
   // 스플래시 - 메인 컨테이너
@@ -41,17 +39,15 @@ export const splashStyles = StyleSheet.create({
   },
 
   // 스플래시 - 캐릭터 컨테이너 (하단)
+  // bottom/left/width/height는 창 크기에 따라 실시간 계산되어 인라인으로 덮어씀
+  // (Mac 창 리사이즈 대응)
   'splash-characterContainer': {
     position: 'absolute',
-    bottom: -SCREEN_HEIGHT * 0.2,  
-    left: SCREEN_WIDTH * 0.05,    // 왼쪽 밖으로
-    overflow: 'visible',            // 넘치는 부분 보이게
+    overflow: 'visible', // 넘치는 부분 보이게
   },
 
   // 스플래시 - 캐릭터 컨테이너 - 이미지
   'splash-characterContainer-image': {
-    width: SCREEN_WIDTH ,      
-    height: SCREEN_HEIGHT,    
     resizeMode: 'contain',
   },
 });

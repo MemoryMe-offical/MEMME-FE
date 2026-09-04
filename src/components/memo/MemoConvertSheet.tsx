@@ -144,8 +144,8 @@ const MemoConvertSheet = ({
 
       onSuccess(memo.id, newBoard);
       handleClose();
-    } catch (error) {
-      console.error('Failed to convert memo to new board:', error);
+    } catch {
+      // console.error('Failed to convert memo to new board:', error);
       showAlert({ title: '오류', message: '변환 중 문제가 발생했습니다. 다시 시도해주세요.', type: 'error' });
     } finally {
       setIsLoading(false);
@@ -181,8 +181,8 @@ const MemoConvertSheet = ({
 
       onSuccess(memo.id, updatedBoard);
       handleClose();
-    } catch (error) {
-      console.error('Failed to convert memo to existing board:', error);
+    } catch {
+      // console.error('Failed to convert memo to existing board:', error);
       showAlert({ title: '오류', message: '추가 중 문제가 발생했습니다. 다시 시도해주세요.', type: 'error' });
     } finally {
       setIsLoading(false);

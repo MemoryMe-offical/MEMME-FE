@@ -58,6 +58,10 @@ const MainScreen = () => {
   const [userId, setUserId] = useState<string>('');
   const [items, setItems] = useState<TimelineItem[]>([]);
   const [loaded, setLoaded] = useState(false);
+  // 타임라인 "더 불러오기"(과거 기록) 관련 상태
+  const [timelineHasMore, setTimelineHasMore] = useState(false);
+  const [timelineNextCursor, setTimelineNextCursor] = useState<string | null>(null);
+  const [isLoadingMoreTimeline, setIsLoadingMoreTimeline] = useState(false);
   const [inputText, setInputText] = useState('');
   const [expandedMemoId, setExpandedMemoId] = useState<string | null>(null);
   const [contextMenuItem, setContextMenuItem] = useState<TimelineItem | null>(null);
@@ -119,8 +123,8 @@ const MainScreen = () => {
       try {
         const id = await AsyncStorage.getItem('userId');
         setUserId(id || '');
-      } catch (error) {
-        console.error('Failed to load userId:', error);
+      } catch {
+        // console.error('Failed to load userId:', error);
       }
     };
     loadUserId();
@@ -158,6 +162,12 @@ const MainScreen = () => {
   const [searchResults, setSearchResults] = useState<searchService.SearchItem[]>([]);
   const [nextSearchCursor, setNextSearchCursor] = useState<string | null>(null);
   const [searchHasMore, setSearchHasMore] = useState(false);
+  // 검색 결과 중 최근 타임라인(items)에 없는 보드/노트를 보여주기 위해
+  // 개별적으로 불러온 보드들. (검색은 서버 전체를 대상으로 하지만, 화면에는
+  // 최근에 불러온 items에 있는 것만 표시되고 있어서 오래된 보드가 검색해도
+  // 안 보이는 문제가 있었음)
+  const [searchOnlyBoards, setSearchOnlyBoards] = useState<Board[]>([]);
+  const searchAutoLoadAttemptsRef = useRef(0);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [recentBoards, setRecentBoards] = useState<Board[]>([]);
@@ -181,8 +191,8 @@ const MainScreen = () => {
           const settings = JSON.parse(savedSettings);
           setExpandInitialSettings(settings);
         }
-      } catch (error) {
-        console.error('Failed to load expand settings:', error);
+      } catch {
+        // console.error('Failed to load expand settings:', error);
       }
     };
     loadExpandSettings();
@@ -194,15 +204,30 @@ const MainScreen = () => {
 
     const loadRecentBoards = async () => {
       try {
+        // limit을 작게 주면(예: 5) 최근에 "수정"은 안 됐지만 실제로는
+        // 존재하는 보드가 목록/검색(MemoConvertSheet)에서 아예 보이지
+        // 않는 문제가 있었다. 개수를 제한하지 않고 정렬만(최근 수정순)
+        // 적용해 모든 보드가 보이도록 한다. limit은 백엔드 최대치(100)로
+        // 지정해 사실상 전체를 가져오되 과도한 응답은 방지한다.
         const response = await timelineService.fetchTimeline({
           type: 'board',
           sort: 'updatedAt',
-          limit: 5,
+          limit: 100,
         });
-        setRecentBoards(response.items as Board[]);
-      } catch (error) {
-        console.error('Failed to load recent boards:', error);
-        const boards = (items.filter(i => i.type === 'board') as Board[]).slice(0, 5);
+        // fetchTimeline은 채팅형 타임라인(오래된 게 위로 오도록) 기준으로
+        // 항상 응답 순서를 뒤집기 때문에, 여기서는 최근 수정순으로 다시
+        // 정렬해야 한다(그렇지 않으면 오래된 보드가 위로 옴).
+        const sortedBoards = (response.items as Board[])
+          .slice()
+          .sort((a, b) => (b.updatedAt ?? b.createdAt).localeCompare(a.updatedAt ?? a.createdAt));
+        setRecentBoards(sortedBoards);
+      } catch {
+        // console.error('Failed to load recent boards:', error);
+        // API 호출이 실패했을 때의 대체 경로: 로컬에 이미 로드된 타임라인
+        // 항목에서 보드만 추려서 최근 수정순으로 정렬한다.
+        const boards = (items.filter(i => i.type === 'board') as Board[])
+          .slice()
+          .sort((a, b) => (b.updatedAt ?? b.createdAt).localeCompare(a.updatedAt ?? a.createdAt));
         setRecentBoards(boards);
       }
     };
@@ -294,8 +319,13 @@ const MainScreen = () => {
     // 검색 모드이고 필터가 없을 때는 API 검색 결과로 필터링
     if (isSearchMode && searchResults.length > 0 && searchFieldFilters.size === 0) {
       const searchUids = new Set(searchResults.map(r => r.uid));
-      result = result.filter(i => searchUids.has(i.id));
-      return result;
+      // 검색은 서버 전체를 대상으로 하지만 items는 최근 항목만 들고 있으므로,
+      // items에 없어서 개별적으로 불러온 보드(searchOnlyBoards)도 후보에 포함한다.
+      const combined = [
+        ...result,
+        ...searchOnlyBoards.filter(b => !result.some(i => i.id === b.id)),
+      ];
+      return combined.filter(i => searchUids.has(i.id));
     }
 
     // 북마크 필터
@@ -304,16 +334,30 @@ const MainScreen = () => {
     }
 
     return result;
-  }, [items, isSearchMode, searchResults, searchFieldFilters, filterBookmarkOnly]);
+  }, [items, isSearchMode, searchResults, searchFieldFilters, filterBookmarkOnly, searchOnlyBoards]);
 
   const timelineItems = useMemo(() => [...filteredItems].reverse(), [filteredItems]);
 
+  // 검색된 메모 중 아직 화면에 표시하지 못한(과거 기록을 더 불러와야 하는) 개수.
+  // note/board는 개별적으로 다시 불러와 표시하지만, memo는 상세 화면이 따로
+  // 없어 타임라인에 로드되어야만 보여줄 수 있기 때문에 남아있는 경우가 있다.
+  const hiddenSearchMemoCount = useMemo(() => {
+    if (!isSearchMode) return 0;
+    return searchResults.filter(
+      r => r.type === 'memo' && !items.some(i => i.id === r.uid),
+    ).length;
+  }, [isSearchMode, searchResults, items]);
+
   // 검색 함수 (디바운싱 적용)
   const performSearch = useCallback(async (query: string) => {
+    // 새 검색이 시작되면 과거 기록 자동 추가 로드 횟수 제한도 초기화한다.
+    searchAutoLoadAttemptsRef.current = 0;
+
     if (!query.trim()) {
       setSearchResults([]);
       setNextSearchCursor(null);
       setSearchHasMore(false);
+      setSearchOnlyBoards([]);
       return;
     }
 
@@ -323,8 +367,8 @@ const MainScreen = () => {
       setSearchResults(response.items);
       setNextSearchCursor(response.nextCursor);
       setSearchHasMore(response.hasNext);
-    } catch (error) {
-      console.error('Search error:', error);
+    } catch {
+      // console.error('Search error:', error);
       showAlert({ title: '검색 오류', message: '검색 중 오류가 발생했습니다.', type: 'error' });
       setSearchResults([]);
       setNextSearchCursor(null);
@@ -333,6 +377,51 @@ const MainScreen = () => {
       setIsLoadingSearch(false);
     }
   }, [showAlert]);
+
+  // 검색 결과 중 최근 items에 없는 보드/노트는 개별적으로 전체 데이터를
+  // 불러와 searchOnlyBoards에 채운다 (board/note는 fetchBoard로 확인 가능).
+  useEffect(() => {
+    if (!isSearchMode || searchResults.length === 0) {
+      if (searchOnlyBoards.length > 0) setSearchOnlyBoards([]);
+      return;
+    }
+
+    const neededBoardIds = new Set<string>();
+    searchResults.forEach(r => {
+      if (r.type === 'board') neededBoardIds.add(r.uid);
+      else if (r.type === 'note' && r.parentUid) neededBoardIds.add(r.parentUid);
+    });
+
+    const missingIds = Array.from(neededBoardIds).filter(
+      id => !items.some(i => i.id === id) && !searchOnlyBoards.some(b => b.id === id),
+    );
+
+    if (missingIds.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      const fetched = await Promise.all(
+        missingIds.map(async id => {
+          try {
+            return await boardService.fetchBoard(id);
+          } catch {
+            // 개별 보드 조회 실패는 그 보드만 검색 결과에서 빠지고 나머지는 정상 표시
+            return null;
+          }
+        }),
+      );
+      if (cancelled) return;
+      const newBoards = fetched.filter((b): b is Board => b !== null);
+      if (newBoards.length > 0) {
+        setSearchOnlyBoards(prev => [...prev, ...newBoards]);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSearchMode, searchResults, items]);
 
   // 검색 텍스트 변경 시 디바운싱
   useEffect(() => {
@@ -374,8 +463,8 @@ const MainScreen = () => {
         message: '새로운 링크가 추가되었습니다',
         onAlert: msg => showAlert({ message: msg }),
       });
-    } catch (error) {
-      console.error('Failed to handle shared URL:', error);
+    } catch {
+      // console.error('Failed to handle shared URL:', error);
     }
   };
 
@@ -389,13 +478,57 @@ const MainScreen = () => {
         shouldScrollToEnd.current = true;
       }
       setItems(response.items);
-    } catch (error) {
-      console.error('Failed to load timeline:', error);
+      setTimelineHasMore(response.hasNext);
+      setTimelineNextCursor(response.nextCursor ?? null);
+    } catch {
+      // console.error('Failed to load timeline:', error);
       setItems([]);
+      setTimelineHasMore(false);
+      setTimelineNextCursor(null);
     } finally {
       setLoaded(true);
     }
   }, [route.params?.scrollToItemId]);
+
+  // 스크롤을 올려(inverted 리스트라 위로 스크롤 = 과거 방향) 더 오래된 기록을
+  // 이어서 불러온다. 기존에는 최근 50개만 불러오고 끝이라 그 이전 기록을
+  // 볼 방법이 전혀 없었다.
+  const loadMoreTimeline = useCallback(async () => {
+    if (isLoadingMoreTimeline || !timelineHasMore || !timelineNextCursor) return;
+    setIsLoadingMoreTimeline(true);
+    try {
+      const response = await timelineService.fetchTimeline({
+        sort: 'createdAt',
+        limit: 50,
+        cursor: timelineNextCursor,
+      });
+      // 더 오래된 항목들이므로 배열의 앞쪽(가장 오래된 쪽)에 이어붙인다.
+      setItems(prev => [...response.items, ...prev]);
+      setTimelineHasMore(response.hasNext);
+      setTimelineNextCursor(response.nextCursor ?? null);
+    } catch {
+      // 실패해도 timelineHasMore를 그대로 둬서 다음 스크롤 시 다시 시도할 수 있게 한다.
+    } finally {
+      setIsLoadingMoreTimeline(false);
+    }
+  }, [isLoadingMoreTimeline, timelineHasMore, timelineNextCursor]);
+
+  // 검색 결과 중 memo 타입은 items(최근 타임라인)에 있어야만 표시할 수 있다.
+  // 없으면 과거 기록을 더 불러와서(최대 5페이지) 찾아본다.
+  useEffect(() => {
+    if (!isSearchMode || searchResults.length === 0) return;
+    if (isLoadingMoreTimeline || !timelineHasMore) return;
+    if (searchAutoLoadAttemptsRef.current >= 5) return;
+
+    const hasMissingMemoMatch = searchResults.some(
+      r => r.type === 'memo' && !items.some(i => i.id === r.uid),
+    );
+
+    if (hasMissingMemoMatch) {
+      searchAutoLoadAttemptsRef.current += 1;
+      loadMoreTimeline();
+    }
+  }, [isSearchMode, searchResults, items, timelineHasMore, isLoadingMoreTimeline, loadMoreTimeline]);
 
   useEffect(() => {
     loadTimeline();
@@ -408,8 +541,8 @@ const MainScreen = () => {
           try {
             const ogData = await fetchOgData(link.url);
             return { ...link, ogData };
-          } catch (error) {
-            console.error('Failed to load OG data:', link.url, error);
+          } catch {
+            // console.error('Failed to load OG data:', link.url, error);
             return link;
           }
         })
@@ -476,8 +609,8 @@ const MainScreen = () => {
             const settings = JSON.parse(savedSettings);
             setExpandInitialSettings(settings);
           }
-        } catch (error) {
-          console.error('Failed to load expand settings:', error);
+        } catch {
+          // console.error('Failed to load expand settings:', error);
         }
       };
       loadExpandSettings();
@@ -503,8 +636,8 @@ const MainScreen = () => {
           await handleSharedUrl(url);
           await nativeShareModule.clearSharedURL();
         }
-      } catch (error) {
-        console.error('Failed to handle shared URL:', error);
+      } catch {
+        // console.error('Failed to handle shared URL:', error);
       }
     };
 
@@ -610,8 +743,8 @@ const MainScreen = () => {
         });
         return;
       }
-    } catch (error) {
-      console.error('Failed to copy to clipboard:', error);
+    } catch {
+      // console.error('Failed to copy to clipboard:', error);
       showToastNotification({
         message: '복사 실패',
         onAlert: msg => showAlert({ message: msg }),
@@ -639,8 +772,8 @@ const MainScreen = () => {
           ),
         );
       }
-    } catch (error) {
-      console.error('Failed to toggle bookmark:', error);
+    } catch {
+      // console.error('Failed to toggle bookmark:', error);
       showAlert({ title: '오류', message: '북마크 설정에 실패했습니다.', type: 'error' });
     }
   };
@@ -711,8 +844,8 @@ const MainScreen = () => {
       shouldScrollToEnd.current = true;
       setItems(prev => [...prev, newMemo]);
       setInputText('');
-    } catch (error) {
-      console.error('Failed to create memo:', error);
+    } catch {
+      // console.error('Failed to create memo:', error);
       showAlert({ title: '오류', message: '메모 저장에 실패했습니다.', type: 'error' });
       setInputText(text);
     }
@@ -753,8 +886,8 @@ const MainScreen = () => {
           onAlert: msg => showAlert({ message: msg }),
         });
       }
-    } catch (error) {
-      console.error('Failed to handle link:', error);
+    } catch {
+      // console.error('Failed to handle link:', error);
       showAlert({ title: '오류', message: '링크 처리에 실패했습니다.', type: 'error' });
     }
 
@@ -793,8 +926,8 @@ const MainScreen = () => {
       setLinkOgData(null);
       setShowNewBoardFormInLinkModal(false);
       setNewBoardNameInLinkModal('');
-    } catch (error) {
-      console.error('Failed to create board and add link:', error);
+    } catch {
+      // console.error('Failed to create board and add link:', error);
       showAlert({ title: '오류', message: '보드 생성 중 오류가 발생했습니다.', type: 'error' });
     } finally {
       setIsCreatingBoardInLinkModal(false);
@@ -821,8 +954,8 @@ const MainScreen = () => {
           }
           setItems(prev => prev.filter(i => i.id !== id));
           handleCloseContextMenu();
-        } catch (error) {
-          console.error('Failed to delete item:', error);
+        } catch {
+          // console.error('Failed to delete item:', error);
           showAlert({ title: '오류', message: '삭제에 실패했습니다.', type: 'error' });
         }
       },
@@ -860,8 +993,8 @@ const MainScreen = () => {
         .then(data => {
           setLinkOgData(data || null);
         })
-        .catch(error => {
-          console.error('Failed to fetch OG data:', error);
+        .catch(() => {
+          // console.error('Failed to fetch OG data:', error);
           setLinkOgData(null);
         })
         .finally(() => {
@@ -932,8 +1065,8 @@ const MainScreen = () => {
       };
       shouldScrollToEnd.current = true;
       setItems(prev => [...prev, newMemo]);
-    } catch (error) {
-      console.error('Failed to upload images:', error);
+    } catch {
+      // console.error('Failed to upload images:', error);
       showAlert({ title: '오류', message: '이미지 업로드에 실패했습니다.', type: 'error' });
     } finally {
       setIsUploadingMedia(false);
@@ -956,8 +1089,8 @@ const MainScreen = () => {
       };
       shouldScrollToEnd.current = true;
       setItems(prev => [...prev, newMemo]);
-    } catch (error) {
-      console.error('Failed to upload video:', error);
+    } catch {
+      // console.error('Failed to upload video:', error);
       showAlert({ title: '오류', message: '동영상 업로드에 실패했습니다.', type: 'error' });
     } finally {
       setIsUploadingMedia(false);
@@ -979,8 +1112,8 @@ const MainScreen = () => {
       };
       shouldScrollToEnd.current = true;
       setItems(prev => [...prev, newMemo]);
-    } catch (error) {
-      console.error('Failed to upload file:', error);
+    } catch {
+      // console.error('Failed to upload file:', error);
       showAlert({ title: '오류', message: '파일 업로드에 실패했습니다.', type: 'error' });
     } finally {
       setIsUploadingMedia(false);
@@ -1019,8 +1152,8 @@ const MainScreen = () => {
       }
 
       setPendingLinks(prev => prev.filter(l => l.id !== link.id));
-    } catch (error) {
-      console.error('Failed to add note to board:', error);
+    } catch {
+      // console.error('Failed to add note to board:', error);
       showAlert({ title: '오류', message: '노트 추가에 실패했습니다.', type: 'error' });
     }
   };
@@ -1029,8 +1162,8 @@ const MainScreen = () => {
     try {
       await pendingLinkService.removePendingLink(linkId);
       setPendingLinks(prev => prev.filter(l => l.id !== linkId));
-    } catch (error) {
-      console.error('Failed to dismiss pending link:', error);
+    } catch {
+      // console.error('Failed to dismiss pending link:', error);
       showAlert({ title: '오류', message: '링크 삭제에 실패했습니다.', type: 'error' });
     }
   };
@@ -1115,10 +1248,14 @@ const MainScreen = () => {
         <View
           style={styles['main-content']}
           onLayout={({ nativeEvent }) => {
-            if (watermarkFrame) return;
-
             const { width, height } = nativeEvent.layout;
-            setWatermarkFrame({ width, height });
+            // 값이 실제로 바뀌었을 때만 갱신 (Mac에서 창 크기를 조절해도
+            // 워터마크 크기가 최초 측정값에 고정되지 않도록 함)
+            setWatermarkFrame(prev =>
+              prev && prev.width === width && prev.height === height
+                ? prev
+                : { width, height },
+            );
           }}>
           {watermarkFrame ? (
             <View
@@ -1143,6 +1280,17 @@ const MainScreen = () => {
             </View>
           ) : null}
 
+            {/* 검색된 메모 중 아직 못 불러온 게 남아있을 때 안내 */}
+            {isSearchMode && hiddenSearchMemoCount > 0 && !isLoadingMoreTimeline && (
+              <View style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: '#FFF7E0' }}>
+                <Text style={{ fontSize: 12, color: '#8A6D00', fontFamily: 'PretendardVariable' }}>
+                  {timelineHasMore
+                    ? `오래된 메모 검색 결과 ${hiddenSearchMemoCount}건은 아직 안 보여요. 화면을 위로 스크롤하면 더 불러옵니다.`
+                    : `오래된 메모 검색 결과 ${hiddenSearchMemoCount}건은 현재 타임라인에서 찾을 수 없습니다.`}
+                </Text>
+              </View>
+            )}
+
             {/* 일반 타임라인 리스트 */}
             <FlatList<TimelineItem>
               ref={flatListRef}
@@ -1157,6 +1305,19 @@ const MainScreen = () => {
                 scrollToLatestIfNeeded();
               }}
               onLayout={scrollToLatestIfNeeded}
+              // inverted 리스트라 "끝에 도달"이 시각적으로는 위로 스크롤해
+              // 과거 기록에 닿았을 때를 의미한다. 검색 모드에서도 그대로 켜둬서
+              // (검색 결과 중 아직 안 불러온 오래된 메모가 있을 때) 사용자가
+              // 위로 스크롤하면 더 불러오도록 한다.
+              onEndReached={loadMoreTimeline}
+              onEndReachedThreshold={0.4}
+              ListFooterComponent={
+                isLoadingMoreTimeline ? (
+                  <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+                    <ActivityIndicator size="small" color="#588DFF" />
+                  </View>
+                ) : null
+              }
               renderItem={({ item, index }) => {
                 // 다음 아이템의 시간과 비교하여 같은 시간에 보낸 것인지 확인
                 const currentTime = getHourMinute(item.createdAt);

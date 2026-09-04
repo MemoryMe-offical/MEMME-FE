@@ -54,7 +54,7 @@ export const createNote = async (
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('Failed to create note. Status:', response.status, 'Error:', errorData);
+      // console.error('Failed to create note. Status:', response.status, 'Error:', errorData);
       throw new Error(`API error: ${response.status} - ${JSON.stringify(errorData)}`);
     }
 
@@ -69,7 +69,7 @@ export const createNote = async (
 
     return note;
   } catch (error) {
-    console.error('Failed to create note:', error);
+    // console.error('Failed to create note:', error);
     throw error;
   }
 };
@@ -108,7 +108,7 @@ export const updateNote = async (
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('Failed to update note. Status:', response.status, 'Error:', errorData);
+      // console.error('Failed to update note. Status:', response.status, 'Error:', errorData);
       throw new Error(`API error: ${response.status} - ${JSON.stringify(errorData)}`);
     }
 
@@ -123,7 +123,7 @@ export const updateNote = async (
 
     return note;
   } catch (error) {
-    console.error('Failed to update note:', error);
+    // console.error('Failed to update note:', error);
     throw error;
   }
 };
@@ -141,7 +141,7 @@ export const deleteNote = async (boardUid: string, noteUid: string): Promise<voi
       throw new Error(`API error: ${response.status}`);
     }
   } catch (error) {
-    console.error('Failed to delete note:', error);
+    // console.error('Failed to delete note:', error);
     throw error;
   }
 };
@@ -168,7 +168,7 @@ export const moveNote = async (
     const responseNote = data.data;
     return transformNote(responseNote);
   } catch (error) {
-    console.error('Failed to move note:', error);
+    // console.error('Failed to move note:', error);
     throw error;
   }
 };
@@ -191,7 +191,7 @@ export const moveNotes = async (
       throw new Error(`API error: ${response.status}`);
     }
   } catch (error) {
-    console.error('Failed to move notes:', error);
+    // console.error('Failed to move notes:', error);
     throw error;
   }
 };
